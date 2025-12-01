@@ -13,20 +13,27 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (December 2024)
 
 ### UI/UX Improvements
-- **Event Details Page**: Redesigned with horizontal scrolling sticky notes, enlarged host section with name beside avatar, and large attending profile photos with names underneath
-- **Rides/Money Cards**: Updated to use provided image assets for visual appeal
-- **ShareModal**: Two-tab design (Share by URL / Share by Username) with correct Replit domain links
+- **Event Details Page**: Redesigned with horizontal scrolling sticky notes (square, angled with random rotation), enlarged host section with name beside avatar, and large attending profile photos with names underneath
+- **Rides/Money Cards**: Updated to use provided image assets (80x80) for visual appeal
+- **ShareModal**: Two-tab design (Share by URL / Share by Username) with debounced username search
 - **LoadingDots**: Updated with brand colors (orange #E67E5A, yellow #E6B85A, blue #5AACE6)
 - **Messages Page**: All messages now display sender avatars with sender names for non-user messages
+- **GlassModal Animations**: Snappy spring transitions with tension: 120, friction: 10
+- **Tab Navigation**: Haptic feedback (vibration) when switching between pill tabs
 
 ### Map Features
-- Current location marker now uses user's profile photo instead of blue dot
+- **TomTom WebView Maps**: Uses TomTom SDK via WebView (mobile) and iframe (web) for full Expo Go compatibility
+- Current location marker uses user's profile photo with green pulsing border
 - Location sharing toggle state persists across app sessions using AsyncStorage
-- Green pulsing border for current location marker to distinguish from other attendees
+- Attendee markers with profile photos and "On My Way" status indicators
 
 ### Photo Upload
 - Fixed parameter name from 'image' to 'photoUrl' matching backend API
 - Photo display now uses correct database field names (photo_url, first_name)
+- Photo quality reduced to 0.5 to prevent payload size issues
+
+### Event Management
+- Delete event button properly gated to hosts only (isHost check)
 
 ## System Architecture
 
