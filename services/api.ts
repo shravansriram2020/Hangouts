@@ -7,16 +7,16 @@ const getApiUrl = () => {
   }
   
   if (Platform.OS === 'web') {
-    return 'http://localhost:3001/api';
+    return '/api';
   }
   
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
   if (debuggerHost) {
     const host = debuggerHost.split(':')[0];
-    return `http://${host}:3001/api`;
+    return `http://${host}:5000/api`;
   }
   
-  return 'http://172.31.103.34:3001/api';
+  return 'https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api';
 };
 
 const API_BASE_URL = getApiUrl();
