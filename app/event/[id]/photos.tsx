@@ -8,12 +8,16 @@ import {
   TouchableOpacity,
   Dimensions,
   Modal,
+  Share,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
+import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 
 const { width } = Dimensions.get('window');
@@ -23,6 +27,7 @@ interface Photo {
   id: string;
   photo_url: string;
   first_name: string;
+  user_id?: string;
   created_at: string;
   expires_at: string;
 }
