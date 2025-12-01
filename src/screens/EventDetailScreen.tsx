@@ -124,7 +124,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
     );
   }
 
-  const gradientColors = event.gradient_color1 && event.gradient_color2
+  const gradientColors: [string, string] = event.gradient_color1 && event.gradient_color2
     ? [event.gradient_color1, event.gradient_color2]
     : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
 

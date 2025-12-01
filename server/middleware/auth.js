@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hangouts-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
