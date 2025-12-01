@@ -34,9 +34,11 @@ interface Photo {
 
 export default function PhotosScreen() {
   const { event } = useEvent();
+  const { user } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const gradientColors = event?.gradient_color1 && event?.gradient_color2 
     ? [event.gradient_color1, event.gradient_color2]
@@ -94,8 +96,55 @@ export default function PhotosScreen() {
     }
   };
 
+  const handleDownloadPhoto = async (photo: Photo) => {
+    try {
+      setDownloading(true);
+      await Share.share({
+        url: photo.photo_url,
+        message: `Photo from ${photo.first_name}`,
+        title: 'Share Photo',
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      Alert.alert('Error', 'Failed to share photo');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    Alert.alert('Delete Photo', 'Remove this photo?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/photos/${photoId}`);
+            setSelectedPhoto(null);
+            await fetchPhotos();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete photo');
+          }
+        },
+      },
+    ]);
+  };
+
   const handleDownloadAll = async () => {
-    alert('Download all photos functionality');
+    if (photos.length === 0) return;
+    try {
+      setDownloading(true);
+      const urls = photos.map(p => p.photo_url).join('\n');
+      await Share.share({
+        message: `${photos.length} photos from event:\n${urls}`,
+        title: 'Share All Photos',
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const renderPhoto = ({ item }: { item: Photo }) => (
@@ -174,6 +223,25 @@ export default function PhotosScreen() {
                 <Text style={styles.photoModalDate}>
                   {new Date(selectedPhoto.created_at).toLocaleDateString()}
                 </Text>
+              </View>
+              <View style={styles.photoModalActions}>
+                <TouchableOpacity 
+                  style={styles.photoModalButton}
+                  onPress={() => handleDownloadPhoto(selectedPhoto)}
+                  disabled={downloading}
+                >
+                  <Ionicons name="download-outline" size={20} color={Colors.white} />
+                  <Text style={styles.photoModalButtonText}>Download</Text>
+                </TouchableOpacity>
+                {user?.id === selectedPhoto.user_id && (
+                  <TouchableOpacity 
+                    style={[styles.photoModalButton, styles.photoModalButtonDelete]}
+                    onPress={() => handleDeletePhoto(selectedPhoto.id)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={Colors.white} />
+                    <Text style={styles.photoModalButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           )}
