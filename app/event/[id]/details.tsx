@@ -409,16 +409,7 @@ export default function DetailsScreen() {
         attendees={event.attendees || []}
         onEventDeleted={() => router.replace('/')}
         onAttendeeRemoved={refreshEvent}
-        onGradientChange={() => {
-          Alert.alert('Background Color', 'Choose a new background gradient', [
-            { text: 'Blue', onPress: () => updateGradient('#1E3A5F', '#2D5A8B') },
-            { text: 'Purple', onPress: () => updateGradient('#6B46C1', '#9333EA') },
-            { text: 'Green', onPress: () => updateGradient('#059669', '#10B981') },
-            { text: 'Orange', onPress: () => updateGradient('#D97706', '#F97316') },
-            { text: 'Pink', onPress: () => updateGradient('#EC4899', '#F472B6') },
-            { text: 'Cancel', style: 'cancel' },
-          ]);
-        }}
+        onGradientChange={(color1, color2) => updateGradient(color1, color2)}
       />
       </ScrollView>
     </LinearGradient>
@@ -724,30 +715,17 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 4,
   },
-  emptyNotesContainer: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  emptyNotesCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  emptyNotesContent: {
-    flexDirection: 'row',
+  emptyNotesPlaceholder: {
+    paddingVertical: 40,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    gap: 8,
   },
-  emptyNotesText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-    marginLeft: 4,
+  emptyNotesPlaceholderText: {
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+    fontStyle: 'italic',
   },
   bottomSpacer: {
     height: 24,

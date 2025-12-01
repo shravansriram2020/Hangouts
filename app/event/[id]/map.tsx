@@ -435,21 +435,21 @@ export default function MapScreen() {
   return (
     <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
       <View style={styles.innerContainer}>
-      <View style={styles.header}>
-        <View style={styles.sharingInfo}>
-          <Ionicons name="people-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.sharingText}>{sharingCount} sharing</Text>
+        <View style={styles.header}>
+          <View style={styles.sharingInfo}>
+            <Ionicons name="people-outline" size={18} color={Colors.secondary} />
+            <Text style={styles.sharingText}>{sharingCount} sharing</Text>
+          </View>
+          <View style={styles.shareToggle}>
+            <Text style={styles.shareLabel}>Share my location</Text>
+            <Switch
+              value={locationSharing}
+              onValueChange={toggleLocationSharing}
+              trackColor={{ false: Colors.grayLight, true: Colors.green }}
+              thumbColor={Colors.white}
+            />
+          </View>
         </View>
-        <View style={styles.shareToggle}>
-          <Text style={styles.shareLabel}>Share my location</Text>
-          <Switch
-            value={locationSharing}
-            onValueChange={toggleLocationSharing}
-            trackColor={{ false: Colors.grayLight, true: Colors.green }}
-            thumbColor={Colors.white}
-          />
-        </View>
-      </View>
 
       <TouchableOpacity 
         style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
@@ -517,12 +517,16 @@ export default function MapScreen() {
           </Text>
         </View>
       )}
-    </View>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  innerContainer: {
     flex: 1,
   },
   header: {
