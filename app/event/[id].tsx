@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import EventDetailScreen from '../screens/EventDetailScreen';
+import EventDetailScreen from '../../src/screens/EventDetailScreen';
 
 export default function EventPage() {
   const { id } = useLocalSearchParams<{ id: string }>();

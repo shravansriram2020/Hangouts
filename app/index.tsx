@@ -3,10 +3,10 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
-import SignInScreen from './screens/SignInScreen';
-import SignUpScreen from './screens/SignUpScreen';
-import TutorialScreen from './screens/TutorialScreen';
-import HomeScreen from './screens/HomeScreen';
+import SignInScreen from '../src/screens/SignInScreen';
+import SignUpScreen from '../src/screens/SignUpScreen';
+import TutorialScreen from '../src/screens/TutorialScreen';
+import HomeScreen from '../src/screens/HomeScreen';
 
 export default function Index() {
   const router = useRouter();
