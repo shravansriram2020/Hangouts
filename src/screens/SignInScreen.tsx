@@ -67,7 +67,7 @@ export default function SignInScreen({ onSwitchToSignUp }: Props) {
             />
           </View>
 
-          <Text style={styles.tagline}>Connect, Plan, Sync Together</Text>
+          <Text style={styles.tagline}>Making plans with friends just got easier</Text>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
