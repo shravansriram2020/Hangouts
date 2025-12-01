@@ -11,13 +11,15 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
+import NativeGradientPicker, { GRADIENT_PRESETS } from './NativeGradientPicker';
 
 interface Props {
   visible: boolean;
@@ -31,6 +33,7 @@ interface LocationSuggestion {
   address: string;
   lat: number;
   lng: number;
+  distanceMiles?: string | null;
 }
 
 interface UserResult {
@@ -64,6 +67,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   const [loading, setLoading] = useState(false);
   const [suggestingLocation, setSuggestingLocation] = useState(false);
   const [searchingLocation, setSearchingLocation] = useState(false);
+  const [showGradientPicker, setShowGradientPicker] = useState(false);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
@@ -412,6 +416,11 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
                       <Text style={styles.suggestionName}>{loc.name}</Text>
                       <Text style={styles.suggestionAddress} numberOfLines={1}>{loc.address}</Text>
                     </View>
+                    {loc.distanceMiles && (
+                      <View style={styles.distanceBadge}>
+                        <Text style={styles.distanceText}>{loc.distanceMiles} mi</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -502,38 +511,45 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               These notes will be visible to all attendees on the hangout page
             </Text>
 
-            <Text style={styles.sectionTitle}>Custom Background Gradient</Text>
-            <View style={styles.colorRow}>
-              <View style={styles.colorInput}>
-                <Text style={styles.inputLabel}>Color 1</Text>
-                <View style={styles.colorPickerRow}>
-                  <View style={[styles.colorPreview, { backgroundColor: gradientColor1 || '#000' }]} />
-                  <TextInput
-                    style={[styles.input, styles.colorTextInput]}
-                    value={gradientColor1}
-                    onChangeText={setGradientColor1}
-                    placeholder="#000000"
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
+            <Text style={styles.sectionTitle}>Background Theme</Text>
+            <TouchableOpacity 
+              style={styles.gradientPickerButton}
+              onPress={() => setShowGradientPicker(true)}
+            >
+              <LinearGradient
+                colors={[
+                  gradientColor1 || GRADIENT_PRESETS[0].color1, 
+                  gradientColor2 || GRADIENT_PRESETS[0].color2
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientButtonPreview}
+              />
+              <View style={styles.gradientButtonText}>
+                <Text style={styles.gradientButtonLabel}>
+                  {gradientColor1 && gradientColor2 
+                    ? GRADIENT_PRESETS.find(p => p.color1 === gradientColor1 && p.color2 === gradientColor2)?.name || 'Custom'
+                    : 'Default'}
+                </Text>
+                <Text style={styles.gradientButtonHint}>Tap to change</Text>
               </View>
-              <View style={styles.colorInput}>
-                <Text style={styles.inputLabel}>Color 2</Text>
-                <View style={styles.colorPickerRow}>
-                  <View style={[styles.colorPreview, { backgroundColor: gradientColor2 || '#000' }]} />
-                  <TextInput
-                    style={[styles.input, styles.colorTextInput]}
-                    value={gradientColor2}
-                    onChangeText={setGradientColor2}
-                    placeholder="#000000"
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
-              </View>
-            </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.gray} />
+            </TouchableOpacity>
             <Text style={styles.helperText}>
-              Leave empty to use the default gradient. Both colors must be selected to apply custom gradient.
+              Choose a background theme for your hangout page
             </Text>
+            
+            <NativeGradientPicker
+              visible={showGradientPicker}
+              onClose={() => setShowGradientPicker(false)}
+              onSelect={(c1, c2) => {
+                setGradientColor1(c1);
+                setGradientColor2(c2);
+              }}
+              selectedColor1={gradientColor1}
+              selectedColor2={gradientColor2}
+              title="Choose Background Theme"
+            />
 
             <View style={styles.footer}>
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
@@ -873,5 +889,44 @@ const styles = StyleSheet.create({
   },
   createButtonTextDisabled: {
     color: Colors.grayMedium,
+  },
+  distanceBadge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  distanceText: {
+    fontSize: 11,
+    color: Colors.white,
+    fontFamily: Fonts.medium,
+  },
+  gradientPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 12,
+  },
+  gradientButtonPreview: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+  },
+  gradientButtonText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  gradientButtonLabel: {
+    fontSize: 15,
+    color: Colors.secondary,
+    fontFamily: Fonts.semiBold,
+  },
+  gradientButtonHint: {
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
   },
 });

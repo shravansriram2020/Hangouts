@@ -10,7 +10,7 @@ router.get('/search', authenticateToken, async (req, res) => {
   const { query, lat, lng, radius = 10, category } = req.query;
 
   try {
-    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=10`;
+    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=15`;
     
     if (lat && lng) {
       url += `&lat=${lat}&lon=${lng}&radius=${radius * 1609}`; // Convert miles to meters
@@ -23,17 +23,36 @@ router.get('/search', authenticateToken, async (req, res) => {
     const response = await fetch(url);
     const data = await response.json();
 
-    const results = data.results?.map(result => ({
-      id: result.id,
-      name: result.poi?.name || result.address?.freeformAddress,
-      address: result.address?.freeformAddress,
-      lat: result.position?.lat,
-      lng: result.position?.lon,
-      distance: result.dist,
-      category: result.poi?.categories?.[0]
-    })) || [];
+    let results = data.results?.map(result => {
+      let distance = result.dist;
+      if (!distance && lat && lng && result.position) {
+        const R = 3959; // Earth's radius in miles
+        const dLat = (result.position.lat - parseFloat(lat)) * Math.PI / 180;
+        const dLon = (result.position.lon - parseFloat(lng)) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(parseFloat(lat) * Math.PI / 180) * Math.cos(result.position.lat * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        distance = R * c * 1609.34; // Convert miles to meters
+      }
+      
+      return {
+        id: result.id,
+        name: result.poi?.name || result.address?.freeformAddress,
+        address: result.address?.freeformAddress,
+        lat: result.position?.lat,
+        lng: result.position?.lon,
+        distance: distance,
+        distanceMiles: distance ? (distance / 1609.34).toFixed(1) : null,
+        category: result.poi?.categories?.[0]
+      };
+    }) || [];
 
-    res.json(results);
+    if (lat && lng) {
+      results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    }
+
+    res.json(results.slice(0, 10));
   } catch (error) {
     console.error('Location search error:', error);
     res.status(500).json({ error: 'Failed to search locations' });
@@ -85,10 +104,15 @@ router.get('/route', authenticateToken, async (req, res) => {
       const route = data.routes[0];
       const leg = route.legs[0];
       
+      const normalizedPoints = (leg.points || []).map(p => ({
+        latitude: p.latitude,
+        longitude: p.longitude
+      }));
+      
       res.json({
         distance: (leg.summary.lengthInMeters / 1609.34).toFixed(1),
         duration: Math.round(leg.summary.travelTimeInSeconds / 60),
-        points: leg.points
+        points: normalizedPoints
       });
     } else {
       res.json({ distance: null, duration: null, points: [] });

@@ -22,10 +22,13 @@ Preferred communication style: Simple, everyday language.
 - **Tab Navigation**: Haptic feedback (vibration) when switching between pill tabs
 
 ### Map Features
-- **TomTom WebView Maps**: Uses TomTom SDK via WebView (mobile) and iframe (web) for full Expo Go compatibility
+- **Native Maps with Conditional Rendering**: Uses `react-native-maps` for iOS/Android (Expo Go compatible) with static TomTom image fallback for web
 - Current location marker uses user's profile photo with green pulsing border
 - Location sharing toggle state persists across app sessions using AsyncStorage
 - Attendee markers with profile photos and "On My Way" status indicators
+- Route polylines displayed for attendees marked "On My Way"
+- Distance and ETA shown in marker callouts via TomTom Routing API
+- Real-time location tracking with `expo-location` watchPositionAsync
 
 ### Photo Upload
 - Fixed parameter name from 'image' to 'photoUrl' matching backend API

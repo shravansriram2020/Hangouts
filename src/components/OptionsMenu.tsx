@@ -10,18 +10,10 @@ import {
   Image,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
-
-const GRADIENT_PRESETS = [
-  { name: 'Blue', color1: '#1E3A5F', color2: '#2D5A8B' },
-  { name: 'Purple', color1: '#6B46C1', color2: '#9333EA' },
-  { name: 'Green', color1: '#059669', color2: '#10B981' },
-  { name: 'Orange', color1: '#D97706', color2: '#F97316' },
-  { name: 'Pink', color1: '#EC4899', color2: '#F472B6' },
-];
+import NativeGradientPicker from './NativeGradientPicker';
 
 interface Props {
   visible: boolean;
@@ -218,43 +210,14 @@ export default function OptionsMenu({
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={showGradientPicker} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.overlay}
-          onPress={() => setShowGradientPicker(false)}
-          activeOpacity={1}
-        >
-          <View style={styles.gradientPickerModal}>
-            <View style={styles.gradientPickerHeader}>
-              <Text style={styles.gradientPickerTitle}>Choose Background</Text>
-              <TouchableOpacity onPress={() => setShowGradientPicker(false)}>
-                <Ionicons name="close" size={24} color={Colors.secondary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.gradientGrid}>
-              {GRADIENT_PRESETS.map((preset) => (
-                <TouchableOpacity
-                  key={preset.name}
-                  style={styles.gradientOption}
-                  onPress={() => {
-                    onGradientChange?.(preset.color1, preset.color2);
-                    setShowGradientPicker(false);
-                    onClose();
-                  }}
-                >
-                  <LinearGradient
-                    colors={[preset.color1, preset.color2]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.gradientPreview}
-                  />
-                  <Text style={styles.gradientName}>{preset.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <NativeGradientPicker
+        visible={showGradientPicker}
+        onClose={() => setShowGradientPicker(false)}
+        onSelect={(color1, color2) => {
+          onGradientChange?.(color1, color2);
+        }}
+        title="Choose Background"
+      />
     </>
   );
 }
@@ -360,52 +323,6 @@ const styles = StyleSheet.create({
   },
   attendeeName: {
     fontSize: 14,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-  },
-  gradientPickerModal: {
-    backgroundColor: Colors.white,
-    marginTop: 'auto',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  gradientPickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  gradientPickerTitle: {
-    fontSize: 18,
-    fontFamily: Fonts.bold,
-    color: Colors.secondary,
-  },
-  gradientGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'space-between',
-  },
-  gradientOption: {
-    width: '30%',
-    alignItems: 'center',
-  },
-  gradientPreview: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  gradientName: {
-    marginTop: 8,
-    fontSize: 12,
     fontFamily: Fonts.medium,
     color: Colors.secondary,
   },
