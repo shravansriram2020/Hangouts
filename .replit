@@ -82,3 +82,8 @@ outputType = "webview"
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+TOMTOM_API_KEY = "zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z"
