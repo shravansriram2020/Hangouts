@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import { Colors, Fonts } from '../constants/theme';
-import { api } from '../services/api';
+import { Colors, Fonts } from '../../constants/theme';
+import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 
 interface Props {

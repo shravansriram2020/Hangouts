@@ -8,8 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../constants/theme';
-import { api } from '../services/api';
+import { Colors, Fonts } from '../../constants/theme';
+import { api } from '../../services/api';
 
 interface Props {
   eventId: string;
