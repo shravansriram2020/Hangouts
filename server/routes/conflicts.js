@@ -1,0 +1,121 @@
+const express = require('express');
+const { pool } = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.get('/event/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT c.*, u.first_name, u.profile_photo,
+       (SELECT json_agg(json_build_object(
+         'id', cv.id,
+         'userId', cv.user_id,
+         'vote', cv.vote,
+         'firstName', vu.first_name
+       )) FROM conflict_votes cv 
+        JOIN users vu ON cv.user_id = vu.id 
+        WHERE cv.conflict_id = c.id) as votes
+       FROM conflicts c
+       JOIN users u ON c.reporter_id = u.id
+       WHERE c.event_id = $1 AND c.is_resolved = false
+       ORDER BY c.created_at DESC`,
+      [req.params.eventId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get conflicts error:', error);
+    res.status(500).json({ error: 'Failed to get conflicts' });
+  }
+});
+
+router.post('/', authenticateToken, async (req, res) => {
+  const { eventId, conflictType, reason, suggestedTime, suggestedLocation, suggestedLat, suggestedLng } = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO conflicts (event_id, reporter_id, conflict_type, reason, suggested_time, suggested_location, suggested_lat, suggested_lng)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [eventId, req.user.id, conflictType, reason, suggestedTime, suggestedLocation, suggestedLat, suggestedLng]
+    );
+
+    const attendees = await pool.query(
+      'SELECT user_id FROM event_attendees WHERE event_id = $1 AND user_id != $2',
+      [eventId, req.user.id]
+    );
+
+    const userResult = await pool.query(
+      'SELECT first_name FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    const eventResult = await pool.query(
+      'SELECT title FROM events WHERE id = $1',
+      [eventId]
+    );
+
+    for (const attendee of attendees.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, event_id)
+         VALUES ($1, 'conflict', 'New Conflict Reported', $2, $3)`,
+        [attendee.user_id, `${userResult.rows[0].first_name} reported a ${conflictType} conflict for ${eventResult.rows[0].title}`, eventId]
+      );
+    }
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Create conflict error:', error);
+    res.status(500).json({ error: 'Failed to create conflict' });
+  }
+});
+
+router.post('/:id/vote', authenticateToken, async (req, res) => {
+  const { vote } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO conflict_votes (conflict_id, user_id, vote)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (conflict_id, user_id) DO UPDATE SET vote = $3`,
+      [req.params.id, req.user.id, vote]
+    );
+
+    res.json({ message: 'Vote recorded' });
+  } catch (error) {
+    console.error('Vote error:', error);
+    res.status(500).json({ error: 'Failed to vote' });
+  }
+});
+
+router.put('/:id/resolve', authenticateToken, async (req, res) => {
+  try {
+    const conflictCheck = await pool.query(
+      `SELECT c.*, e.host_id FROM conflicts c
+       JOIN events e ON c.event_id = e.id
+       WHERE c.id = $1`,
+      [req.params.id]
+    );
+
+    if (conflictCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Conflict not found' });
+    }
+
+    if (conflictCheck.rows[0].host_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the host can resolve conflicts' });
+    }
+
+    await pool.query(
+      'UPDATE conflicts SET is_resolved = true WHERE id = $1',
+      [req.params.id]
+    );
+
+    res.json({ message: 'Conflict resolved' });
+  } catch (error) {
+    console.error('Resolve conflict error:', error);
+    res.status(500).json({ error: 'Failed to resolve conflict' });
+  }
+});
+
+module.exports = router;

@@ -5,6 +5,14 @@ modules = ["nodejs-22"]
 channel = "stable-24_05"
 
 [[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
 localPort = 8081
 externalPort = 80
 
@@ -13,8 +21,8 @@ localPort = 8082
 externalPort = 3000
 
 [[ports]]
-localPort = 5000
-externalPort = 80
+localPort = 38161
+externalPort = 3002
 
 [workflows]
 runButton = "Project"
@@ -68,6 +76,10 @@ author = "agent"
 task = "workflow.run"
 args = "Expo Web"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend API"
+
 [[workflows.workflow]]
 name = "Expo Web"
 author = "agent"
@@ -80,6 +92,18 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [agent]
 expertMode = true
 
@@ -89,3 +113,4 @@ expertMode = true
 TOMTOM_API_KEY = "zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z"
 TERMS_OF_SERVICE_URL = "https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing"
 PRIVACY_POLICY_URL = "https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing"
+EXPO_PUBLIC_API_URL = "https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api"

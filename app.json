@@ -1,20 +1,22 @@
 {
   "expo": {
-    "name": "expo-on-replit",
-    "slug": "expo-on-replit",
+    "name": "Hangouts",
+    "slug": "hangouts",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "hangouts",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hangouts.app"
     },
     "android": {
+      "package": "com.hangouts.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#D4EDFC"
       },
       "edgeToEdgeEnabled": true
     },
@@ -31,12 +33,29 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#D4EDFC"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Hangouts to use your location to share with friends."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Hangouts to access your photos to share with friends."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "hangouts-app"
+      }
     }
   }
 }
