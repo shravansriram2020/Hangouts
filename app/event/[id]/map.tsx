@@ -24,22 +24,13 @@ let MapView: any = null;
 let Marker: any = null;
 let Polyline: any = null;
 let Callout: any = null;
-let PROVIDER_DEFAULT: any = null;
-let mapsAvailable = false;
 
-try {
-  if (Platform.OS !== 'web') {
-    const Maps = require('react-native-maps');
-    MapView = Maps.default;
-    Marker = Maps.Marker;
-    Polyline = Maps.Polyline;
-    Callout = Maps.Callout;
-    PROVIDER_DEFAULT = Maps.PROVIDER_DEFAULT;
-    mapsAvailable = true;
-  }
-} catch (e) {
-  console.log('react-native-maps not available, using fallback');
-  mapsAvailable = false;
+if (Platform.OS !== 'web') {
+  const RNMaps = require('react-native-maps');
+  MapView = RNMaps.default;
+  Marker = RNMaps.Marker;
+  Polyline = RNMaps.Polyline;
+  Callout = RNMaps.Callout;
 }
 
 const TOMTOM_API_KEY = process.env.EXPO_PUBLIC_TOMTOM_API_KEY || 'zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z';
@@ -81,8 +72,6 @@ export default function MapScreen() {
   const [onMyWayList, setOnMyWayList] = useState<AttendeeLocation[]>([]);
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [myRoute, setMyRoute] = useState<RouteData | null>(null);
-  const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
 
   const gradientColors = useMemo(() => {
     return event?.gradient_color1 && event?.gradient_color2 
@@ -320,8 +309,31 @@ export default function MapScreen() {
 
   const locationSharingAttendees = attendeeLocations.filter(a => a.lat && a.lng && a.user_id !== user?.id);
 
+  const renderFallbackMap = () => {
+    const mapWidth = Math.min(Math.round(SCREEN_WIDTH * 2), 1024);
+    const mapHeight = 400;
+    const mapUrl = `https://api.tomtom.com/map/1/staticimage?key=${TOMTOM_API_KEY}&center=${eventLng},${eventLat}&zoom=14&width=${mapWidth}&height=${mapHeight}&format=png`;
+
+    return (
+      <View style={styles.fallbackContainer}>
+        <Image 
+          source={{ uri: mapUrl }} 
+          style={styles.fallbackImage}
+          resizeMode="cover"
+        />
+        <View style={styles.fallbackOverlay}>
+          <View style={styles.eventMarkerContainer}>
+            <View style={styles.eventMarker}>
+              <Ionicons name="location" size={20} color="white" />
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderNativeMap = () => {
-    if (!MapView || !mapsAvailable) {
+    if (!MapView) {
       return renderFallbackMap();
     }
 
@@ -330,8 +342,6 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         initialRegion={initialRegion}
-        onMapReady={() => setMapReady(true)}
-        onError={() => setMapError(true)}
         showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
@@ -425,37 +435,10 @@ export default function MapScreen() {
     );
   };
 
-  const renderFallbackMap = () => {
-    const mapWidth = Math.min(Math.round(SCREEN_WIDTH * 2), 1024);
-    const mapHeight = 400;
-    const mapUrl = `https://api.tomtom.com/map/1/staticimage?key=${TOMTOM_API_KEY}&center=${eventLng},${eventLat}&zoom=14&width=${mapWidth}&height=${mapHeight}&format=png`;
-
-    return (
-      <View style={styles.fallbackContainer}>
-        <Image 
-          source={{ uri: mapUrl }} 
-          style={styles.fallbackImage}
-          resizeMode="cover"
-        />
-        <View style={styles.fallbackOverlay}>
-          <View style={styles.eventMarkerContainer}>
-            <View style={styles.eventMarker}>
-              <Ionicons name="location" size={20} color="white" />
-            </View>
-          </View>
-        </View>
-        <View style={styles.fallbackInfo}>
-          <Ionicons name="information-circle" size={16} color={Colors.gray} />
-          <Text style={styles.fallbackText}>Interactive map available in Expo Go</Text>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
       <View style={styles.mapContainer}>
-        {mapError ? renderFallbackMap() : renderNativeMap()}
+        {renderNativeMap()}
         
         <View style={styles.mapInfoCard}>
           <Text style={styles.mapTitle}>{event?.title || 'Event Location'}</Text>

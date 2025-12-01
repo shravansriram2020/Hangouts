@@ -162,6 +162,22 @@ router.put('/toggle-sharing', authenticateToken, async (req, res) => {
   }
 });
 
+router.put('/on-my-way', authenticateToken, async (req, res) => {
+  const { eventId, isOnMyWay } = req.body;
+
+  try {
+    await pool.query(
+      'UPDATE event_attendees SET is_on_my_way = $1 WHERE event_id = $2 AND user_id = $3',
+      [isOnMyWay, eventId, req.user.id]
+    );
+
+    res.json({ message: 'On my way status updated' });
+  } catch (error) {
+    console.error('On my way error:', error);
+    res.status(500).json({ error: 'Failed to update on my way status' });
+  }
+});
+
 router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
