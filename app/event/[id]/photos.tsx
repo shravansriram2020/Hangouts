@@ -16,7 +16,7 @@ import { useEvent } from '../../../context/EventContext';
 import { api } from '../../../services/api';
 
 const { width } = Dimensions.get('window');
-const PHOTO_SIZE = (width - 48 - 16) / 3;
+const PHOTO_SIZE = (width - 48 - 16) / 2;
 
 interface Photo {
   id: string;
@@ -132,7 +132,7 @@ export default function PhotosScreen() {
           data={photos}
           keyExtractor={(item) => item.id}
           renderItem={renderPhoto}
-          numColumns={3}
+          numColumns={2}
           contentContainerStyle={styles.photoGrid}
           showsVerticalScrollIndicator={false}
         />

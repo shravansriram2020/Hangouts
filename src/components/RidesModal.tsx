@@ -26,12 +26,6 @@ interface Props {
 export default function RidesModal({ visible, onClose, eventId, attendees }: Props) {
   const { user } = useAuth();
   const [rides, setRides] = useState<any[]>([]);
-  const [showCreateRide, setShowCreateRide] = useState(false);
-  const [spotsAvailable, setSpotsAvailable] = useState('');
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [canDriveTo, setCanDriveTo] = useState(true);
-  const [canDriveFrom, setCanDriveFrom] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -48,32 +42,6 @@ export default function RidesModal({ visible, onClose, eventId, attendees }: Pro
     }
   };
 
-  const handleCreateRide = async () => {
-    if (!spotsAvailable || !pickupLocation) {
-      Alert.alert('Required', 'Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.post('/rides', {
-        eventId,
-        spotsAvailable: parseInt(spotsAvailable),
-        pickupLocation,
-        canDriveTo,
-        canDriveFrom,
-      });
-
-      setShowCreateRide(false);
-      setSpotsAvailable('');
-      setPickupLocation('');
-      fetchRides();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create ride');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleJoinRide = async (rideId: string) => {
     try {
@@ -114,80 +82,13 @@ export default function RidesModal({ visible, onClose, eventId, attendees }: Pro
   return (
     <GlassModal visible={visible} onClose={onClose} title="Rides" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {showCreateRide ? (
-              <View style={styles.createForm}>
-                <Text style={styles.formTitle}>Offer a Ride</Text>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Spots Available</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={spotsAvailable}
-                    onChangeText={setSpotsAvailable}
-                    keyboardType="number-pad"
-                    placeholder="e.g., 3"
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Pickup Location</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={pickupLocation}
-                    onChangeText={setPickupLocation}
-                    placeholder="Where can you pick people up?"
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Can drive TO the event</Text>
-                  <Switch
-                    value={canDriveTo}
-                    onValueChange={setCanDriveTo}
-                    trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
-                    thumbColor={canDriveTo ? Colors.green : Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Can drive FROM the event</Text>
-                  <Switch
-                    value={canDriveFrom}
-                    onValueChange={setCanDriveFrom}
-                    trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
-                    thumbColor={canDriveFrom ? Colors.green : Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.formButtons}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => setShowCreateRide(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-                    onPress={handleCreateRide}
-                    disabled={loading}
-                  >
-                    <Text style={styles.submitButtonText}>
-                      {loading ? 'Creating...' : 'Offer Ride'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.createButton}
-                  onPress={() => setShowCreateRide(true)}
-                >
-                  <Ionicons name="add" size={18} color={Colors.white} />
-                  <Text style={styles.createButtonText}>Offer a Ride</Text>
-                </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => {}} 
+        >
+          <Ionicons name="add" size={18} color={Colors.white} />
+          <Text style={styles.createButtonText}>Offer a Ride</Text>
+        </TouchableOpacity>
 
                 {rides.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -276,9 +177,7 @@ export default function RidesModal({ visible, onClose, eventId, attendees }: Pro
                     );
                   })
                 )}
-              </>
-            )}
-          </ScrollView>
+      </ScrollView>
     </GlassModal>
   );
 }

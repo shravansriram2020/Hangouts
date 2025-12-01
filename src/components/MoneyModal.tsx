@@ -26,11 +26,6 @@ interface Props {
 export default function MoneyModal({ visible, onClose, eventId, attendees }: Props) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
-  const [showCreateRequest, setShowCreateRequest] = useState(false);
-  const [selectedOwer, setSelectedOwer] = useState('');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -47,32 +42,6 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
     }
   };
 
-  const handleCreateRequest = async () => {
-    if (!selectedOwer || !amount) {
-      Alert.alert('Required', 'Please select a person and enter an amount');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.post('/money', {
-        eventId,
-        owerId: selectedOwer,
-        amount: parseFloat(amount),
-        description,
-      });
-
-      setShowCreateRequest(false);
-      setSelectedOwer('');
-      setAmount('');
-      setDescription('');
-      fetchRequests();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create request');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMarkPaid = async (requestId: string) => {
     try {
@@ -110,85 +79,16 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
     ]);
   };
 
-  const otherAttendees = attendees?.filter(a => a.id !== user?.id) || [];
-
   return (
     <GlassModal visible={visible} onClose={onClose} title="Money" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {showCreateRequest ? (
-              <View style={styles.createForm}>
-                <Text style={styles.formTitle}>Request Payment</Text>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Who owes you money?</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={selectedOwer}
-                      onValueChange={setSelectedOwer}
-                      style={styles.picker}
-                    >
-                      <Picker.Item label="Select a person" value="" />
-                      {otherAttendees.map((attendee) => (
-                        <Picker.Item
-                          key={attendee.id}
-                          label={attendee.first_name}
-                          value={attendee.id}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Amount</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>What for? (optional)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="e.g., dinner split, gas money..."
-                    placeholderTextColor={Colors.grayMedium}
-                  />
-                </View>
-
-                <View style={styles.formButtons}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => setShowCreateRequest(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-                    onPress={handleCreateRequest}
-                    disabled={loading}
-                  >
-                    <Text style={styles.submitButtonText}>
-                      {loading ? 'Sending...' : 'Send Request'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.createButton}
-                  onPress={() => setShowCreateRequest(true)}
-                >
-                  <Ionicons name="add" size={18} color={Colors.white} />
-                  <Text style={styles.createButtonText}>Request Payment</Text>
-                </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => {}}
+        >
+          <Ionicons name="add" size={18} color={Colors.white} />
+          <Text style={styles.createButtonText}>Request Payment</Text>
+        </TouchableOpacity>
 
                 {requests.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -279,9 +179,7 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
                     );
                   })
                 )}
-              </>
-            )}
-          </ScrollView>
+      </ScrollView>
     </GlassModal>
   );
 }
