@@ -312,15 +312,6 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 }
 
 const styles = StyleSheet.create({
-  headerSubtitle: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
-  },
   content: {
     padding: 20,
   },

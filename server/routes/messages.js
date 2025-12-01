@@ -17,7 +17,7 @@ const detectSuggestion = (content) => {
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT m.*, u.first_name, u.profile_photo
+      `SELECT m.*, u.first_name as user_name, u.profile_photo as user_profile_image
        FROM messages m
        JOIN users u ON m.user_id = u.id
        WHERE m.event_id = $1
@@ -46,7 +46,7 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const messageWithUser = await pool.query(
-      `SELECT m.*, u.first_name, u.profile_photo
+      `SELECT m.*, u.first_name as user_name, u.profile_photo as user_profile_image
        FROM messages m
        JOIN users u ON m.user_id = u.id
        WHERE m.id = $1`,

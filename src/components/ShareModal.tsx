@@ -159,28 +159,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
               </TouchableOpacity>
             </View>
 
-            <View style={styles.shareOptions}>
-              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
-                <View style={[styles.shareIconCircle, { backgroundColor: '#34C759' }]}>
-                  <Ionicons name="chatbubble" size={24} color={Colors.white} />
-                </View>
-                <Text style={styles.shareOptionText}>Message</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
-                <View style={[styles.shareIconCircle, { backgroundColor: '#25D366' }]}>
-                  <Ionicons name="logo-whatsapp" size={24} color={Colors.white} />
-                </View>
-                <Text style={styles.shareOptionText}>WhatsApp</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
-                <View style={[styles.shareIconCircle, { backgroundColor: Colors.secondary }]}>
-                  <Ionicons name="share-social" size={24} color={Colors.white} />
-                </View>
-                <Text style={styles.shareOptionText}>More</Text>
-              </TouchableOpacity>
-            </View>
+            <View style={styles.separator} />
           </>
         ) : (
           <>
@@ -237,6 +216,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
             <Text style={styles.helperText}>
               Start typing a username to search and invite
             </Text>
+            <View style={styles.separator} />
           </>
         )}
 
@@ -452,5 +432,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    marginVertical: 20,
   },
 });
