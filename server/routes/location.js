@@ -129,7 +129,7 @@ router.put('/update', authenticateToken, async (req, res) => {
   try {
     await pool.query(
       `UPDATE event_attendees 
-       SET current_lat = $1, current_lng = $2, is_on_my_way = COALESCE($3, is_on_my_way), location_sharing = true
+       SET current_lat = $1, current_lng = $2, is_on_my_way = COALESCE($3, is_on_my_way)
        WHERE event_id = $4 AND user_id = $5`,
       [lat, lng, isOnMyWay, eventId, req.user.id]
     );
@@ -166,8 +166,7 @@ router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT u.id as user_id, u.first_name as user_name, u.profile_photo as profile_image, 
-       ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way, ea.location_sharing,
-       ea.updated_at
+       ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way, ea.location_sharing
        FROM event_attendees ea
        JOIN users u ON ea.user_id = u.id
        WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted'`,
