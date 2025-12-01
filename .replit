@@ -41,6 +41,10 @@ localPort = 40091
 externalPort = 3000
 
 [[ports]]
+localPort = 42389
+externalPort = 6000
+
+[[ports]]
 localPort = 43405
 externalPort = 3003
 
@@ -134,3 +138,4 @@ TOMTOM_API_KEY = "zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z"
 TERMS_OF_SERVICE_URL = "https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing"
 PRIVACY_POLICY_URL = "https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing"
 EXPO_PUBLIC_API_URL = "https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api"
+EXPO_PUBLIC_TOMTOM_API_KEY = "zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z"
