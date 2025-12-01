@@ -31,9 +31,11 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    fetchAttendeeLocations();
-    const interval = setInterval(fetchAttendeeLocations, 10000);
-    return () => clearInterval(interval);
+    if (eventId) {
+      fetchAttendeeLocations();
+      const interval = setInterval(fetchAttendeeLocations, 10000);
+      return () => clearInterval(interval);
+    }
   }, [eventId]);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
   }, [locationSharing]);
 
   const fetchAttendeeLocations = async () => {
+    if (!eventId) return;
     try {
       const data = await api.get(`/location/attendees/${eventId}`);
       setAttendeeLocations(data);
