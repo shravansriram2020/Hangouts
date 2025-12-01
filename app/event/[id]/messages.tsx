@@ -9,8 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -72,6 +74,26 @@ export default function MessagesScreen() {
     }
   };
 
+  const handleAddToConflicts = async (message: Message) => {
+    if (!event?.id) return;
+    
+    try {
+      const conflictType = message.has_time_suggestion ? 'time' : 'location';
+      await api.post('/conflicts', {
+        eventId: event.id,
+        type: conflictType,
+        description: `Suggestion from ${message.user_name}: "${message.content}"`,
+        suggestedValue: message.content,
+      });
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Added to Conflicts', 'The suggestion has been added as a conflict for voting.');
+    } catch (error: any) {
+      console.error('Failed to add conflict:', error);
+      Alert.alert('Error', error.message || 'Failed to add to conflicts');
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-US', {
@@ -95,8 +117,12 @@ export default function MessagesScreen() {
                 <Text style={styles.suggestionText}>Time suggestion</Text>
               </View>
             )}
-            {item.has_time_suggestion && (
-              <TouchableOpacity style={styles.addToConflictsButton}>
+            {(item.has_time_suggestion || item.has_location_suggestion) && (
+              <TouchableOpacity 
+                style={styles.addToConflictsButton}
+                onPress={() => handleAddToConflicts(item)}
+              >
+                <Ionicons name="add-circle-outline" size={14} color={Colors.white} />
                 <Text style={styles.addToConflictsText}>Add to Conflicts</Text>
               </TouchableOpacity>
             )}
@@ -246,12 +272,15 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   addToConflictsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginTop: 8,
     alignSelf: 'flex-start',
+    gap: 4,
   },
   addToConflictsText: {
     fontSize: 13,

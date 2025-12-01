@@ -176,12 +176,16 @@ export default function MapScreen() {
   const mapHTML = useMemo(() => {
     const attendeeMarkers = attendeeLocations
       .filter(a => a.lat && a.lng)
-      .map(a => `
-        new tt.Marker({ element: createAttendeeMarker('${a.user_name?.charAt(0) || '?'}', ${a.is_on_my_way}) })
+      .map(a => {
+        const profilePhotoUrl = a.profile_image ? a.profile_image.replace(/'/g, "\\'") : '';
+        const initial = a.user_name?.charAt(0) || '?';
+        return `
+        new tt.Marker({ element: createAttendeeMarker('${initial}', ${a.is_on_my_way}, '${profilePhotoUrl}') })
           .setLngLat([${a.lng}, ${a.lat}])
           .setPopup(new tt.Popup({ offset: 30 }).setHTML('<strong>${a.user_name}</strong><br/>${a.is_on_my_way ? '🚗 On my way' : 'Location shared'}'))
           .addTo(map);
-      `).join('\n');
+      `;
+      }).join('\n');
 
     const currentLocationMarker = currentLocation ? `
       new tt.Marker({ element: createCurrentLocationMarker() })
@@ -219,9 +223,9 @@ export default function MapScreen() {
             border-radius: 50%;
           }
           .attendee-marker {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #A78BFA, #8B5CF6);
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #1E3A5F, #2D5A8B);
             border: 3px solid white;
             border-radius: 50%;
             display: flex;
@@ -231,11 +235,29 @@ export default function MapScreen() {
             font-weight: bold;
             font-size: 16px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.4);
+            overflow: hidden;
+          }
+          .attendee-marker img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
           }
           .attendee-marker.on-my-way {
-            border: 3px solid #10B981;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            border: 4px solid #10B981;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+            position: relative;
+          }
+          .attendee-marker.on-my-way::after {
+            content: '🚗';
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            font-size: 14px;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           }
           .current-location-marker {
             width: 24px;
@@ -272,10 +294,21 @@ export default function MapScreen() {
             return el;
           }
           
-          function createAttendeeMarker(initial, isOnMyWay) {
+          function createAttendeeMarker(initial, isOnMyWay, profilePhotoUrl) {
             const el = document.createElement('div');
             el.className = 'attendee-marker' + (isOnMyWay ? ' on-my-way' : '');
-            el.textContent = initial;
+            if (profilePhotoUrl) {
+              const img = document.createElement('img');
+              img.src = profilePhotoUrl;
+              img.alt = initial;
+              img.onerror = function() {
+                this.style.display = 'none';
+                el.textContent = initial;
+              };
+              el.appendChild(img);
+            } else {
+              el.textContent = initial;
+            }
             return el;
           }
 
@@ -354,11 +387,9 @@ export default function MapScreen() {
         style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
         onPress={handleMarkOnMyWay}
       >
-        <Ionicons 
-          name="navigate" 
-          size={18} 
-          color={Colors.white} 
-        />
+        <Text style={styles.onMyWayEmoji}>
+          {isOnMyWay ? '🚗' : '📍'}
+        </Text>
         <Text style={styles.onMyWayButtonText}>
           {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
         </Text>
@@ -400,8 +431,9 @@ export default function MapScreen() {
                   </View>
                   <View style={styles.onMyWayInfo}>
                     <Text style={styles.onMyWayName}>{attendee.user_name}</Text>
-                    <Text style={styles.onMyWayStatus}>On their way</Text>
+                    <Text style={styles.onMyWayStatus}>🚗 On their way</Text>
                   </View>
+                  <Text style={styles.onMyWayEmoji}>🚗</Text>
                 </View>
               ))}
             </ScrollView>
@@ -485,6 +517,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  onMyWayEmoji: {
+    fontSize: 20,
   },
   mapContainer: {
     flex: 1,

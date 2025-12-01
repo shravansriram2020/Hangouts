@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
+  Animated,
+  Share,
+  Alert,
 } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Fonts } from '../../../constants/theme';
 import { EventProvider, useEvent } from '../../../context/EventContext';
+import LoadingDots from '../../../src/components/LoadingDots';
+import ShareModal from '../../../src/components/ShareModal';
 
 const { width } = Dimensions.get('window');
 
@@ -30,10 +34,52 @@ function EventLayoutContent() {
   const insets = useSafeAreaInsets();
   const { event, loading } = useEvent();
 
+  const [showShareModal, setShowShareModal] = useState(false);
+  
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+  const prevTabRef = useRef('details');
+
   const currentTab = pathname.split('/').pop() || 'details';
+  const currentTabIndex = TABS.findIndex(t => t.key === currentTab);
+
+  useEffect(() => {
+    const prevIndex = TABS.findIndex(t => t.key === prevTabRef.current);
+    const newIndex = currentTabIndex;
+    
+    if (prevIndex !== newIndex) {
+      const direction = newIndex > prevIndex ? 1 : -1;
+      
+      slideAnim.setValue(direction * 30);
+      bounceAnim.setValue(0.95);
+      
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 10,
+        }),
+        Animated.spring(bounceAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 120,
+          friction: 8,
+        }),
+      ]).start();
+    }
+    
+    prevTabRef.current = currentTab;
+  }, [currentTab]);
 
   const handleTabPress = (tabKey: string) => {
-    router.replace(`/event/${id}/${tabKey}`);
+    if (tabKey !== currentTab) {
+      router.replace(`/event/${id}/${tabKey}`);
+    }
+  };
+
+  const handleShare = async () => {
+    setShowShareModal(true);
   };
 
   const gradientStart = event?.gradient_color1 || '#E8F4FC';
@@ -43,7 +89,8 @@ function EventLayoutContent() {
     return (
       <LinearGradient colors={[gradientStart, gradientEnd]} style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <LoadingDots size={14} />
+          <Text style={styles.loadingText}>Loading event...</Text>
         </View>
       </LinearGradient>
     );
@@ -51,9 +98,24 @@ function EventLayoutContent() {
 
   return (
     <LinearGradient colors={[gradientStart, gradientEnd]} style={styles.container}>
-      <View style={[styles.content, { paddingTop: insets.top }]}>
+      <Animated.View 
+        style={[
+          styles.content, 
+          { 
+            paddingTop: insets.top,
+            transform: [
+              { translateX: slideAnim },
+              { scale: bounceAnim },
+            ],
+            opacity: bounceAnim.interpolate({
+              inputRange: [0.95, 1],
+              outputRange: [0.8, 1],
+            }),
+          }
+        ]}
+      >
         <Slot />
-      </View>
+      </Animated.View>
 
       <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <TouchableOpacity 
@@ -64,7 +126,7 @@ function EventLayoutContent() {
         </TouchableOpacity>
 
         <View style={styles.tabPill}>
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = currentTab === tab.key;
             return (
               <TouchableOpacity
@@ -82,10 +144,17 @@ function EventLayoutContent() {
           })}
         </View>
 
-        <TouchableOpacity style={styles.sideButton}>
+        <TouchableOpacity style={styles.sideButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={22} color={Colors.secondary} />
         </TouchableOpacity>
       </View>
+
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        eventId={id || ''}
+        eventTitle={event?.title || 'Event'}
+      />
     </LinearGradient>
   );
 }
@@ -108,6 +177,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
   },
   content: {
     flex: 1,
