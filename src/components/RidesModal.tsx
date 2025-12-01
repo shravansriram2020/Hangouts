@@ -20,10 +20,11 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
-  attendees: any[];
+  attendees?: any[];
+  onCreateClick?: () => void;
 }
 
-export default function RidesModal({ visible, onClose, eventId, attendees }: Props) {
+export default function RidesModal({ visible, onClose, eventId, attendees, onCreateClick }: Props) {
   const { user } = useAuth();
   const [rides, setRides] = useState<any[]>([]);
 
@@ -84,7 +85,7 @@ export default function RidesModal({ visible, onClose, eventId, attendees }: Pro
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
           style={styles.createButton}
-          onPress={() => {}} 
+          onPress={onCreateClick}
         >
           <Ionicons name="add" size={18} color={Colors.white} />
           <Text style={styles.createButtonText}>Offer a Ride</Text>

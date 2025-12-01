@@ -20,10 +20,12 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
-  attendees: any[];
+  attendees?: any[];
+  onCreateClick?: () => void;
+  attendeeCount?: number;
 }
 
-export default function MoneyModal({ visible, onClose, eventId, attendees }: Props) {
+export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0 }: Props) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
 
@@ -82,13 +84,20 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
   return (
     <GlassModal visible={visible} onClose={onClose} title="Money" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => {}}
-        >
-          <Ionicons name="add" size={18} color={Colors.white} />
-          <Text style={styles.createButtonText}>Request Payment</Text>
-        </TouchableOpacity>
+        {attendeeCount > 0 ? (
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={onCreateClick}
+          >
+            <Ionicons name="add" size={18} color={Colors.white} />
+            <Text style={styles.createButtonText}>Request Payment</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.disabledButton}>
+            <Ionicons name="add" size={18} color={Colors.grayMedium} />
+            <Text style={styles.disabledButtonText}>Request Payment (no attendees yet)</Text>
+          </View>
+        )}
 
                 {requests.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -201,6 +210,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
+    marginLeft: 6,
+  },
+  disabledButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.grayLight,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  disabledButtonText: {
+    fontSize: 14,
+    color: Colors.grayMedium,
+    fontFamily: 'Prompt-Regular',
     marginLeft: 6,
   },
   emptyState: {

@@ -20,6 +20,10 @@ import MoneyModal from '../../../src/components/MoneyModal';
 import ConflictsModal from '../../../src/components/ConflictsModal';
 import NotesModal from '../../../src/components/NotesModal';
 import LoadingDots from '../../../src/components/LoadingDots';
+import OptionsMenu from '../../../src/components/OptionsMenu';
+import RSVPDropdown from '../../../src/components/RSVPDropdown';
+import CreateRideModal from '../../../src/components/CreateRideModal';
+import CreateMoneyModal from '../../../src/components/CreateMoneyModal';
 
 const STICKY_COLORS = [
   Colors.stickyYellow,
@@ -42,6 +46,9 @@ export default function DetailsScreen() {
   const [showMoney, setShowMoney] = useState(false);
   const [showConflicts, setShowConflicts] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [showCreateRide, setShowCreateRide] = useState(false);
+  const [showCreateMoney, setShowCreateMoney] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
@@ -79,30 +86,7 @@ export default function DetailsScreen() {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const handleDeleteEvent = async () => {
-    Alert.alert(
-      'Delete Event',
-      'Are you sure you want to delete this event? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await api.delete(`/events/${event?.id}`);
-              router.replace('/');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete event');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
-  };
+  const attendeeCount = event?.attendees?.length || 0;
 
   if (loading) {
     return (
@@ -320,14 +304,10 @@ export default function DetailsScreen() {
 
       {isHost && (
         <TouchableOpacity 
-          style={styles.deleteButton}
-          onPress={handleDeleteEvent}
-          disabled={deleting}
+          style={styles.optionsButton}
+          onPress={() => setShowOptions(true)}
         >
-          <Ionicons name="trash-outline" size={18} color={Colors.red} />
-          <Text style={styles.deleteButtonText}>
-            {deleting ? 'Deleting...' : 'Delete Event'}
-          </Text>
+          <Ionicons name="ellipsis-vertical" size={20} color={Colors.secondary} />
         </TouchableOpacity>
       )}
 
@@ -337,11 +317,33 @@ export default function DetailsScreen() {
         visible={showRides}
         onClose={() => setShowRides(false)}
         eventId={event.id}
+        onCreateClick={() => {
+          setShowRides(false);
+          setShowCreateRide(true);
+        }}
       />
       <MoneyModal
         visible={showMoney}
         onClose={() => setShowMoney(false)}
         eventId={event.id}
+        onCreateClick={() => {
+          setShowMoney(false);
+          setShowCreateMoney(true);
+        }}
+        attendeeCount={attendeeCount}
+      />
+      <CreateRideModal
+        visible={showCreateRide}
+        onClose={() => setShowCreateRide(false)}
+        eventId={event.id}
+        onCreated={refreshEvent}
+      />
+      <CreateMoneyModal
+        visible={showCreateMoney}
+        onClose={() => setShowCreateMoney(false)}
+        eventId={event.id}
+        attendees={event.attendees || []}
+        onCreated={refreshEvent}
       />
       <ConflictsModal
         visible={showConflicts}
@@ -356,6 +358,15 @@ export default function DetailsScreen() {
         eventId={event.id}
         notes={event.notes || []}
         onNoteAdded={refreshEvent}
+      />
+      <OptionsMenu
+        visible={showOptions}
+        onClose={() => setShowOptions(false)}
+        eventId={event.id}
+        isHost={isHost}
+        attendees={event.attendees || []}
+        onEventDeleted={() => router.replace('/')}
+        onAttendeeRemoved={refreshEvent}
       />
     </ScrollView>
   );
