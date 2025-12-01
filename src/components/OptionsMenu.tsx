@@ -147,7 +147,8 @@ export default function OptionsMenu({
                   <TouchableOpacity
                     style={styles.menuItem}
                     onPress={() => {
-                      setShowGradientPicker(true);
+                      onClose();
+                      setTimeout(() => setShowGradientPicker(true), 100);
                     }}
                   >
                     <Ionicons name="color-palette-outline" size={18} color={Colors.secondary} />
