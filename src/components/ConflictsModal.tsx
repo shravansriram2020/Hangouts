@@ -124,7 +124,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onEv
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    <Modal visible={visible} animationType="none" transparent>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <View style={styles.container} onStartShouldSetResponder={() => true}>
           <View style={styles.header}>

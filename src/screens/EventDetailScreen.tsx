@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,13 +24,9 @@ import MoneyModal from '../components/MoneyModal';
 import ConflictsModal from '../components/ConflictsModal';
 import NotesModal from '../components/NotesModal';
 
-const { width } = Dimensions.get('window');
-const TABS = ['details', 'messages', 'map', 'photos'];
-
 export default function EventDetailScreen({ route, navigation }: any) {
   const { eventId } = route.params;
   const { user } = useAuth();
-  const scrollViewRef = useRef<ScrollView>(null);
   
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -56,21 +51,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
       Alert.alert('Error', 'Failed to load event');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTabChange = (index: number) => {
-    setActiveTab(index);
-    scrollViewRef.current?.scrollTo({
-      x: index * width,
-      animated: true,
-    });
-  };
-
-  const handleScroll = (event: any) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-    if (index !== activeTab) {
-      setActiveTab(index);
     }
   };
 
@@ -113,6 +93,38 @@ export default function EventDetailScreen({ route, navigation }: any) {
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0:
+        return (
+          <EventDetailsTab
+            event={event}
+            onOpenRides={() => setShowRides(true)}
+            onOpenMoney={() => setShowMoney(true)}
+            onOpenConflicts={() => setShowConflicts(true)}
+            onOpenNotes={() => setShowNotes(true)}
+          />
+        );
+      case 1:
+        return <EventMessagesTab eventId={eventId} onConflictPress={() => setShowConflicts(true)} />;
+      case 2:
+        return (
+          <EventMapTab
+            eventId={eventId}
+            eventLocation={event?.location_lat && event?.location_lng ? {
+              lat: event.location_lat,
+              lng: event.location_lng,
+              address: event.location_address || '',
+            } : null}
+          />
+        );
+      case 3:
+        return <EventPhotosTab eventId={eventId} />;
+      default:
+        return null;
+    }
+  };
+
   if (loading || !event) {
     return (
       <LinearGradient
@@ -130,163 +142,103 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
   return (
     <LinearGradient colors={gradientColors} style={styles.container}>
-      <View style={styles.header}>
-        {event.event_image && (
-          <Image
-            source={{ uri: event.event_image }}
-            style={styles.eventImage}
-          />
-        )}
-        <View style={styles.headerContent}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.eventTitle}>{event.title}</Text>
-            <Text style={styles.eventDate}>
-              {formatDate(event.event_date)}
-            </Text>
-            <Text style={styles.eventTime}>{formatTime(event.event_time)}</Text>
-          </View>
-          {event.isHost && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-              <Ionicons name="trash-outline" size={20} color={Colors.red} />
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.topRow}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={20} color={Colors.secondary} />
             </TouchableOpacity>
-          )}
-        </View>
-        
-        {event.location_address && (
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={14} color={Colors.gray} />
-            <Text style={styles.locationText}>{event.location_address}</Text>
+            <TouchableOpacity style={styles.shareButton} onPress={() => setShowShare(true)}>
+              <Ionicons name="share-outline" size={20} color={Colors.secondary} />
+            </TouchableOpacity>
           </View>
-        )}
 
-        <View style={styles.attendeesList}>
-          {event.attendees?.slice(0, 5).map((attendee: any, index: number) => (
-            <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -10 : 0 }]}>
-              {attendee.profile_photo ? (
-                <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
-              ) : (
-                <View style={styles.attendeePlaceholder}>
-                  <Text style={styles.attendeeInitial}>
-                    {attendee.first_name?.charAt(0)}
-                  </Text>
-                </View>
+          <View style={styles.eventHeader}>
+            {event.event_image && (
+              <Image
+                source={{ uri: event.event_image }}
+                style={styles.eventImage}
+              />
+            )}
+            <View style={styles.headerContent}>
+              <View style={styles.headerInfo}>
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={styles.eventDateTime}>
+                  {formatDate(event.event_date)} at {formatTime(event.event_time)}
+                </Text>
+              </View>
+              {event.isHost && (
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                  <Ionicons name="trash-outline" size={18} color={Colors.red} />
+                </TouchableOpacity>
               )}
             </View>
-          ))}
-          {event.attendees?.length > 5 && (
-            <View style={[styles.attendeeAvatar, styles.moreAttendees]}>
-              <Text style={styles.moreAttendeesText}>+{event.attendees.length - 5}</Text>
-            </View>
-          )}
-          <Text style={styles.attendeeName}>
-            {event.attendees?.[0]?.first_name}
-            {event.attendees?.length > 1 && ` +${event.attendees.length - 1} more`}
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.conflictsButton} onPress={() => setShowConflicts(true)}>
-          <Ionicons name="alert-circle-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.conflictsButtonText}>Conflicts</Text>
-        </TouchableOpacity>
-
-        <View style={styles.categoryButtons}>
-          <TouchableOpacity style={styles.categoryButton} onPress={() => setShowRides(true)}>
-            <Image
-              source={require('../../assets/images/360_F_1516542978_mc3KOajI3kbhFHs8pGvbuUvaK0YHXJT2-removebg-preview_1760856241070_1764548149934.png')}
-              style={styles.categoryIcon}
-            />
-            <Text style={styles.categoryText}>Rides</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryButton} onPress={() => setShowMoney(true)}>
-            <Image
-              source={require('../../assets/images/7630510_1756853409509_1764548151597.png')}
-              style={styles.categoryIcon}
-            />
-            <Text style={styles.categoryText}>Money</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.notesSection}>
-          <View style={styles.notesHeader}>
-            <Text style={styles.notesTitle}>Notes</Text>
-            <TouchableOpacity style={styles.addNotesButton} onPress={() => setShowNotes(true)}>
-              <Ionicons name="add" size={14} color={Colors.secondary} />
-              <Text style={styles.addNotesText}>Add/View Notes</Text>
-            </TouchableOpacity>
           </View>
           
-          {event.notes?.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.notesScroll}>
-              {event.notes.map((note: any, index: number) => (
-                <View
-                  key={note.id}
-                  style={[
-                    styles.stickyNote,
-                    { transform: [{ rotate: `${(index % 2 === 0 ? -2 : 2)}deg` }] }
-                  ]}
-                >
-                  <Text style={styles.stickyNoteText}>{note.content}</Text>
-                  <Text style={styles.stickyNoteAuthor}>- {note.first_name}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={styles.noNotesText}>No notes yet. Tap "Add Note" to create one!</Text>
+          {event.location_address && (
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={14} color={Colors.gray} />
+              <Text style={styles.locationText}>{event.location_address}</Text>
+            </View>
           )}
-        </View>
 
-        <View style={styles.hostSection}>
-          <View style={styles.hostInfo}>
-            {event.host_photo ? (
-              <Image source={{ uri: event.host_photo }} style={styles.hostPhoto} />
-            ) : (
-              <View style={styles.hostPhotoPlaceholder}>
-                <Text style={styles.hostInitial}>{event.host_first_name?.charAt(0)}</Text>
+          <View style={styles.attendeesList}>
+            {event.attendees?.slice(0, 5).map((attendee: any, index: number) => (
+              <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -10 : 0, zIndex: 5 - index }]}>
+                {attendee.profile_photo ? (
+                  <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
+                ) : (
+                  <View style={styles.attendeePlaceholder}>
+                    <Text style={styles.attendeeInitial}>
+                      {attendee.first_name?.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+            {event.attendees?.length > 5 && (
+              <View style={[styles.attendeeAvatar, styles.moreAttendees, { marginLeft: -10 }]}>
+                <Text style={styles.moreAttendeesText}>+{event.attendees.length - 5}</Text>
               </View>
             )}
-            <View>
-              <Text style={styles.hostLabel}>Host</Text>
-              <Text style={styles.hostName}>{event.host_first_name}</Text>
-            </View>
+            <Text style={styles.attendeeCount}>
+              {event.attendees?.length || 1} attending
+            </Text>
           </View>
         </View>
-      </View>
+
+        <View style={styles.contentCard}>
+          {renderTabContent()}
+        </View>
+      </ScrollView>
 
       <View style={styles.navigationBar}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={Colors.secondary} />
-        </TouchableOpacity>
-        
         <View style={styles.navPill}>
           <TouchableOpacity
             style={[styles.navPillItem, activeTab === 0 && styles.navPillItemActive]}
-            onPress={() => handleTabChange(0)}
+            onPress={() => setActiveTab(0)}
           >
-            <Ionicons name="document-text-outline" size={18} color={activeTab === 0 ? Colors.primary : Colors.gray} />
+            <Ionicons name="document-text-outline" size={20} color={activeTab === 0 ? Colors.primary : Colors.gray} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navPillItem, activeTab === 1 && styles.navPillItemActive]}
-            onPress={() => handleTabChange(1)}
+            onPress={() => setActiveTab(1)}
           >
-            <Ionicons name="chatbubble-outline" size={18} color={activeTab === 1 ? Colors.primary : Colors.gray} />
+            <Ionicons name="chatbubble-outline" size={20} color={activeTab === 1 ? Colors.primary : Colors.gray} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navPillItem, activeTab === 2 && styles.navPillItemActive]}
-            onPress={() => handleTabChange(2)}
+            onPress={() => setActiveTab(2)}
           >
-            <Ionicons name="map-outline" size={18} color={activeTab === 2 ? Colors.primary : Colors.gray} />
+            <Ionicons name="map-outline" size={20} color={activeTab === 2 ? Colors.primary : Colors.gray} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navPillItem, activeTab === 3 && styles.navPillItemActive]}
-            onPress={() => handleTabChange(3)}
+            onPress={() => setActiveTab(3)}
           >
-            <Ionicons name="images-outline" size={18} color={activeTab === 3 ? Colors.primary : Colors.gray} />
+            <Ionicons name="images-outline" size={20} color={activeTab === 3 ? Colors.primary : Colors.gray} />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => setShowShare(true)}>
-          <Ionicons name="share-outline" size={20} color={Colors.secondary} />
-        </TouchableOpacity>
       </View>
 
       <ShareEventModal
@@ -342,18 +294,46 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontFamily: 'Prompt-Regular',
   },
-  header: {
+  scrollView: {
     flex: 1,
+  },
+  header: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 50,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   eventImage: {
     width: 80,
     height: 80,
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    marginRight: 14,
   },
   headerContent: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -362,29 +342,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventTitle: {
-    fontSize: 24,
+    fontSize: 22,
     color: Colors.secondary,
     fontFamily: 'Prompt-Bold',
   },
-  eventDate: {
-    fontSize: 14,
+  eventDateTime: {
+    fontSize: 13,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
-  },
-  eventTime: {
-    fontSize: 14,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    marginTop: 2,
   },
   deleteButton: {
     backgroundColor: Colors.redLight,
-    padding: 10,
-    borderRadius: 20,
+    padding: 8,
+    borderRadius: 16,
+    marginLeft: 8,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 8,
+    marginTop: 12,
   },
   locationText: {
     fontSize: 12,
@@ -396,30 +373,29 @@ const styles = StyleSheet.create({
   attendeesList: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 14,
   },
   attendeeAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: Colors.white,
+    overflow: 'hidden',
   },
   attendeePhoto: {
     width: '100%',
     height: '100%',
-    borderRadius: 17,
   },
   attendeePlaceholder: {
     width: '100%',
     height: '100%',
-    borderRadius: 17,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   attendeeInitial: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
   },
@@ -427,177 +403,50 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.grayMedium,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -10,
   },
   moreAttendeesText: {
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
   },
-  attendeeName: {
+  attendeeCount: {
     fontSize: 12,
     color: Colors.secondary,
     fontFamily: 'Prompt-Regular',
-    marginLeft: 8,
+    marginLeft: 10,
   },
-  conflictsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  contentCard: {
     backgroundColor: Colors.white,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  conflictsButtonText: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-    marginLeft: 6,
-  },
-  categoryButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  categoryButton: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginHorizontal: 6,
-  },
-  categoryIcon: {
-    width: 60,
-    height: 60,
-    resizeMode: 'contain',
-  },
-  categoryText: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-    marginTop: 8,
-  },
-  notesSection: {
-    marginTop: 16,
-  },
-  notesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  notesTitle: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
-  },
-  addNotesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addNotesText: {
-    fontSize: 12,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-    marginLeft: 4,
-  },
-  notesScroll: {
-    flexDirection: 'row',
-  },
-  stickyNote: {
-    backgroundColor: Colors.stickyNote,
-    padding: 12,
-    borderRadius: 4,
-    marginRight: 12,
-    width: 140,
-    minHeight: 80,
-  },
-  stickyNoteText: {
-    fontSize: 12,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
-  },
-  stickyNoteAuthor: {
-    fontSize: 10,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    marginTop: 8,
-    textAlign: 'right',
-  },
-  noNotesText: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    fontStyle: 'italic',
-  },
-  hostSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
-  },
-  hostInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  hostPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  hostPhotoPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  hostInitial: {
-    fontSize: 18,
-    color: Colors.white,
-    fontFamily: 'Prompt-Bold',
-  },
-  hostLabel: {
-    fontSize: 10,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-  },
-  hostName: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    minHeight: 400,
+    paddingBottom: 100,
   },
   navigationBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingVertical: 16,
-    paddingBottom: 36,
-  },
-  navButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingBottom: 32,
+    backgroundColor: 'transparent',
   },
   navPill: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 4,
+    borderRadius: 28,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   navPillItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 22,
   },
   navPillItemActive: {
     backgroundColor: Colors.grayLight,

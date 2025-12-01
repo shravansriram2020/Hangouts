@@ -123,169 +123,181 @@ export default function SettingsModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="settings-outline" size={24} color={Colors.secondary} />
-            <Text style={styles.headerTitle}>Settings</Text>
+    <Modal visible={visible} animationType="none" transparent>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Ionicons name="settings-outline" size={22} color={Colors.secondary} />
+              <Text style={styles.headerTitle}>Settings</Text>
+            </View>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={24} color={Colors.secondary} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color={Colors.secondary} />
-          </TouchableOpacity>
+
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.profileSection}>
+              <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
+                {profilePhoto ? (
+                  <Image source={{ uri: profilePhoto }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person" size={40} color={Colors.grayMedium} />
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.changePhotoButton} onPress={handlePickImage}>
+                <Ionicons name="camera-outline" size={14} color={Colors.secondary} />
+                <Text style={styles.changePhotoText}>Change Photo</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Username</Text>
+              <TextInput
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+              <Text style={styles.inputHelper}>Your unique username for invitations and sharing</Text>
+            </View>
+
+            <View style={styles.nameRow}>
+              <View style={[styles.inputGroup, styles.nameInput]}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                />
+              </View>
+              <View style={[styles.inputGroup, styles.nameInput]}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.sectionTitle}>Location & Privacy</Text>
+
+            <View style={styles.switchRow}>
+              <View style={styles.switchInfo}>
+                <Text style={styles.switchTitle}>Share Location</Text>
+                <Text style={styles.switchDescription}>Allow friends to see your location for events</Text>
+              </View>
+              <Switch
+                value={locationEnabled}
+                onValueChange={setLocationEnabled}
+                trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
+                thumbColor={locationEnabled ? Colors.green : Colors.grayMedium}
+              />
+            </View>
+
+            <Text style={styles.sectionTitle}>Security</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password</Text>
+              <TextInput
+                style={styles.input}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                placeholder="Enter new password"
+                placeholderTextColor={Colors.grayMedium}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                placeholder="Confirm new password"
+                placeholderTextColor={Colors.grayMedium}
+              />
+            </View>
+
+            <TouchableOpacity style={styles.actionButton} onPress={handleReplayTutorial}>
+              <Ionicons name="play-outline" size={18} color={Colors.secondary} />
+              <Text style={styles.actionButtonText}>Replay Tutorial</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={18} color={Colors.secondary} />
+              <Text style={styles.actionButtonText}>Sign Out</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Legal & Privacy</Text>
+
+            <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+              <Text style={styles.link}>Terms of Service</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
+              <Text style={styles.link}>Privacy Policy</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Danger Zone</Text>
+
+            <View style={styles.dangerZone}>
+              <View style={styles.dangerInfo}>
+                <Text style={styles.dangerTitle}>Delete Account</Text>
+                <Text style={styles.dangerDescription}>
+                  Permanently delete your account and all data
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+                <Ionicons name="trash-outline" size={14} color={Colors.secondary} />
+                <Text style={styles.deleteButtonText}>Delete Account</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.version}>Version 1.0</Text>
+          </ScrollView>
         </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.profileSection}>
-            <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
-              {profilePhoto ? (
-                <Image source={{ uri: profilePhoto }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={48} color={Colors.grayMedium} />
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.changePhotoButton} onPress={handlePickImage}>
-              <Ionicons name="camera-outline" size={16} color={Colors.secondary} />
-              <Text style={styles.changePhotoText}>Change Photo</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
-            <Text style={styles.inputHelper}>Your unique username for invitations and sharing</Text>
-          </View>
-
-          <View style={styles.nameRow}>
-            <View style={[styles.inputGroup, styles.nameInput]}>
-              <Text style={styles.inputLabel}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
-            <View style={[styles.inputGroup, styles.nameInput]}>
-              <Text style={styles.inputLabel}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-
-          <Text style={styles.sectionTitle}>Location & Privacy</Text>
-
-          <View style={styles.switchRow}>
-            <View style={styles.switchInfo}>
-              <Text style={styles.switchTitle}>Share Location</Text>
-              <Text style={styles.switchDescription}>Allow friends to see your location for events</Text>
-            </View>
-            <Switch
-              value={locationEnabled}
-              onValueChange={setLocationEnabled}
-              trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
-              thumbColor={locationEnabled ? Colors.green : Colors.grayMedium}
-            />
-          </View>
-
-          <Text style={styles.sectionTitle}>Security</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>New Password</Text>
-            <TextInput
-              style={styles.input}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-              placeholder="Enter new password"
-              placeholderTextColor={Colors.grayMedium}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Confirm Password</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              placeholder="Confirm new password"
-              placeholderTextColor={Colors.grayMedium}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleReplayTutorial}>
-            <Ionicons name="play-outline" size={20} color={Colors.secondary} />
-            <Text style={styles.actionButtonText}>Replay Tutorial</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleSignOut}>
-            <Ionicons name="log-out-outline" size={20} color={Colors.secondary} />
-            <Text style={styles.actionButtonText}>Sign Out</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.sectionTitle}>Legal & Privacy</Text>
-
-          <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
-            <Text style={styles.link}>Terms of Service</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
-            <Text style={styles.link}>Privacy Policy</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
-
-          <View style={styles.dangerZone}>
-            <View style={styles.dangerInfo}>
-              <Text style={styles.dangerTitle}>Delete Account</Text>
-              <Text style={styles.dangerDescription}>
-                Permanently delete your account and all data
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-              <Ionicons name="trash-outline" size={16} color={Colors.red} />
-              <Text style={styles.deleteButtonText}>Delete Account</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.version}>Version 1.0</Text>
-        </ScrollView>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  container: {
     backgroundColor: Colors.white,
+    borderRadius: 20,
+    width: '100%',
+    maxHeight: '90%',
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -302,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     color: Colors.secondary,
     fontFamily: 'Prompt-Bold',
     marginLeft: 8,
@@ -313,20 +325,20 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: 20,
   },
   avatarContainer: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
@@ -335,74 +347,74 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.grayLight,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   changePhotoText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
-    marginLeft: 6,
+    marginLeft: 5,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 20,
+    marginBottom: 10,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.gray,
     fontFamily: 'Prompt-Medium',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   input: {
     backgroundColor: Colors.grayLight,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Prompt-Regular',
   },
   inputHelper: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.grayMedium,
     fontFamily: 'Prompt-Regular',
-    marginTop: 4,
+    marginTop: 3,
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
   },
   nameInput: {
     flex: 1,
-    marginHorizontal: 4,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: Colors.grayLight,
-    padding: 16,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
   },
   switchInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   switchTitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
   },
   switchDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
   },
@@ -411,42 +423,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.grayLight,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 10,
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   link: {
-    fontSize: 14,
-    color: Colors.secondary,
+    fontSize: 13,
+    color: Colors.primary,
     fontFamily: 'Prompt-Medium',
     textDecorationLine: 'underline',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   dangerZone: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: Colors.redLight,
-    padding: 16,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
   },
   dangerInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   dangerTitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.red,
     fontFamily: 'Prompt-Medium',
   },
   dangerDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.red,
     fontFamily: 'Prompt-Regular',
     opacity: 0.8,
@@ -455,57 +467,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: Colors.grayLight,
   },
   deleteButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
     marginLeft: 4,
   },
   footer: {
     flexDirection: 'row',
-    marginTop: 32,
-    marginBottom: 16,
+    marginTop: 24,
+    marginBottom: 12,
+    gap: 10,
   },
   cancelButton: {
     flex: 1,
     backgroundColor: Colors.grayLight,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    marginRight: 8,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
   },
   saveButton: {
     flex: 1,
     backgroundColor: Colors.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    marginLeft: 8,
   },
   saveButtonDisabled: {
     opacity: 0.7,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
   },
   version: {
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.grayMedium,
     fontFamily: 'Prompt-Regular',
-    marginBottom: 40,
+    marginBottom: 20,
   },
 });

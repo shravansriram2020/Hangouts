@@ -25,7 +25,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
   };
 
   const { month, day } = formatDate(event.event_date);
-  const isHost = event.host_id === event.user_id;
+  const isHost = event.isHost;
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
@@ -39,7 +39,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
           <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
           {isHost && (
             <View style={styles.hostBadge}>
-              <Ionicons name="person-outline" size={12} color={Colors.secondary} />
+              <Ionicons name="ribbon-outline" size={12} color={Colors.secondary} />
               <Text style={styles.hostText}>Host</Text>
             </View>
           )}
@@ -59,14 +59,25 @@ export default function EventCard({ event, onPress }: EventCardProps) {
         </View>
 
         <View style={styles.footer}>
-          <View style={styles.attendees}>
-            <Ionicons name="people-outline" size={14} color={Colors.gray} />
-            <Text style={styles.attendeeCount}>{event.attendee_count} attending</Text>
-          </View>
-          {event.photo_count > 0 && (
-            <View style={styles.photos}>
-              <Ionicons name="camera-outline" size={14} color={Colors.gray} />
-              <Text style={styles.photoCount}>{event.photo_count}</Text>
+          {event.attendees && event.attendees.length > 0 ? (
+            <View style={styles.attendeesRow}>
+              {event.attendees.slice(0, 3).map((attendee: any, index: number) => (
+                <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }]}>
+                  {attendee.profile_photo ? (
+                    <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
+                  ) : (
+                    <View style={[styles.attendeePlaceholder, { backgroundColor: Colors.primary }]}>
+                      <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+              <Text style={styles.attendeeCount}>{event.attendee_count || event.attendees.length} attending</Text>
+            </View>
+          ) : (
+            <View style={styles.attendeesRow}>
+              <Ionicons name="people-outline" size={14} color={Colors.gray} />
+              <Text style={styles.attendeeCount}>{event.attendee_count || 1} attending</Text>
             </View>
           )}
         </View>
@@ -84,15 +95,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   dateBox: {
-    width: 54,
-    height: 54,
+    width: 50,
+    height: 50,
     backgroundColor: Colors.secondary,
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -100,11 +111,11 @@ const styles = StyleSheet.create({
   dateMonth: {
     fontSize: 10,
     color: Colors.white,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Prompt-SemiBold',
     letterSpacing: 0.5,
   },
   dateDay: {
-    fontSize: 22,
+    fontSize: 20,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
     marginTop: -2,
@@ -116,7 +127,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   title: {
     fontSize: 16,
@@ -128,24 +139,26 @@ const styles = StyleSheet.create({
   hostBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.grayLight,
+    backgroundColor: Colors.white,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.grayLight,
   },
   hostText: {
     fontSize: 10,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
-    marginLeft: 4,
+    marginLeft: 3,
   },
   details: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   detailText: {
     fontSize: 12,
@@ -158,25 +171,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  attendees: {
+  attendeesRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  attendeeAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: Colors.white,
+    overflow: 'hidden',
+  },
+  attendeePhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  attendeePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attendeeInitial: {
+    fontSize: 9,
+    color: Colors.white,
+    fontFamily: 'Prompt-Bold',
   },
   attendeeCount: {
     fontSize: 12,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
-    marginLeft: 4,
-  },
-  photos: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 16,
-  },
-  photoCount: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    marginLeft: 4,
+    marginLeft: 6,
   },
 });

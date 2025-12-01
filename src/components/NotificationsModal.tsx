@@ -81,12 +81,12 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   const renderNotification = ({ item }: { item: Notification }) => (
     <View style={[styles.notification, !item.is_read && styles.unread]}>
       <View style={styles.iconContainer}>
-        <Ionicons name={getIcon(item.type) as any} size={20} color={Colors.secondary} />
+        <Ionicons name={getIcon(item.type) as any} size={18} color={Colors.secondary} />
       </View>
       <View style={styles.notificationContent}>
         <Text style={styles.notificationTitle}>{item.title}</Text>
         {item.message && (
-          <Text style={styles.notificationMessage}>{item.message}</Text>
+          <Text style={styles.notificationMessage} numberOfLines={2}>{item.message}</Text>
         )}
         <Text style={styles.notificationTime}>{formatTime(item.created_at)}</Text>
       </View>
@@ -94,18 +94,21 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   );
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    <Modal visible={visible} animationType="none" transparent>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.container}>
+        <TouchableOpacity activeOpacity={1} style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Notifications</Text>
             <Text style={styles.headerSubtitle}>All caught up!</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={20} color={Colors.gray} />
+            </TouchableOpacity>
           </View>
 
           {notifications.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
-                <Ionicons name="notifications-off-outline" size={32} color={Colors.secondary} />
+                <Ionicons name="notifications-off" size={28} color={Colors.secondary} />
               </View>
               <Text style={styles.emptyTitle}>No notifications</Text>
               <Text style={styles.emptyDescription}>You're all caught up!</Text>
@@ -119,7 +122,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
               showsVerticalScrollIndicator={false}
             />
           )}
-        </View>
+        </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
   );
@@ -128,23 +131,27 @@ export default function NotificationsModal({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     paddingTop: 100,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   container: {
     backgroundColor: Colors.white,
-    borderRadius: 20,
-    maxHeight: '70%',
+    borderRadius: 16,
+    maxHeight: 320,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   header: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
+    padding: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     color: Colors.secondary,
     fontFamily: 'Prompt-Bold',
   },
@@ -154,13 +161,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
+  closeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+  },
   list: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingBottom: 16,
   },
   notification: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
   },
@@ -170,57 +182,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.grayLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   notificationContent: {
     flex: 1,
   },
   notificationTitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
   },
   notificationMessage: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
-    marginTop: 2,
+    marginTop: 1,
   },
   notificationTime: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.grayMedium,
     fontFamily: 'Prompt-Regular',
-    marginTop: 4,
+    marginTop: 3,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 32,
     paddingHorizontal: 20,
   },
   emptyIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.grayLight,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
-    marginTop: 4,
+    marginTop: 2,
   },
 });
