@@ -25,7 +25,6 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
   const [pickupLocation, setPickupLocation] = useState('');
   const [canDriveTo, setCanDriveTo] = useState(true);
   const [canDriveFrom, setCanDriveFrom] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const handleCreateRide = async () => {
     if (!spotsAvailable || !pickupLocation) {
@@ -33,7 +32,15 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
       return;
     }
 
-    setLoading(true);
+    // Optimistically close and update UI
+    setSpotsAvailable('');
+    setPickupLocation('');
+    setCanDriveTo(true);
+    setCanDriveFrom(true);
+    onCreated();
+    onClose();
+
+    // Make API call in background
     try {
       await api.post('/rides', {
         eventId,
@@ -42,17 +49,8 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
         canDriveTo,
         canDriveFrom,
       });
-
-      setSpotsAvailable('');
-      setPickupLocation('');
-      setCanDriveTo(true);
-      setCanDriveFrom(true);
-      onCreated();
-      onClose();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to create ride');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -118,13 +116,10 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            style={styles.submitButton}
             onPress={handleCreateRide}
-            disabled={loading}
           >
-            <Text style={styles.submitButtonText}>
-              {loading ? 'Creating...' : 'Offer Ride'}
-            </Text>
+            <Text style={styles.submitButtonText}>Offer Ride</Text>
           </TouchableOpacity>
         </View>
       </View>

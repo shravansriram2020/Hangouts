@@ -26,22 +26,22 @@ interface Props {
 export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdded }: Props) {
   const { user } = useAuth();
   const [newNote, setNewNote] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {
       return;
     }
 
-    setLoading(true);
+    // Optimistically update UI
+    const noteContent = newNote;
+    setNewNote('');
+    onNoteAdded();
+
+    // Make API call in background
     try {
-      await api.post(`/events/${eventId}/notes`, { content: newNote });
-      setNewNote('');
-      onNoteAdded();
+      await api.post(`/events/${eventId}/notes`, { content: noteContent });
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to add note');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -68,11 +68,9 @@ export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdd
             <TouchableOpacity
               style={[styles.addButton, !newNote.trim() && styles.addButtonDisabled]}
               onPress={handleAddNote}
-              disabled={!newNote.trim() || loading}
+              disabled={!newNote.trim()}
             >
-              <Text style={styles.addButtonText}>
-                {loading ? 'Adding...' : 'Add Note'}
-              </Text>
+              <Text style={styles.addButtonText}>Add Note</Text>
             </TouchableOpacity>
           </View>
 

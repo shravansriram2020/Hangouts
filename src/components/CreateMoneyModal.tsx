@@ -25,7 +25,6 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
   const [selectedOwer, setSelectedOwer] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleCreateRequest = async () => {
     if (!selectedOwer || !amount) {
@@ -33,7 +32,14 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
       return;
     }
 
-    setLoading(true);
+    // Optimistically close and update UI
+    setSelectedOwer('');
+    setAmount('');
+    setDescription('');
+    onCreated();
+    onClose();
+
+    // Make API call in background
     try {
       await api.post('/money', {
         eventId,
@@ -41,16 +47,8 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
         amount: parseFloat(amount),
         description,
       });
-
-      setSelectedOwer('');
-      setAmount('');
-      setDescription('');
-      onCreated();
-      onClose();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to create request');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -117,13 +115,10 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            style={styles.submitButton}
             onPress={handleCreateRequest}
-            disabled={loading}
           >
-            <Text style={styles.submitButtonText}>
-              {loading ? 'Sending...' : 'Send Request'}
-            </Text>
+            <Text style={styles.submitButtonText}>Send Request</Text>
           </TouchableOpacity>
         </View>
       </View>

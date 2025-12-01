@@ -45,20 +45,38 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
 
 
   const handleJoinRide = async (rideId: string) => {
+    // Optimistically update UI
+    const updatedRides = rides.map(ride => 
+      ride.id === rideId 
+        ? { ...ride, passenger_count: (ride.passenger_count || 0) + 1 }
+        : ride
+    );
+    setRides(updatedRides);
+
+    // Make API call in background
     try {
       await api.post(`/rides/${rideId}/join`, {});
-      fetchRides();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to join ride');
+      fetchRides();
     }
   };
 
   const handleLeaveRide = async (rideId: string) => {
+    // Optimistically update UI
+    const updatedRides = rides.map(ride => 
+      ride.id === rideId 
+        ? { ...ride, passenger_count: Math.max(0, (ride.passenger_count || 1) - 1) }
+        : ride
+    );
+    setRides(updatedRides);
+
+    // Make API call in background
     try {
       await api.post(`/rides/${rideId}/leave`, {});
-      fetchRides();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to leave ride');
+      fetchRides();
     }
   };
 
@@ -69,11 +87,16 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
         text: 'Yes',
         style: 'destructive',
         onPress: async () => {
+          // Optimistically remove ride
+          const updatedRides = rides.filter(ride => ride.id !== rideId);
+          setRides(updatedRides);
+
+          // Make API call in background
           try {
             await api.delete(`/rides/${rideId}`);
-            fetchRides();
           } catch (error) {
             Alert.alert('Error', 'Failed to cancel ride');
+            fetchRides();
           }
         },
       },
