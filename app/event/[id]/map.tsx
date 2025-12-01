@@ -46,6 +46,14 @@ export default function MapScreen() {
   const [showOnMyWayPanel, setShowOnMyWayPanel] = useState(false);
   const [mapKey, setMapKey] = useState(0);
 
+  const isEventDay = useMemo(() => {
+    if (!event?.event_date) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const eventDateStr = event.event_date.split('T')[0];
+    return todayStr === eventDateStr;
+  }, [event?.event_date]);
+
   const gradientColors = event?.gradient_color1 && event?.gradient_color2 
     ? [event.gradient_color1, event.gradient_color2]
     : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
@@ -239,12 +247,13 @@ export default function MapScreen() {
       <html>
       <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css">
         <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js"></script>
         <style>
-          body { margin: 0; padding: 0; }
-          #map { width: 100%; height: 100vh; }
+          * { box-sizing: border-box; }
+          html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+          #map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
           .event-marker {
             width: 36px;
             height: 36px;
@@ -385,23 +394,57 @@ export default function MapScreen() {
             return el;
           }
 
-          const map = tt.map({
-            key: '${TOMTOM_API_KEY}',
-            container: 'map',
-            center: [${eventLng}, ${eventLat}],
-            zoom: 12,
-            style: 'tomtom://vector/1/basic-main'
-          });
+          window.onerror = function(msg, url, line) {
+            console.error('JS Error:', msg, url, line);
+            return false;
+          };
 
-          map.addControl(new tt.NavigationControl());
+          function initMap() {
+            try {
+              var map = tt.map({
+                key: '${TOMTOM_API_KEY}',
+                container: 'map',
+                center: [${eventLng}, ${eventLat}],
+                zoom: 13,
+                language: 'en-US',
+                stylesVisibility: {
+                  trafficIncidents: false,
+                  trafficFlow: false
+                }
+              });
 
-          new tt.Marker({ element: createEventMarker() })
-            .setLngLat([${eventLng}, ${eventLat}])
-            .setPopup(new tt.Popup({ offset: 30 }).setHTML('<strong>${event?.title?.replace(/'/g, "\\'") || 'Event'}</strong><br/>${event?.location_name?.replace(/'/g, "\\'") || ''}'))
-            .addTo(map);
+              map.addControl(new tt.NavigationControl());
 
-          ${attendeeMarkers}
-          ${currentLocationMarker}
+              var addMarkers = function() {
+                new tt.Marker({ element: createEventMarker() })
+                  .setLngLat([${eventLng}, ${eventLat}])
+                  .setPopup(new tt.Popup({ offset: 30 }).setHTML('<strong>${event?.title?.replace(/'/g, "\\'") || 'Event'}</strong><br/>${event?.location_name?.replace(/'/g, "\\'") || ''}'))
+                  .addTo(map);
+
+                ${attendeeMarkers}
+                ${currentLocationMarker}
+              };
+
+              if (map.loaded()) {
+                addMarkers();
+              } else {
+                map.on('load', addMarkers);
+              }
+
+              map.on('error', function(e) {
+                console.error('Map error:', e);
+              });
+            } catch (e) {
+              console.error('Map initialization error:', e);
+              document.getElementById('map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-family:sans-serif;">Unable to load map</div>';
+            }
+          }
+
+          if (document.readyState === 'complete') {
+            initMap();
+          } else {
+            window.addEventListener('load', initMap);
+          }
         </script>
       </body>
       </html>
@@ -428,6 +471,15 @@ export default function MapScreen() {
         style={styles.webView}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        originWhitelist={['*']}
+        mixedContentMode="always"
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
+        scalesPageToFit={true}
+        scrollEnabled={false}
+        onError={(syntheticEvent) => {
+          console.log('WebView error:', syntheticEvent.nativeEvent);
+        }}
       />
     );
   };
@@ -451,17 +503,19 @@ export default function MapScreen() {
           </View>
         </View>
 
-      <TouchableOpacity 
-        style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
-        onPress={handleMarkOnMyWay}
-      >
-        <Text style={styles.onMyWayEmoji}>
-          {isOnMyWay ? '🚗' : '📍'}
-        </Text>
-        <Text style={styles.onMyWayButtonText}>
-          {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
-        </Text>
-      </TouchableOpacity>
+      {isEventDay && (
+        <TouchableOpacity 
+          style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
+          onPress={handleMarkOnMyWay}
+        >
+          <Text style={styles.onMyWayEmoji}>
+            {isOnMyWay ? '🚗' : '📍'}
+          </Text>
+          <Text style={styles.onMyWayButtonText}>
+            {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.mapContainer}>
         {renderMap()}
@@ -486,8 +540,8 @@ export default function MapScreen() {
           </TouchableOpacity>
           {showOnMyWayPanel && (
             <ScrollView style={styles.onMyWayPanelContent} nestedScrollEnabled>
-              {onMyWayList.map((attendee) => (
-                <View key={attendee.user_id} style={styles.onMyWayItem}>
+              {onMyWayList.map((attendee, index) => (
+                <View key={attendee.user_id || `attendee-${index}`} style={styles.onMyWayItem}>
                   <View style={styles.onMyWayAvatar}>
                     {attendee.profile_image ? (
                       <Image source={{ uri: attendee.profile_image }} style={styles.onMyWayAvatarImage} />
