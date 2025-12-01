@@ -238,7 +238,13 @@ export default function DetailsScreen() {
 
       <TouchableOpacity 
         style={styles.conflictsContainer}
-        onPress={() => setShowConflicts(true)}
+        onPress={() => {
+          Alert.alert('Conflicts', 'View existing conflicts or report a new one?', [
+            { text: 'View', onPress: () => setShowConflicts(true) },
+            { text: 'Report New', onPress: () => setShowCreateConflicts(true) },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
+        }}
       >
         <BlurView intensity={60} tint="light" style={styles.conflictsCard}>
           <View style={styles.conflictsContent}>

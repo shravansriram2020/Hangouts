@@ -9,6 +9,7 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Fonts } from '../../../constants/theme';
@@ -31,6 +32,10 @@ export default function PhotosScreen() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
+    ? [event.gradient_color1, event.gradient_color2]
+    : ['#1E3A5F', '#2D5A8B'];
 
   useEffect(() => {
     if (event?.id) {
@@ -98,7 +103,8 @@ export default function PhotosScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <View style={styles.innerContainer}>
       <View style={styles.headerActions}>
         <TouchableOpacity 
           style={styles.addPhotoButton}
@@ -168,12 +174,16 @@ export default function PhotosScreen() {
           )}
         </View>
       </Modal>
-    </View>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  innerContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
