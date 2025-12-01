@@ -125,7 +125,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "SKIP_EAS=true npx expo start --tunnel --port 8080"
+args = "bash start-expo.sh"
 waitForPort = 8080
 
 [agent]
