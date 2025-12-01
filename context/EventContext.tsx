@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 
 interface EventData {
   id: string;
@@ -14,6 +15,7 @@ interface EventData {
   host_id: string;
   host_name: string;
   host_username: string;
+  host_profile_image?: string;
   gradient_start: string;
   gradient_end: string;
   image_url: string | null;
@@ -37,18 +39,22 @@ export function EventProvider({
   children: React.ReactNode; 
   eventId: string;
 }) {
+  const { loading: authLoading, token } = useAuth();
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvent = async () => {
-    if (!eventId) return;
+    if (!eventId) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      setError(null);
       const data = await api.get(`/events/${eventId}`);
       setEvent(data);
-      setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to load event');
     } finally {
@@ -57,11 +63,13 @@ export function EventProvider({
   };
 
   useEffect(() => {
-    fetchEvent();
-  }, [eventId]);
+    if (!authLoading && eventId) {
+      fetchEvent();
+    }
+  }, [eventId, authLoading, token]);
 
   return (
-    <EventContext.Provider value={{ event, loading, error, refreshEvent: fetchEvent }}>
+    <EventContext.Provider value={{ event, loading: loading || authLoading, error, refreshEvent: fetchEvent }}>
       {children}
     </EventContext.Provider>
   );

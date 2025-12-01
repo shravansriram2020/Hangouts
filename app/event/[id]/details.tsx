@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../../constants/theme';
@@ -18,7 +19,7 @@ import ConflictsModal from '../../../src/components/ConflictsModal';
 import NotesModal from '../../../src/components/NotesModal';
 
 export default function DetailsScreen() {
-  const { event, refreshEvent } = useEvent();
+  const { event, loading, error, refreshEvent } = useEvent();
   const { user } = useAuth();
   
   const [showRides, setShowRides] = useState(false);
@@ -62,8 +63,34 @@ export default function DetailsScreen() {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Loading event...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.red} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refreshEvent}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (!event) {
-    return null;
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="calendar-outline" size={48} color={Colors.gray} />
+        <Text style={styles.errorText}>Event not found</Text>
+      </View>
+    );
   }
 
   return (
@@ -463,5 +490,36 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.semiBold,
     color: Colors.secondary,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
   },
 });
