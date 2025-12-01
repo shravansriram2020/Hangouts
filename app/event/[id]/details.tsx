@@ -28,6 +28,9 @@ const STICKY_COLORS = [
   Colors.stickyPurple,
 ];
 
+const ridesImage = require('../../../attached_assets/360_F_1516542978_mc3KOajI3kbhFHs8pGvbuUvaK0YHXJT2-removebg-preview_1760856241070_1764566858022.png');
+const moneyImage = require('../../../attached_assets/7630510_1756853409509_1764566858022.png');
+
 export default function DetailsScreen() {
   const { event, loading, error, refreshEvent } = useEvent();
   const { user } = useAuth();
@@ -37,7 +40,6 @@ export default function DetailsScreen() {
   const [showConflicts, setShowConflicts] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
-  const [notes, setNotes] = useState<any[]>([]);
 
   useEffect(() => {
     if (event?.id) {
@@ -134,11 +136,37 @@ export default function DetailsScreen() {
         </View>
       </BlurView>
 
-      <View style={styles.attendeesSection}>
-        {event.attendees && event.attendees.length > 0 && (
-          <View style={styles.attendeesRow}>
-            {event.attendees.slice(0, 5).map((attendee: any, index: number) => (
-              <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -12 : 0, zIndex: 5 - index }]}>
+      <BlurView intensity={60} tint="light" style={styles.hostCard}>
+        <View style={styles.hostContent}>
+          <View style={styles.hostAvatar}>
+            {event.host_photo ? (
+              <Image source={{ uri: event.host_photo }} style={styles.hostAvatarImage} />
+            ) : (
+              <View style={styles.hostAvatarPlaceholder}>
+                <Text style={styles.hostAvatarInitial}>
+                  {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.hostInfo}>
+            <Text style={styles.hostLabel}>HOST</Text>
+            <Text style={styles.hostName}>{event.host_first_name}</Text>
+          </View>
+        </View>
+      </BlurView>
+
+      <Text style={styles.sectionTitle}>Attending</Text>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.attendeesScroll}
+        contentContainerStyle={styles.attendeesContent}
+      >
+        {event.attendees && event.attendees.length > 0 ? (
+          event.attendees.map((attendee: any) => (
+            <View key={attendee.id} style={styles.attendeeItem}>
+              <View style={styles.attendeeAvatar}>
                 {attendee.profile_photo ? (
                   <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
                 ) : (
@@ -147,13 +175,20 @@ export default function DetailsScreen() {
                   </View>
                 )}
               </View>
-            ))}
-            <Text style={styles.attendeeCount}>
-              {event.attendee_count || event.attendees.length} attending
-            </Text>
+              <Text style={styles.attendeeName} numberOfLines={1}>{attendee.first_name}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.attendeeItem}>
+            <View style={styles.attendeeAvatar}>
+              <View style={styles.attendeePlaceholder}>
+                <Text style={styles.attendeeInitial}>?</Text>
+              </View>
+            </View>
+            <Text style={styles.attendeeName}>No attendees</Text>
           </View>
         )}
-      </View>
+      </ScrollView>
 
       <View style={styles.actionCardsRow}>
         <TouchableOpacity 
@@ -162,7 +197,7 @@ export default function DetailsScreen() {
         >
           <BlurView intensity={60} tint="light" style={styles.actionCard}>
             <View style={styles.actionCardContent}>
-              <Text style={styles.actionEmoji}>🚗</Text>
+              <Image source={ridesImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Rides</Text>
             </View>
           </BlurView>
@@ -173,7 +208,7 @@ export default function DetailsScreen() {
         >
           <BlurView intensity={60} tint="light" style={styles.actionCard}>
             <View style={styles.actionCardContent}>
-              <Text style={styles.actionEmoji}>💵</Text>
+              <Image source={moneyImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Money</Text>
             </View>
           </BlurView>
@@ -197,55 +232,55 @@ export default function DetailsScreen() {
         </BlurView>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.notesHeaderContainer}
-        onPress={() => setShowNotes(true)}
-      >
-        <BlurView intensity={60} tint="light" style={styles.notesHeaderCard}>
-          <View style={styles.notesHeaderContent}>
-            <Ionicons name="document-text-outline" size={18} color={Colors.secondary} />
-            <Text style={styles.addNotesText}>Add/View Notes</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
-          </View>
-        </BlurView>
-      </TouchableOpacity>
-
       {event.notes && Array.isArray(event.notes) && event.notes.length > 0 && (
-        <View style={styles.notesGrid}>
-          {event.notes.slice(0, 4).map((note: any, index: number) => (
-            <View 
-              key={note.id} 
-              style={[
-                styles.stickyNote, 
-                { backgroundColor: STICKY_COLORS[index % STICKY_COLORS.length] }
-              ]}
+        <View style={styles.notesSection}>
+          <View style={styles.notesSectionHeader}>
+            <Text style={styles.notesSectionTitle}>Notes</Text>
+            <TouchableOpacity 
+              style={styles.addNotesButton}
+              onPress={() => setShowNotes(true)}
             >
-              <Text style={styles.stickyNoteText} numberOfLines={4}>{note.content}</Text>
-              <Text style={styles.stickyNoteAuthor}>- {note.first_name || 'Anonymous'}</Text>
-            </View>
-          ))}
+              <Ionicons name="add" size={16} color={Colors.secondary} />
+              <Text style={styles.addNotesText}>Add/View</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.notesScrollContent}
+          >
+            {event.notes.map((note: any, index: number) => (
+              <View 
+                key={note.id} 
+                style={[
+                  styles.stickyNote, 
+                  { backgroundColor: STICKY_COLORS[index % STICKY_COLORS.length] }
+                ]}
+              >
+                <Text style={styles.stickyNoteText} numberOfLines={5}>{note.content}</Text>
+                <Text style={styles.stickyNoteAuthor}>- {note.first_name || 'Anonymous'}</Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
       )}
 
-      <BlurView intensity={60} tint="light" style={styles.hostCard}>
-        <View style={styles.hostContent}>
-          <View style={styles.hostAvatar}>
-            {event.host_photo ? (
-              <Image source={{ uri: event.host_photo }} style={styles.hostAvatarImage} />
-            ) : (
-              <View style={styles.hostAvatarPlaceholder}>
-                <Text style={styles.hostAvatarInitial}>
-                  {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View>
-            <Text style={styles.hostLabel}>Host</Text>
-            <Text style={styles.hostName}>{event.host_first_name}</Text>
-          </View>
-        </View>
-      </BlurView>
+      {(!event.notes || event.notes.length === 0) && (
+        <TouchableOpacity 
+          style={styles.emptyNotesContainer}
+          onPress={() => setShowNotes(true)}
+        >
+          <BlurView intensity={60} tint="light" style={styles.emptyNotesCard}>
+            <View style={styles.emptyNotesContent}>
+              <Ionicons name="document-text-outline" size={18} color={Colors.secondary} />
+              <Text style={styles.emptyNotesText}>Add/View Notes</Text>
+              <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+      )}
+
+      <View style={styles.bottomSpacer} />
 
       <RidesModal
         visible={showRides}
@@ -286,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerContent: {
     padding: 16,
@@ -342,21 +377,83 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginLeft: 6,
   },
-  attendeesSection: {
+  hostCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
     marginBottom: 16,
-    paddingHorizontal: 4,
   },
-  attendeesRow: {
+  hostContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
+    gap: 14,
+  },
+  hostAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  hostAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  hostAvatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hostAvatarInitial: {
+    fontSize: 22,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
+  hostInfo: {
+    flex: 1,
+  },
+  hostLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.gray,
+    letterSpacing: 1,
+  },
+  hostName: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginTop: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  attendeesScroll: {
+    marginBottom: 16,
+  },
+  attendeesContent: {
+    paddingHorizontal: 4,
+  },
+  attendeeItem: {
+    alignItems: 'center',
+    marginRight: 16,
+    width: 70,
   },
   attendeeAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.8)',
     overflow: 'hidden',
+    marginBottom: 6,
   },
   attendeePhoto: {
     width: '100%',
@@ -370,15 +467,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   attendeeInitial: {
-    fontSize: 14,
+    fontSize: 20,
     color: Colors.white,
     fontFamily: Fonts.bold,
   },
-  attendeeCount: {
-    fontSize: 13,
-    color: Colors.gray,
+  attendeeName: {
+    fontSize: 12,
     fontFamily: Fonts.medium,
-    marginLeft: 12,
+    color: Colors.secondary,
+    textAlign: 'center',
   },
   actionCardsRow: {
     flexDirection: 'row',
@@ -399,9 +496,11 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  actionEmoji: {
-    fontSize: 40,
-    marginBottom: 6,
+  actionImage: {
+    width: 60,
+    height: 60,
+    marginBottom: 8,
+    resizeMode: 'contain',
   },
   actionLabel: {
     fontSize: 15,
@@ -411,7 +510,7 @@ const styles = StyleSheet.create({
   conflictsContainer: {
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   conflictsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
@@ -445,42 +544,45 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: Colors.white,
   },
-  notesHeaderContainer: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  notesHeaderCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  notesHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  addNotesText: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-    marginLeft: 4,
-  },
-  notesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+  notesSection: {
     marginBottom: 16,
   },
+  notesSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  notesSectionTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+  },
+  addNotesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  addNotesText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
+  },
+  notesScrollContent: {
+    paddingLeft: 4,
+    paddingRight: 16,
+  },
   stickyNote: {
-    width: '48%',
-    aspectRatio: 1,
+    width: 140,
+    height: 140,
     borderRadius: 8,
     padding: 12,
+    marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 4 },
     shadowOpacity: 0.15,
@@ -489,63 +591,45 @@ const styles = StyleSheet.create({
   },
   stickyNoteText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.regular,
     color: Colors.secondary,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   stickyNoteAuthor: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: Fonts.medium,
     color: Colors.grayDark,
     textAlign: 'right',
     marginTop: 4,
   },
-  hostCard: {
+  emptyNotesContainer: {
     borderRadius: 16,
     overflow: 'hidden',
+    marginBottom: 16,
+  },
+  emptyNotesCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
-    marginBottom: 24,
   },
-  hostContent: {
+  emptyNotesContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    gap: 12,
-  },
-  hostAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  hostAvatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  hostAvatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: Colors.secondary,
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 8,
   },
-  hostAvatarInitial: {
-    fontSize: 18,
-    fontFamily: Fonts.semiBold,
-    color: Colors.white,
-  },
-  hostLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
-    color: Colors.gray,
-  },
-  hostName: {
+  emptyNotesText: {
+    flex: 1,
     fontSize: 15,
-    fontFamily: Fonts.semiBold,
+    fontFamily: Fonts.medium,
     color: Colors.secondary,
+    marginLeft: 4,
+  },
+  bottomSpacer: {
+    height: 24,
   },
   centerContainer: {
     flex: 1,

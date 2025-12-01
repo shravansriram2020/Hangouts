@@ -20,8 +20,8 @@ const PHOTO_SIZE = (width - 48 - 16) / 3;
 
 interface Photo {
   id: string;
-  image_url: string;
-  user_name: string;
+  photo_url: string;
+  first_name: string;
   created_at: string;
   expires_at: string;
 }
@@ -66,9 +66,10 @@ export default function PhotosScreen() {
       if (!result.canceled && result.assets[0]) {
         setUploading(true);
         try {
+          const photoData = `data:image/jpeg;base64,${result.assets[0].base64}`;
           await api.post('/photos', {
             eventId: event?.id,
-            image: result.assets[0].base64,
+            photoUrl: photoData,
           });
           await fetchPhotos();
         } catch (error) {
@@ -91,7 +92,7 @@ export default function PhotosScreen() {
       style={styles.photoItem}
       onPress={() => setSelectedPhoto(item)}
     >
-      <Image source={{ uri: item.image_url }} style={styles.photoImage} />
+      <Image source={{ uri: item.photo_url }} style={styles.photoImage} />
     </TouchableOpacity>
   );
 
@@ -152,12 +153,12 @@ export default function PhotosScreen() {
           {selectedPhoto && (
             <>
               <Image 
-                source={{ uri: selectedPhoto.image_url }} 
+                source={{ uri: selectedPhoto.photo_url }} 
                 style={styles.photoModalImage}
                 resizeMode="contain"
               />
               <View style={styles.photoModalInfo}>
-                <Text style={styles.photoModalUser}>{selectedPhoto.user_name}</Text>
+                <Text style={styles.photoModalUser}>{selectedPhoto.first_name}</Text>
                 <Text style={styles.photoModalDate}>
                   {new Date(selectedPhoto.created_at).toLocaleDateString()}
                 </Text>

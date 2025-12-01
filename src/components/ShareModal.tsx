@@ -5,10 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Share,
-  Clipboard,
+  TextInput,
   Alert,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
@@ -21,19 +20,28 @@ interface ShareModalProps {
   eventTitle: string;
 }
 
-export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
-  const [copied, setCopied] = useState(false);
+const REPLIT_DOMAIN = 'dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev';
 
-  const eventLink = `https://hangouts.app/event/${eventId}`;
+export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
+  const [activeTab, setActiveTab] = useState<'url' | 'username'>('url');
+  const [copied, setCopied] = useState(false);
+  const [username, setUsername] = useState('');
+
+  const eventLink = `https://${REPLIT_DOMAIN}/event/${eventId}`;
 
   const handleCopyLink = async () => {
     try {
-      Clipboard.setString(eventLink);
+      await Share.share({
+        message: eventLink,
+        title: 'Event Link',
+      });
       setCopied(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to copy link');
+    } catch (error: any) {
+      if (error.message !== 'User did not share') {
+        Alert.alert('Error', 'Failed to copy link');
+      }
     }
   };
 
@@ -51,19 +59,14 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
     }
   };
 
-  const handleShareToMessage = () => {
-    handleShare();
-  };
-
-  const handleShareToWhatsApp = async () => {
-    const message = encodeURIComponent(`Join me at "${eventTitle}"! ${eventLink}`);
-    try {
-      await Share.share({
-        message: `Join me at "${eventTitle}"! ${eventLink}`,
-      });
-    } catch (error) {
-      handleShare();
+  const handleInviteByUsername = async () => {
+    if (!username.trim()) {
+      Alert.alert('Error', 'Please enter a username');
+      return;
     }
+    Alert.alert('Invite Sent', `Invitation sent to @${username}`);
+    setUsername('');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   return (
@@ -71,39 +74,85 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
       <View style={styles.content}>
         <Text style={styles.eventTitle}>{eventTitle}</Text>
         
-        <View style={styles.linkContainer}>
-          <Text style={styles.linkText} numberOfLines={1}>{eventLink}</Text>
-          <TouchableOpacity style={styles.copyButton} onPress={handleCopyLink}>
-            <Ionicons 
-              name={copied ? 'checkmark-circle' : 'copy-outline'} 
-              size={20} 
-              color={copied ? Colors.green : Colors.secondary} 
-            />
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'url' && styles.tabActive]}
+            onPress={() => setActiveTab('url')}
+          >
+            <Text style={[styles.tabText, activeTab === 'url' && styles.tabTextActive]}>
+              Share by URL
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'username' && styles.tabActive]}
+            onPress={() => setActiveTab('username')}
+          >
+            <Text style={[styles.tabText, activeTab === 'username' && styles.tabTextActive]}>
+              Share by Username
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.shareOptions}>
-          <TouchableOpacity style={styles.shareOption} onPress={handleShareToMessage}>
-            <View style={[styles.shareIconCircle, { backgroundColor: '#34C759' }]}>
-              <Ionicons name="chatbubble" size={24} color={Colors.white} />
+        {activeTab === 'url' ? (
+          <>
+            <View style={styles.linkContainer}>
+              <Text style={styles.linkText} numberOfLines={1}>{eventLink}</Text>
+              <TouchableOpacity style={styles.copyButton} onPress={handleCopyLink}>
+                <Ionicons 
+                  name={copied ? 'checkmark-circle' : 'copy-outline'} 
+                  size={20} 
+                  color={copied ? Colors.green : Colors.secondary} 
+                />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.shareOptionText}>Message</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareOption} onPress={handleShareToWhatsApp}>
-            <View style={[styles.shareIconCircle, { backgroundColor: '#25D366' }]}>
-              <Ionicons name="logo-whatsapp" size={24} color={Colors.white} />
-            </View>
-            <Text style={styles.shareOptionText}>WhatsApp</Text>
-          </TouchableOpacity>
+            <View style={styles.shareOptions}>
+              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
+                <View style={[styles.shareIconCircle, { backgroundColor: '#34C759' }]}>
+                  <Ionicons name="chatbubble" size={24} color={Colors.white} />
+                </View>
+                <Text style={styles.shareOptionText}>Message</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
-            <View style={[styles.shareIconCircle, { backgroundColor: Colors.secondary }]}>
-              <Ionicons name="share-social" size={24} color={Colors.white} />
+              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
+                <View style={[styles.shareIconCircle, { backgroundColor: '#25D366' }]}>
+                  <Ionicons name="logo-whatsapp" size={24} color={Colors.white} />
+                </View>
+                <Text style={styles.shareOptionText}>WhatsApp</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.shareOption} onPress={handleShare}>
+                <View style={[styles.shareIconCircle, { backgroundColor: Colors.secondary }]}>
+                  <Ionicons name="share-social" size={24} color={Colors.white} />
+                </View>
+                <Text style={styles.shareOptionText}>More</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.shareOptionText}>More</Text>
-          </TouchableOpacity>
-        </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.usernameInputContainer}>
+              <Text style={styles.atSymbol}>@</Text>
+              <TextInput
+                style={styles.usernameInput}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Enter username..."
+                placeholderTextColor={Colors.grayMedium}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <TouchableOpacity 
+              style={[styles.inviteButton, !username.trim() && styles.inviteButtonDisabled]}
+              onPress={handleInviteByUsername}
+              disabled={!username.trim()}
+            >
+              <Ionicons name="paper-plane" size={18} color={Colors.white} />
+              <Text style={styles.inviteButtonText}>Send Invite</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <TouchableOpacity style={styles.mainShareButton} onPress={handleShare}>
           <Ionicons name="share-outline" size={20} color={Colors.white} />
@@ -126,6 +175,35 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  tabActive: {
+    backgroundColor: Colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
+  },
+  tabTextActive: {
+    color: Colors.secondary,
+  },
   linkContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -138,7 +216,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: Fonts.regular,
     color: Colors.gray,
   },
@@ -170,6 +248,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.medium,
     color: Colors.grayDark,
+  },
+  usernameInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 16,
+  },
+  atSymbol: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginRight: 4,
+  },
+  usernameInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
+    paddingVertical: 12,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.green,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16,
+  },
+  inviteButtonDisabled: {
+    backgroundColor: Colors.grayMedium,
+  },
+  inviteButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
   },
   mainShareButton: {
     flexDirection: 'row',

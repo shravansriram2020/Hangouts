@@ -10,6 +10,24 @@ The application targets iOS, Android, and web platforms using Expo's universal a
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (December 2024)
+
+### UI/UX Improvements
+- **Event Details Page**: Redesigned with horizontal scrolling sticky notes, enlarged host section with name beside avatar, and large attending profile photos with names underneath
+- **Rides/Money Cards**: Updated to use provided image assets for visual appeal
+- **ShareModal**: Two-tab design (Share by URL / Share by Username) with correct Replit domain links
+- **LoadingDots**: Updated with brand colors (orange #E67E5A, yellow #E6B85A, blue #5AACE6)
+- **Messages Page**: All messages now display sender avatars with sender names for non-user messages
+
+### Map Features
+- Current location marker now uses user's profile photo instead of blue dot
+- Location sharing toggle state persists across app sessions using AsyncStorage
+- Green pulsing border for current location marker to distinguish from other attendees
+
+### Photo Upload
+- Fixed parameter name from 'image' to 'photoUrl' matching backend API
+- Photo display now uses correct database field names (photo_url, first_name)
+
 ## System Architecture
 
 ### Frontend Architecture

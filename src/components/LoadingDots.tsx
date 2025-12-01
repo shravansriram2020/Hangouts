@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { Colors } from '../../constants/theme';
 
 interface LoadingDotsProps {
   size?: number;
@@ -54,7 +53,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: Colors.secondary,
+            backgroundColor: '#E67E5A',
             transform: [{ translateY: dot1 }] 
           }
         ]} 
@@ -66,7 +65,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: Colors.blue,
+            backgroundColor: '#E6B85A',
             transform: [{ translateY: dot2 }] 
           }
         ]} 
@@ -78,7 +77,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: '#A8D8F0',
+            backgroundColor: '#5AACE6',
             transform: [{ translateY: dot3 }] 
           }
         ]} 

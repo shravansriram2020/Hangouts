@@ -107,10 +107,26 @@ export default function MessagesScreen() {
 
     return (
       <View style={[styles.messageRow, isOwnMessage && styles.messageRowOwn]}>
-        <View style={styles.messageContent}>
+        {!isOwnMessage && (
+          <View style={styles.avatarContainer}>
+            {item.user_profile_image ? (
+              <Image source={{ uri: item.user_profile_image }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitial}>
+                  {item.user_name?.charAt(0).toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+        <View style={[styles.messageContent, !isOwnMessage && styles.messageContentOther]}>
+          {!isOwnMessage && (
+            <Text style={styles.messageSender}>{item.user_name}</Text>
+          )}
           <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
-          <View style={[styles.messageBubble, isOwnMessage && styles.messageBubbleOwn]}>
-            <Text style={styles.messageText}>{item.content}</Text>
+          <View style={[styles.messageBubble, isOwnMessage ? styles.messageBubbleOwn : styles.messageBubbleOther]}>
+            <Text style={[styles.messageText, !isOwnMessage && styles.messageTextOther]}>{item.content}</Text>
             {item.has_time_suggestion && (
               <View style={styles.suggestionBadge}>
                 <Ionicons name="time" size={12} color={Colors.blue} />
@@ -234,10 +250,19 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     alignItems: 'flex-end',
-    maxWidth: '75%',
+    maxWidth: '70%',
+  },
+  messageContentOther: {
+    alignItems: 'flex-start',
+  },
+  messageSender: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginBottom: 2,
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: Fonts.regular,
     color: Colors.gray,
     marginBottom: 4,
@@ -251,10 +276,16 @@ const styles = StyleSheet.create({
   messageBubbleOwn: {
     backgroundColor: Colors.secondary,
   },
+  messageBubbleOther: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
   messageText: {
     fontSize: 15,
     fontFamily: Fonts.regular,
     color: Colors.white,
+  },
+  messageTextOther: {
+    color: Colors.secondary,
   },
   suggestionBadge: {
     flexDirection: 'row',

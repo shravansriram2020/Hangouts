@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -46,11 +47,41 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (event?.id) {
+      loadLocationSharingState();
       fetchAttendeeLocations();
       const interval = setInterval(fetchAttendeeLocations, 5000);
       return () => clearInterval(interval);
     }
   }, [event?.id]);
+
+  const loadLocationSharingState = async () => {
+    if (!event?.id) return;
+    try {
+      const savedState = await AsyncStorage.getItem(`location_sharing_${event.id}`);
+      if (savedState !== null) {
+        const state = JSON.parse(savedState);
+        setLocationSharing(state.sharing);
+        setIsOnMyWay(state.isOnMyWay);
+        if (state.sharing) {
+          toggleLocationSharing(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load location sharing state:', error);
+    }
+  };
+
+  const saveLocationSharingState = async (sharing: boolean, onMyWay: boolean) => {
+    if (!event?.id) return;
+    try {
+      await AsyncStorage.setItem(
+        `location_sharing_${event.id}`,
+        JSON.stringify({ sharing, isOnMyWay: onMyWay })
+      );
+    } catch (error) {
+      console.error('Failed to save location sharing state:', error);
+    }
+  };
 
   useEffect(() => {
     if (locationSharing) {
@@ -141,6 +172,7 @@ export default function MapScreen() {
 
   const toggleLocationSharing = async (value: boolean) => {
     setLocationSharing(value);
+    saveLocationSharingState(value, isOnMyWay);
     try {
       await api.put('/location/toggle-sharing', {
         eventId: event?.id,
@@ -157,6 +189,7 @@ export default function MapScreen() {
   const handleMarkOnMyWay = async () => {
     const newValue = !isOnMyWay;
     setIsOnMyWay(newValue);
+    saveLocationSharingState(locationSharing || !locationSharing, newValue);
     
     if (!locationSharing) {
       setLocationSharing(true);
@@ -187,8 +220,10 @@ export default function MapScreen() {
       `;
       }).join('\n');
 
+    const userProfilePhoto = user?.profilePhoto ? user.profilePhoto.replace(/'/g, "\\'") : '';
+    const userInitial = user?.firstName?.charAt(0) || user?.username?.charAt(0) || '?';
     const currentLocationMarker = currentLocation ? `
-      new tt.Marker({ element: createCurrentLocationMarker() })
+      new tt.Marker({ element: createCurrentLocationMarker('${userInitial}', '${userProfilePhoto}') })
         .setLngLat([${currentLocation.lng}, ${currentLocation.lat}])
         .setPopup(new tt.Popup({ offset: 30 }).setHTML('<strong>You are here</strong>'))
         .addTo(map);
@@ -260,23 +295,38 @@ export default function MapScreen() {
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           }
           .current-location-marker {
-            width: 24px;
-            height: 24px;
-            background: #3B82F6;
-            border: 4px solid white;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            border: 4px solid #10B981;
             border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+            position: relative;
+          }
+          .current-location-marker img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
           }
           .current-location-marker::after {
             content: '';
             position: absolute;
-            width: 48px;
-            height: 48px;
-            background: rgba(59, 130, 246, 0.2);
+            width: 64px;
+            height: 64px;
+            background: rgba(16, 185, 129, 0.2);
             border-radius: 50%;
-            top: -12px;
-            left: -12px;
+            top: -8px;
+            left: -8px;
             animation: pulse 2s infinite;
+            z-index: -1;
           }
           @keyframes pulse {
             0% { transform: scale(0.8); opacity: 1; }
@@ -312,9 +362,21 @@ export default function MapScreen() {
             return el;
           }
 
-          function createCurrentLocationMarker() {
+          function createCurrentLocationMarker(initial, profilePhotoUrl) {
             const el = document.createElement('div');
             el.className = 'current-location-marker';
+            if (profilePhotoUrl) {
+              const img = document.createElement('img');
+              img.src = profilePhotoUrl;
+              img.alt = initial;
+              img.onerror = function() {
+                this.style.display = 'none';
+                el.textContent = initial;
+              };
+              el.appendChild(img);
+            } else {
+              el.textContent = initial;
+            }
             return el;
           }
 
@@ -339,7 +401,7 @@ export default function MapScreen() {
       </body>
       </html>
     `;
-  }, [attendeeLocations, currentLocation, eventLat, eventLng, event?.title, event?.location_name]);
+  }, [attendeeLocations, currentLocation, eventLat, eventLng, event?.title, event?.location_name, user?.profilePhoto, user?.firstName, user?.username]);
 
   const renderMap = () => {
     if (Platform.OS === 'web') {
