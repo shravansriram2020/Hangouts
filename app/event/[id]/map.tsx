@@ -24,14 +24,21 @@ let Marker: any = null;
 let Polyline: any = null;
 let Callout: any = null;
 let PROVIDER_DEFAULT: any = null;
+let mapsAvailable = false;
 
 if (Platform.OS !== 'web') {
-  const Maps = require('react-native-maps');
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  Polyline = Maps.Polyline;
-  Callout = Maps.Callout;
-  PROVIDER_DEFAULT = Maps.PROVIDER_DEFAULT;
+  try {
+    const Maps = require('react-native-maps');
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+    Polyline = Maps.Polyline;
+    Callout = Maps.Callout;
+    PROVIDER_DEFAULT = Maps.PROVIDER_DEFAULT;
+    mapsAvailable = true;
+  } catch (e) {
+    console.log('react-native-maps not available (Expo Go mode)');
+    mapsAvailable = false;
+  }
 }
 
 const WebView = Platform.OS === 'web' ? null : require('react-native-webview').WebView;
@@ -495,9 +502,9 @@ export default function MapScreen() {
   return (
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
       <View style={styles.mapContainer}>
-        {Platform.OS === 'web' ? renderWebMap() : renderNativeMap()}
+        {Platform.OS === 'web' || !mapsAvailable ? renderWebMap() : renderNativeMap()}
         
-        {Platform.OS !== 'web' && (
+        {Platform.OS !== 'web' && mapsAvailable && (
           <>
             <TouchableOpacity style={styles.centerButton} onPress={centerOnEvent}>
               <Ionicons name="locate" size={22} color={Colors.secondary} />

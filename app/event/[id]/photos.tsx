@@ -367,4 +367,30 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
+  photoModalActions: {
+    position: 'absolute',
+    bottom: 40,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  photoModalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(90, 172, 230, 0.9)',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  photoModalButtonDelete: {
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+  },
+  photoModalButtonText: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
 });

@@ -165,8 +165,9 @@ router.put('/toggle-sharing', authenticateToken, async (req, res) => {
 router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.first_name, u.profile_photo, 
-       ea.current_lat, ea.current_lng, ea.is_on_my_way, ea.location_sharing
+      `SELECT u.id as user_id, u.first_name as user_name, u.profile_photo as profile_image, 
+       ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way, ea.location_sharing,
+       ea.updated_at
        FROM event_attendees ea
        JOIN users u ON ea.user_id = u.id
        WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted'`,

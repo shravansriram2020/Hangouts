@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../../constants/theme';
 import { EventProvider, useEvent } from '../../../context/EventContext';
+import { useAuth } from '../../../context/AuthContext';
 import LoadingDots from '../../../src/components/LoadingDots';
 import ShareModal from '../../../src/components/ShareModal';
 
@@ -35,6 +36,7 @@ function EventLayoutContent() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { event, loading } = useEvent();
+  const { user } = useAuth();
 
   const [showShareModal, setShowShareModal] = useState(false);
   
@@ -44,6 +46,22 @@ function EventLayoutContent() {
 
   const currentTab = pathname.split('/').pop() || 'details';
   const currentTabIndex = TABS.findIndex(t => t.key === currentTab);
+
+  const userAttendee = event?.attendees?.find(a => a.id === user?.id);
+  const attendeesLoaded = event?.attendees !== undefined && event.attendees.length >= 0;
+  const isHost = event?.isHost === true;
+  const isAttending = isHost || userAttendee?.status === 'accepted';
+  const restrictedTabs = ['messages', 'map', 'photos'];
+
+  useEffect(() => {
+    if (!loading && event && attendeesLoaded && !isHost && !isAttending && restrictedTabs.includes(currentTab)) {
+      Alert.alert(
+        'RSVP Required',
+        'You need to confirm your attendance to access this feature.',
+        [{ text: 'OK', onPress: () => router.replace(`/event/${id}/details`) }]
+      );
+    }
+  }, [loading, event, attendeesLoaded, isHost, isAttending, currentTab]);
 
   useEffect(() => {
     const prevIndex = TABS.findIndex(t => t.key === prevTabRef.current);
@@ -76,6 +94,13 @@ function EventLayoutContent() {
 
   const handleTabPress = (tabKey: string) => {
     if (tabKey !== currentTab) {
+      if (restrictedTabs.includes(tabKey) && attendeesLoaded && !isHost && !isAttending) {
+        Alert.alert(
+          'RSVP Required',
+          'Please confirm your attendance on the Details tab to access this feature.'
+        );
+        return;
+      }
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }

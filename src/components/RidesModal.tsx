@@ -45,17 +45,22 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
 
 
   const handleJoinRide = async (rideId: string) => {
-    // Optimistically update UI
-    const updatedRides = rides.map(ride => 
-      ride.id === rideId 
-        ? { ...ride, passenger_count: (ride.passenger_count || 0) + 1 }
-        : ride
-    );
+    const updatedRides = rides.map(ride => {
+      if (ride.id === rideId) {
+        const newPassengers = [...(ride.passengers || []), { userId: user?.id, firstName: user?.firstName, profilePhoto: user?.profilePhoto }];
+        return { 
+          ...ride, 
+          passenger_count: parseInt(ride.passenger_count || '0') + 1,
+          passengers: newPassengers
+        };
+      }
+      return ride;
+    });
     setRides(updatedRides);
 
-    // Make API call in background
     try {
       await api.post(`/rides/${rideId}/join`, {});
+      await fetchRides();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to join ride');
       fetchRides();
@@ -63,17 +68,22 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
   };
 
   const handleLeaveRide = async (rideId: string) => {
-    // Optimistically update UI
-    const updatedRides = rides.map(ride => 
-      ride.id === rideId 
-        ? { ...ride, passenger_count: Math.max(0, (ride.passenger_count || 1) - 1) }
-        : ride
-    );
+    const updatedRides = rides.map(ride => {
+      if (ride.id === rideId) {
+        const newPassengers = (ride.passengers || []).filter((p: any) => p.userId !== user?.id);
+        return { 
+          ...ride, 
+          passenger_count: Math.max(0, parseInt(ride.passenger_count || '1') - 1),
+          passengers: newPassengers
+        };
+      }
+      return ride;
+    });
     setRides(updatedRides);
 
-    // Make API call in background
     try {
       await api.post(`/rides/${rideId}/leave`, {});
+      await fetchRides();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to leave ride');
       fetchRides();
