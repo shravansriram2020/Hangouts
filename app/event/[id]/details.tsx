@@ -299,18 +299,21 @@ export default function DetailsScreen() {
       )}
 
       {(!event.notes || event.notes.length === 0) && (
-        <TouchableOpacity 
-          style={styles.emptyNotesContainer}
-          onPress={() => setShowNotes(true)}
-        >
-          <BlurView intensity={60} tint="light" style={styles.emptyNotesCard}>
-            <View style={styles.emptyNotesContent}>
-              <Ionicons name="document-text-outline" size={18} color={Colors.secondary} />
-              <Text style={styles.emptyNotesText}>Add/View Notes</Text>
-              <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
-            </View>
-          </BlurView>
-        </TouchableOpacity>
+        <View style={styles.notesSection}>
+          <View style={styles.notesSectionHeader}>
+            <Text style={styles.notesSectionTitle}>Notes</Text>
+            <TouchableOpacity 
+              style={styles.addNotesButton}
+              onPress={() => setShowNotes(true)}
+            >
+              <Ionicons name="add" size={16} color={Colors.secondary} />
+              <Text style={styles.addNotesText}>Add/View</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.emptyNotesPlaceholder}>
+            <Text style={styles.emptyNotesPlaceholderText}>No Notes Yet</Text>
+          </View>
+        </View>
       )}
 
       <BlurView intensity={60} tint="light" style={styles.hostCard}>
