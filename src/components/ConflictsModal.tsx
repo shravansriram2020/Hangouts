@@ -126,9 +126,6 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 
   return (
     <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
-      <Text style={styles.headerSubtitle}>
-        Report and vote on conflicts for this event
-      </Text>
       <ScrollView style={styles.content}>
             {showCreateConflict ? (
               <View style={styles.createForm}>

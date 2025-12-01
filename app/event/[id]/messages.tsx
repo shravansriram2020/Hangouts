@@ -11,6 +11,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../../constants/theme';
@@ -173,13 +174,18 @@ export default function MessagesScreen() {
     );
   };
 
+  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
+    ? [event.gradient_color1, event.gradient_color2]
+    : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={120}
-    >
-      <FlatList
+    <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <KeyboardAvoidingView 
+        style={styles.innerContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={120}
+      >
+        <FlatList
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
@@ -230,12 +236,16 @@ export default function MessagesScreen() {
           Hangouts can detect messages that suggest a new location or time and add them as conflicts.
         </Text>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  innerContainer: {
     flex: 1,
   },
   messagesList: {
