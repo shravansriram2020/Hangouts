@@ -60,6 +60,7 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
   };
 
   const otherAttendees = attendees?.filter((a: any) => true) || [];
+  const hasAttendees = attendees && attendees.length > 0;
 
   return (
     <GlassModal visible={visible} onClose={handleClose} title="Request Payment" fullHeight>
@@ -71,8 +72,9 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
               selectedValue={selectedOwer}
               onValueChange={setSelectedOwer}
               style={styles.picker}
+              enabled={hasAttendees}
             >
-              <Picker.Item label="Select a person" value="" />
+              <Picker.Item label={hasAttendees ? "Select a person" : "No attendees added"} value="" />
               {otherAttendees.map((attendee: any) => (
                 <Picker.Item
                   key={attendee.id}
@@ -93,6 +95,7 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
             keyboardType="decimal-pad"
             placeholder="0.00"
             placeholderTextColor={Colors.grayMedium}
+            editable={hasAttendees}
           />
         </View>
 
@@ -104,6 +107,7 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
             onChangeText={setDescription}
             placeholder="e.g., dinner split, gas money..."
             placeholderTextColor={Colors.grayMedium}
+            editable={hasAttendees}
           />
         </View>
 
@@ -115,8 +119,9 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, !hasAttendees && styles.submitButtonDisabled]}
             onPress={handleCreateRequest}
+            disabled={!hasAttendees}
           >
             <Text style={styles.submitButtonText}>Send Request</Text>
           </TouchableOpacity>
@@ -181,7 +186,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.5,
+    backgroundColor: Colors.grayMedium,
   },
   submitButtonText: {
     fontSize: 13,

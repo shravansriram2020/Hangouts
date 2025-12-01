@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Image,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/theme';
@@ -21,6 +22,7 @@ interface Props {
   attendees: any[];
   onEventDeleted: () => void;
   onAttendeeRemoved: () => void;
+  onGradientChange?: () => void;
 }
 
 export default function OptionsMenu({
@@ -31,9 +33,24 @@ export default function OptionsMenu({
   attendees,
   onEventDeleted,
   onAttendeeRemoved,
+  onGradientChange,
 }: Props) {
   const [showRemoveAttendee, setShowRemoveAttendee] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const slideAnim = useRef(new Animated.Value(400)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 10,
+      }).start();
+    } else {
+      slideAnim.setValue(400);
+    }
+  }, [visible]);
 
   const handleDeleteEvent = async () => {
     Alert.alert(
@@ -87,31 +104,61 @@ export default function OptionsMenu({
     <>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <TouchableOpacity style={styles.overlay} onPress={onClose} activeOpacity={1}>
-          <TouchableOpacity style={styles.menuContainer} onPress={() => {}} activeOpacity={1}>
-            {isHost && (
-              <>
-                {attendees.length > 0 && (
+          <Animated.View 
+            style={[styles.menuContainer, { transform: [{ translateY: slideAnim }] }]} 
+            onTouchEnd={() => {}}
+          >
+            <TouchableOpacity onPress={() => {}} activeOpacity={1}>
+              {isHost && (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.menuItem,
+                      attendees.length === 0 && styles.menuItemDisabled,
+                    ]}
+                    onPress={() => setShowRemoveAttendee(true)}
+                    disabled={attendees.length === 0}
+                  >
+                    <Ionicons 
+                      name="person-remove-outline" 
+                      size={18} 
+                      color={attendees.length === 0 ? Colors.grayMedium : Colors.secondary} 
+                    />
+                    <Text 
+                      style={[
+                        styles.menuItemText,
+                        attendees.length === 0 && styles.menuItemTextDisabled,
+                      ]}
+                    >
+                      Remove Attendees
+                    </Text>
+                  </TouchableOpacity>
+                  
                   <TouchableOpacity
                     style={styles.menuItem}
-                    onPress={() => setShowRemoveAttendee(true)}
+                    onPress={() => {
+                      onClose();
+                      onGradientChange?.();
+                    }}
                   >
-                    <Ionicons name="person-remove-outline" size={18} color={Colors.secondary} />
-                    <Text style={styles.menuItemText}>Remove Attendees</Text>
+                    <Ionicons name="color-palette-outline" size={18} color={Colors.secondary} />
+                    <Text style={styles.menuItemText}>Change Background</Text>
                   </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.menuItem, styles.menuItemDanger]}
-                  onPress={() => {
-                    onClose();
-                    handleDeleteEvent();
-                  }}
-                >
-                  <Ionicons name="trash-outline" size={18} color={Colors.red} />
-                  <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Event</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.menuItem, styles.menuItemDanger]}
+                    onPress={() => {
+                      onClose();
+                      handleDeleteEvent();
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={Colors.red} />
+                    <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Event</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
 
@@ -198,6 +245,12 @@ const styles = StyleSheet.create({
   },
   menuItemTextDanger: {
     color: Colors.red,
+  },
+  menuItemDisabled: {
+    opacity: 0.5,
+  },
+  menuItemTextDisabled: {
+    color: Colors.grayMedium,
   },
   removeAttendeeModal: {
     flex: 1,

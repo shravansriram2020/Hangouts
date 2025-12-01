@@ -25,6 +25,7 @@ import OptionsMenu from '../../../src/components/OptionsMenu';
 import RSVPDropdown from '../../../src/components/RSVPDropdown';
 import CreateRideModal from '../../../src/components/CreateRideModal';
 import CreateMoneyModal from '../../../src/components/CreateMoneyModal';
+import CreateConflictsModal from '../../../src/components/CreateConflictsModal';
 
 const STICKY_COLORS = [
   Colors.stickyYellow,
@@ -50,6 +51,7 @@ export default function DetailsScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showCreateRide, setShowCreateRide] = useState(false);
   const [showCreateMoney, setShowCreateMoney] = useState(false);
+  const [showCreateConflicts, setShowCreateConflicts] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
