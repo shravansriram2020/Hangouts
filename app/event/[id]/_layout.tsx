@@ -36,8 +36,8 @@ function EventLayoutContent() {
     router.replace(`/event/${id}/${tabKey}`);
   };
 
-  const gradientStart = event?.gradient_start || '#E8F4FC';
-  const gradientEnd = event?.gradient_end || '#B8E0F7';
+  const gradientStart = event?.gradient_color1 || '#E8F4FC';
+  const gradientEnd = event?.gradient_color2 || '#B8E0F7';
 
   if (loading) {
     return (

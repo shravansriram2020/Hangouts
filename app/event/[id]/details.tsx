@@ -98,8 +98,8 @@ export default function DetailsScreen() {
       <View style={styles.mainCard}>
         <View style={styles.headerRow}>
           <View style={styles.eventImageContainer}>
-            {event.image_url ? (
-              <Image source={{ uri: event.image_url }} style={styles.eventImage} />
+            {event.event_image ? (
+              <Image source={{ uri: event.event_image }} style={styles.eventImage} />
             ) : (
               <View style={styles.eventImagePlaceholder}>
                 <Ionicons name="calendar" size={40} color={Colors.primary} />
@@ -129,15 +129,15 @@ export default function DetailsScreen() {
 
         <View style={styles.hostSection}>
           <View style={styles.hostAvatar}>
-            {event.host_profile_image ? (
-              <Image source={{ uri: event.host_profile_image }} style={styles.hostAvatarImage} />
+            {event.host_photo ? (
+              <Image source={{ uri: event.host_photo }} style={styles.hostAvatarImage} />
             ) : (
               <Text style={styles.hostAvatarInitial}>
-                {event.host_name?.charAt(0).toUpperCase() || 'H'}
+                {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
               </Text>
             )}
           </View>
-          <Text style={styles.hostName}>{event.host_name || 'Host'}</Text>
+          <Text style={styles.hostName}>{event.host_first_name || 'Host'}</Text>
         </View>
 
         <TouchableOpacity 
@@ -182,11 +182,13 @@ export default function DetailsScreen() {
             </TouchableOpacity>
           </View>
           
-          {event.notes ? (
-            <View style={styles.stickyNote}>
-              <Text style={styles.stickyNoteText}>{event.notes}</Text>
-              <Text style={styles.stickyNoteAuthor}>- {event.host_name}</Text>
-            </View>
+          {event.notes && Array.isArray(event.notes) && event.notes.length > 0 ? (
+            event.notes.slice(0, 2).map((note: any) => (
+              <View key={note.id} style={styles.stickyNote}>
+                <Text style={styles.stickyNoteText}>{note.content}</Text>
+                <Text style={styles.stickyNoteAuthor}>- {note.first_name || 'Anonymous'}</Text>
+              </View>
+            ))
           ) : (
             <Text style={styles.noNotesText}>
               No notes yet. Tap "Add Note" to create one!
@@ -196,19 +198,19 @@ export default function DetailsScreen() {
 
         <View style={styles.hostFooter}>
           <View style={styles.hostFooterAvatar}>
-            {event.host_profile_image ? (
-              <Image source={{ uri: event.host_profile_image }} style={styles.hostFooterAvatarImage} />
+            {event.host_photo ? (
+              <Image source={{ uri: event.host_photo }} style={styles.hostFooterAvatarImage} />
             ) : (
               <View style={styles.hostFooterAvatarPlaceholder}>
                 <Text style={styles.hostFooterAvatarInitial}>
-                  {event.host_name?.charAt(0).toUpperCase() || 'H'}
+                  {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
                 </Text>
               </View>
             )}
           </View>
           <View>
             <Text style={styles.hostFooterLabel}>Host</Text>
-            <Text style={styles.hostFooterName}>{event.host_name}</Text>
+            <Text style={styles.hostFooterName}>{event.host_first_name}</Text>
           </View>
         </View>
       </View>
@@ -227,15 +229,15 @@ export default function DetailsScreen() {
         visible={showConflicts}
         onClose={() => setShowConflicts(false)}
         eventId={event.id}
+        isHost={event.isHost}
         onConflictUpdate={fetchConflictCount}
       />
       <NotesModal
         visible={showNotes}
         onClose={() => setShowNotes(false)}
         eventId={event.id}
-        initialNotes={event.notes || ''}
-        isHost={user?.id === event.host_id}
-        onSave={refreshEvent}
+        notes={event.notes || []}
+        onNoteAdded={refreshEvent}
       />
     </ScrollView>
   );

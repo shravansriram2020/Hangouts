@@ -2,6 +2,29 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
 
+interface Note {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  first_name: string;
+  profile_photo?: string;
+}
+
+interface Attendee {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_photo?: string;
+  status: string;
+  is_on_my_way: boolean;
+  location_sharing: boolean;
+  current_lat?: number;
+  current_lng?: number;
+}
+
 interface EventData {
   id: string;
   title: string;
@@ -13,14 +36,16 @@ interface EventData {
   location_lat: number | null;
   location_lng: number | null;
   host_id: string;
-  host_name: string;
+  host_first_name: string;
+  host_last_name: string;
   host_username: string;
-  host_profile_image?: string;
-  gradient_start: string;
-  gradient_end: string;
-  image_url: string | null;
-  notes: string | null;
-  attendees: any[];
+  host_photo?: string;
+  gradient_color1: string;
+  gradient_color2: string;
+  event_image: string | null;
+  notes: Note[];
+  attendees: Attendee[];
+  isHost: boolean;
 }
 
 interface EventContextType {

@@ -18,17 +18,17 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
-  isHost: boolean;
-  onEventUpdated: () => void;
+  isHost?: boolean;
+  onConflictUpdate?: () => void;
 }
 
 const CONFLICT_TYPES = [
   { id: 'time', label: 'Time Conflict', icon: 'time-outline', color: Colors.blue },
   { id: 'location', label: 'Location Conflict', icon: 'location-outline', color: Colors.green },
-  { id: 'other', label: 'Other', icon: 'alert-triangle', color: Colors.yellow },
+  { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, isHost, onEventUpdated }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [showCreateConflict, setShowCreateConflict] = useState(false);
@@ -110,7 +110,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onEv
           try {
             await api.put(`/conflicts/${conflictId}/resolve`, {});
             fetchConflicts();
-            onEventUpdated();
+            onConflictUpdate?.();
           } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to resolve conflict');
           }
