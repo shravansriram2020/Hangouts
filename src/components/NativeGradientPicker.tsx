@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +39,11 @@ export const GRADIENT_PRESETS: GradientPreset[] = [
   { name: 'Coral', color1: '#FB7185', color2: '#F472B6' },
 ];
 
+const QUICK_COLORS = [
+  '#000000', '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
+  '#F97316', '#EC4899', '#A855F7', '#6366F1', '#8B5CF6',
+];
+
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -53,179 +59,214 @@ export default function NativeGradientPicker({
   onSelect,
   selectedColor1,
   selectedColor2,
-  title = 'Choose Background',
+  title = 'Custom Background Gradient',
 }: Props) {
-  const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [customColor1, setCustomColor1] = useState(selectedColor1 || '#D4EDFC');
-  const [customColor2, setCustomColor2] = useState(selectedColor2 || '#A8D8F0');
-  const [activeColorPicker, setActiveColorPicker] = useState<1 | 2>(1);
+  const [color1, setColor1] = useState(selectedColor1 || '');
+  const [color2, setColor2] = useState(selectedColor2 || '');
+  const [activeColorPicker, setActiveColorPicker] = useState<1 | 2 | null>(null);
+  const [tempColor, setTempColor] = useState('#3B82F6');
 
-  const handleSelect = (preset: GradientPreset) => {
+  const handleColorFieldPress = (field: 1 | 2) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    onSelect(preset.color1, preset.color2);
-    onClose();
+    setTempColor(field === 1 ? (color1 || '#3B82F6') : (color2 || '#3B82F6'));
+    setActiveColorPicker(field);
   };
 
-  const handleCustomSelect = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    onSelect(customColor1, customColor2);
-    setShowCustomPicker(false);
-    onClose();
-  };
-
-  const isSelected = (preset: GradientPreset) => {
-    return selectedColor1 === preset.color1 && selectedColor2 === preset.color2;
-  };
-
-  const isCustomSelected = () => {
-    return !GRADIENT_PRESETS.some(p => p.color1 === selectedColor1 && p.color2 === selectedColor2);
-  };
-
-  const handleColorChange = (color: string) => {
+  const handleColorConfirm = () => {
     if (activeColorPicker === 1) {
-      setCustomColor1(color);
-    } else {
-      setCustomColor2(color);
+      setColor1(tempColor);
+    } else if (activeColorPicker === 2) {
+      setColor2(tempColor);
     }
+    setActiveColorPicker(null);
+  };
+
+  const handleQuickColorSelect = (selectedColor: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setTempColor(selectedColor);
+  };
+
+  const handleApply = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    if (color1 && color2) {
+      onSelect(color1, color2);
+    } else {
+      onSelect('#D4EDFC', '#A8D8F0');
+    }
+    onClose();
+  };
+
+  const handlePresetSelect = (preset: GradientPreset) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setColor1(preset.color1);
+    setColor2(preset.color2);
+  };
+
+  const handleClear = () => {
+    setColor1('');
+    setColor2('');
   };
 
   if (!visible) return null;
 
   return (
     <>
-      <Modal visible={visible && !showCustomPicker} transparent animationType="fade" onRequestClose={onClose}>
-        <TouchableOpacity style={styles.overlay} onPress={onClose} activeOpacity={1}>
-          <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
+      <Modal visible={visible && activeColorPicker === null} transparent animationType="slide" onRequestClose={onClose}>
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
             <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                 <Ionicons name="close" size={24} color={Colors.secondary} />
               </TouchableOpacity>
-            </View>
-            
-            <ScrollView 
-              style={styles.scrollView} 
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.gridContainer}
-            >
-              {GRADIENT_PRESETS.map((preset) => (
-                <TouchableOpacity
-                  key={preset.name}
-                  style={styles.gradientOption}
-                  onPress={() => handleSelect(preset)}
-                >
-                  <LinearGradient
-                    colors={[preset.color1, preset.color2]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.gradientPreview,
-                      isSelected(preset) && styles.gradientSelected,
-                    ]}
-                  >
-                    {isSelected(preset) && (
-                      <Ionicons name="checkmark-circle" size={28} color="#FFFFFF" />
-                    )}
-                  </LinearGradient>
-                  <Text style={[
-                    styles.gradientName,
-                    isSelected(preset) && styles.gradientNameSelected,
-                  ]}>
-                    {preset.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-
-              <TouchableOpacity
-                style={styles.gradientOption}
-                onPress={() => {
-                  if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setCustomColor1(selectedColor1 || '#D4EDFC');
-                  setCustomColor2(selectedColor2 || '#A8D8F0');
-                  setShowCustomPicker(true);
-                }}
-              >
-                <View style={[styles.customPreview, isCustomSelected() && styles.gradientSelected]}>
-                  <LinearGradient
-                    colors={[selectedColor1 || '#D4EDFC', selectedColor2 || '#A8D8F0']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.customGradientInner}
-                  >
-                    <Ionicons name="color-palette" size={28} color="#FFFFFF" />
-                  </LinearGradient>
-                </View>
-                <Text style={[styles.gradientName, isCustomSelected() && styles.gradientNameSelected]}>
-                  Custom
-                </Text>
+              <Text style={styles.title}>{title}</Text>
+              <TouchableOpacity onPress={handleApply} style={styles.applyButton}>
+                <Text style={styles.applyButtonText}>Apply</Text>
               </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              {(color1 && color2) && (
+                <LinearGradient
+                  colors={[color1, color2]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.previewGradient}
+                >
+                  <Text style={styles.previewText}>Preview</Text>
+                </LinearGradient>
+              )}
+
+              <View style={styles.colorFieldsContainer}>
+                <View style={styles.colorFieldWrapper}>
+                  <Text style={styles.colorFieldLabel}>Color 1</Text>
+                  <TouchableOpacity 
+                    style={[
+                      styles.colorField, 
+                      color1 ? { backgroundColor: color1 } : styles.colorFieldEmpty
+                    ]}
+                    onPress={() => handleColorFieldPress(1)}
+                  >
+                    {!color1 && (
+                      <Ionicons name="add" size={24} color={Colors.gray} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.colorFieldWrapper}>
+                  <Text style={styles.colorFieldLabel}>Color 2</Text>
+                  <TouchableOpacity 
+                    style={[
+                      styles.colorField, 
+                      color2 ? { backgroundColor: color2 } : styles.colorFieldEmpty
+                    ]}
+                    onPress={() => handleColorFieldPress(2)}
+                  >
+                    {!color2 && (
+                      <Ionicons name="add" size={24} color={Colors.gray} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text style={styles.hintText}>
+                Leave empty to use the default gradient. Both colors must be selected to apply custom gradient.
+              </Text>
+
+              {(color1 || color2) && (
+                <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+                  <Text style={styles.clearButtonText}>Clear Colors</Text>
+                </TouchableOpacity>
+              )}
+
+              <Text style={styles.sectionTitle}>Preset Gradients</Text>
+              <View style={styles.presetsGrid}>
+                {GRADIENT_PRESETS.map((preset) => (
+                  <TouchableOpacity
+                    key={preset.name}
+                    style={styles.presetItem}
+                    onPress={() => handlePresetSelect(preset)}
+                  >
+                    <LinearGradient
+                      colors={[preset.color1, preset.color2]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.presetGradient,
+                        (color1 === preset.color1 && color2 === preset.color2) && styles.presetSelected
+                      ]}
+                    >
+                      {(color1 === preset.color1 && color2 === preset.color2) && (
+                        <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                      )}
+                    </LinearGradient>
+                    <Text style={styles.presetName}>{preset.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
-      <Modal visible={showCustomPicker} transparent animationType="slide" onRequestClose={() => setShowCustomPicker(false)}>
-        <View style={styles.customPickerOverlay}>
-          <View style={styles.customPickerContainer}>
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => setShowCustomPicker(false)} style={styles.backButton}>
-                <Ionicons name="chevron-back" size={24} color={Colors.secondary} />
-              </TouchableOpacity>
-              <Text style={styles.title}>Custom Gradient</Text>
-              <TouchableOpacity onPress={handleCustomSelect} style={styles.doneButton}>
-                <Text style={styles.doneButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
+      <Modal 
+        visible={activeColorPicker !== null} 
+        animationType="slide" 
+        presentationStyle="pageSheet"
+        onRequestClose={() => setActiveColorPicker(null)}
+      >
+        <SafeAreaView style={styles.colorPickerModal}>
+          <View style={styles.colorPickerHeader}>
+            <TouchableOpacity onPress={() => setActiveColorPicker(null)} style={styles.cancelButton}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.colorPickerTitle}>Colors</Text>
+            <TouchableOpacity onPress={handleColorConfirm} style={styles.doneButton}>
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
 
-            <LinearGradient
-              colors={[customColor1, customColor2]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.gradientPreviewLarge}
-            >
-              <Text style={styles.previewText}>Preview</Text>
-            </LinearGradient>
+          <View style={styles.selectedColorPreview}>
+            <View style={[styles.selectedColorBox, { backgroundColor: tempColor }]} />
+            <Text style={styles.selectedColorHex}>{tempColor.toUpperCase()}</Text>
+          </View>
 
-            <View style={styles.colorSelectorsRow}>
-              <TouchableOpacity 
-                style={[styles.colorSelectorButton, activeColorPicker === 1 && styles.colorSelectorActive]}
-                onPress={() => setActiveColorPicker(1)}
-              >
-                <View style={[styles.colorSwatch, { backgroundColor: customColor1 }]} />
-                <Text style={[styles.colorSelectorLabel, activeColorPicker === 1 && styles.colorSelectorLabelActive]}>
-                  Top Color
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.colorSelectorButton, activeColorPicker === 2 && styles.colorSelectorActive]}
-                onPress={() => setActiveColorPicker(2)}
-              >
-                <View style={[styles.colorSwatch, { backgroundColor: customColor2 }]} />
-                <Text style={[styles.colorSelectorLabel, activeColorPicker === 2 && styles.colorSelectorLabelActive]}>
-                  Bottom Color
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.colorPickerContainer}>
+            <ColorPicker
+              color={tempColor}
+              onColorChangeComplete={setTempColor}
+              thumbSize={30}
+              sliderSize={30}
+              noSnap={true}
+              row={false}
+              swatches={false}
+            />
+          </View>
 
-            <View style={styles.colorPickerWrapper}>
-              <ColorPicker
-                color={activeColorPicker === 1 ? customColor1 : customColor2}
-                onColorChangeComplete={handleColorChange}
-                thumbSize={30}
-                sliderSize={30}
-                noSnap={true}
-                row={false}
-                swatches={false}
-              />
+          <View style={styles.quickColorsSection}>
+            <Text style={styles.quickColorsLabel}>Quick Colors</Text>
+            <View style={styles.quickColorsRow}>
+              {QUICK_COLORS.map((qc) => (
+                <TouchableOpacity
+                  key={qc}
+                  style={[
+                    styles.quickColorButton,
+                    { backgroundColor: qc },
+                    tempColor.toLowerCase() === qc.toLowerCase() && styles.quickColorSelected
+                  ]}
+                  onPress={() => handleQuickColorSelect(qc)}
+                />
+              ))}
             </View>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -238,114 +279,48 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 16,
-    paddingBottom: 50,
-    maxHeight: '80%',
+    backgroundColor: '#F5F5F7',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   title: {
-    fontSize: 20,
-    fontFamily: Fonts.bold,
+    fontSize: 17,
+    fontFamily: Fonts.semiBold,
     color: Colors.secondary,
-    flex: 1,
-    textAlign: 'center',
   },
   closeButton: {
     padding: 4,
   },
-  backButton: {
+  applyButton: {
     padding: 4,
   },
-  doneButton: {
-    padding: 4,
-  },
-  doneButtonText: {
-    fontSize: 16,
+  applyButtonText: {
+    fontSize: 17,
     fontFamily: Fonts.semiBold,
-    color: Colors.primary,
+    color: '#007AFF',
   },
-  scrollView: {
-    flex: 1,
+  content: {
+    padding: 20,
   },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  gradientOption: {
-    width: '30%',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  gradientPreview: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 16,
+  previewGradient: {
+    height: 100,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  gradientSelected: {
-    borderWidth: 3,
-    borderColor: Colors.white,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  gradientName: {
-    marginTop: 8,
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-    color: Colors.gray,
-    textAlign: 'center',
-  },
-  gradientNameSelected: {
-    color: Colors.secondary,
-    fontFamily: Fonts.semiBold,
-  },
-  customPreview: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: Colors.grayLight,
-    borderStyle: 'dashed',
-    overflow: 'hidden',
-  },
-  customGradientInner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  customPickerOverlay: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  customPickerContainer: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
-  },
-  gradientPreviewLarge: {
-    height: 120,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   previewText: {
     fontSize: 18,
@@ -355,43 +330,187 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  colorSelectorsRow: {
+  colorFieldsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-    marginBottom: 24,
-    paddingHorizontal: 20,
+    gap: 16,
+    marginBottom: 12,
   },
-  colorSelectorButton: {
+  colorFieldWrapper: {
+    flex: 1,
+  },
+  colorFieldLabel: {
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
+    marginBottom: 8,
+  },
+  colorField: {
+    height: 56,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  colorFieldEmpty: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E5EA',
+    borderStyle: 'dashed',
+  },
+  hintText: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  clearButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  clearButtonText: {
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: '#FF3B30',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginBottom: 12,
+  },
+  presetsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingBottom: 40,
+  },
+  presetItem: {
+    width: (SCREEN_WIDTH - 40 - 36) / 4,
+    alignItems: 'center',
+  },
+  presetGradient: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  presetSelected: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  presetName: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  colorPickerModal: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  colorPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  colorPickerTitle: {
+    fontSize: 17,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+  },
+  cancelButton: {
+    padding: 4,
+  },
+  cancelButtonText: {
+    fontSize: 17,
+    fontFamily: Fonts.regular,
+    color: '#007AFF',
+  },
+  doneButton: {
+    padding: 4,
+  },
+  doneButtonText: {
+    fontSize: 17,
+    fontFamily: Fonts.semiBold,
+    color: '#007AFF',
+  },
+  selectedColorPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
     borderRadius: 12,
-    backgroundColor: Colors.grayLight,
-    gap: 10,
+    gap: 12,
   },
-  colorSelectorActive: {
-    backgroundColor: Colors.secondary,
+  selectedColorBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
   },
-  colorSwatch: {
-    width: 24,
-    height: 24,
+  selectedColorHex: {
+    fontSize: 17,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
+  },
+  colorPickerContainer: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 20,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.white,
+    height: 300,
   },
-  colorSelectorLabel: {
-    fontSize: 14,
+  quickColorsSection: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  quickColorsLabel: {
+    fontSize: 13,
     fontFamily: Fonts.medium,
     color: Colors.gray,
+    marginBottom: 12,
   },
-  colorSelectorLabelActive: {
-    color: Colors.white,
+  quickColorsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  colorPickerWrapper: {
-    flex: 1,
-    paddingHorizontal: 30,
-    paddingBottom: 40,
+  quickColorButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  quickColorSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 3,
   },
 });
