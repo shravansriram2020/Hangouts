@@ -6,9 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -34,12 +36,14 @@ const moneyImage = require('../../../attached_assets/7630510_1756853409509_17645
 export default function DetailsScreen() {
   const { event, loading, error, refreshEvent } = useEvent();
   const { user } = useAuth();
+  const router = useRouter();
   
   const [showRides, setShowRides] = useState(false);
   const [showMoney, setShowMoney] = useState(false);
   const [showConflicts, setShowConflicts] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (event?.id) {
@@ -75,6 +79,31 @@ export default function DetailsScreen() {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  const handleDeleteEvent = async () => {
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await api.delete(`/events/${event?.id}`);
+              router.replace('/');
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete event');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -104,6 +133,8 @@ export default function DetailsScreen() {
       </View>
     );
   }
+
+  const isHost = event.host_id === user?.id;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -136,59 +167,40 @@ export default function DetailsScreen() {
         </View>
       </BlurView>
 
-      <BlurView intensity={60} tint="light" style={styles.hostCard}>
-        <View style={styles.hostContent}>
-          <View style={styles.hostAvatar}>
-            {event.host_photo ? (
-              <Image source={{ uri: event.host_photo }} style={styles.hostAvatarImage} />
-            ) : (
-              <View style={styles.hostAvatarPlaceholder}>
-                <Text style={styles.hostAvatarInitial}>
-                  {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.hostInfo}>
-            <Text style={styles.hostLabel}>HOST</Text>
-            <Text style={styles.hostName}>{event.host_first_name}</Text>
-          </View>
-        </View>
-      </BlurView>
-
       <Text style={styles.sectionTitle}>Attending</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.attendeesScroll}
-        contentContainerStyle={styles.attendeesContent}
-      >
-        {event.attendees && event.attendees.length > 0 ? (
-          event.attendees.map((attendee: any) => (
-            <View key={attendee.id} style={styles.attendeeItem}>
+      <View style={styles.attendeesContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.attendeesContent}
+        >
+          {event.attendees && event.attendees.length > 0 ? (
+            event.attendees.map((attendee: any) => (
+              <View key={attendee.id} style={styles.attendeeItem}>
+                <View style={styles.attendeeAvatar}>
+                  {attendee.profile_photo ? (
+                    <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
+                  ) : (
+                    <View style={styles.attendeePlaceholder}>
+                      <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.attendeeName} numberOfLines={1}>{attendee.first_name}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={styles.attendeeItem}>
               <View style={styles.attendeeAvatar}>
-                {attendee.profile_photo ? (
-                  <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
-                ) : (
-                  <View style={styles.attendeePlaceholder}>
-                    <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
-                  </View>
-                )}
+                <View style={styles.attendeePlaceholder}>
+                  <Text style={styles.attendeeInitial}>?</Text>
+                </View>
               </View>
-              <Text style={styles.attendeeName} numberOfLines={1}>{attendee.first_name}</Text>
+              <Text style={styles.attendeeName}>No attendees</Text>
             </View>
-          ))
-        ) : (
-          <View style={styles.attendeeItem}>
-            <View style={styles.attendeeAvatar}>
-              <View style={styles.attendeePlaceholder}>
-                <Text style={styles.attendeeInitial}>?</Text>
-              </View>
-            </View>
-            <Text style={styles.attendeeName}>No attendees</Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
+      </View>
 
       <View style={styles.actionCardsRow}>
         <TouchableOpacity 
@@ -249,18 +261,24 @@ export default function DetailsScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.notesScrollContent}
           >
-            {event.notes.map((note: any, index: number) => (
-              <View 
-                key={note.id} 
-                style={[
-                  styles.stickyNote, 
-                  { backgroundColor: STICKY_COLORS[index % STICKY_COLORS.length] }
-                ]}
-              >
-                <Text style={styles.stickyNoteText} numberOfLines={5}>{note.content}</Text>
-                <Text style={styles.stickyNoteAuthor}>- {note.first_name || 'Anonymous'}</Text>
-              </View>
-            ))}
+            {event.notes.map((note: any, index: number) => {
+              const rotation = (index % 2 === 0 ? -3 : 3) + Math.random() * 2 - 1;
+              return (
+                <View 
+                  key={note.id} 
+                  style={[
+                    styles.stickyNote, 
+                    { 
+                      backgroundColor: STICKY_COLORS[index % STICKY_COLORS.length],
+                      transform: [{ rotate: `${rotation}deg` }],
+                    }
+                  ]}
+                >
+                  <Text style={styles.stickyNoteText} numberOfLines={5}>{note.content}</Text>
+                  <Text style={styles.stickyNoteAuthor}>- {note.first_name || 'Anonymous'}</Text>
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       )}
@@ -277,6 +295,39 @@ export default function DetailsScreen() {
               <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
             </View>
           </BlurView>
+        </TouchableOpacity>
+      )}
+
+      <BlurView intensity={60} tint="light" style={styles.hostCard}>
+        <View style={styles.hostContent}>
+          <View style={styles.hostAvatar}>
+            {event.host_photo ? (
+              <Image source={{ uri: event.host_photo }} style={styles.hostAvatarImage} />
+            ) : (
+              <View style={styles.hostAvatarPlaceholder}>
+                <Text style={styles.hostAvatarInitial}>
+                  {event.host_first_name?.charAt(0).toUpperCase() || 'H'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.hostInfo}>
+            <Text style={styles.hostLabel}>HOST</Text>
+            <Text style={styles.hostName}>{event.host_first_name}</Text>
+          </View>
+        </View>
+      </BlurView>
+
+      {isHost && (
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={handleDeleteEvent}
+          disabled={deleting}
+        >
+          <Ionicons name="trash-outline" size={18} color={Colors.red} />
+          <Text style={styles.deleteButtonText}>
+            {deleting ? 'Deleting...' : 'Delete Event'}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -435,25 +486,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginLeft: 4,
   },
-  attendeesScroll: {
+  attendeesContainer: {
+    alignItems: 'center',
     marginBottom: 16,
   },
   attendeesContent: {
     paddingHorizontal: 4,
+    justifyContent: 'center',
   },
   attendeeItem: {
     alignItems: 'center',
-    marginRight: 16,
-    width: 70,
+    marginRight: 20,
+    width: 80,
   },
   attendeeAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.8)',
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   attendeePhoto: {
     width: '100%',
@@ -497,8 +550,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionImage: {
-    width: 60,
-    height: 60,
+    width: 90,
+    height: 90,
     marginBottom: 8,
     resizeMode: 'contain',
   },
@@ -578,16 +631,17 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   stickyNote: {
-    width: 140,
-    height: 140,
-    borderRadius: 8,
+    width: 130,
+    height: 130,
+    borderRadius: 4,
     padding: 12,
-    marginRight: 12,
+    marginRight: 16,
+    marginVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   stickyNoteText: {
     flex: 1,
@@ -661,5 +715,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 8,
+    gap: 8,
+  },
+  deleteButtonText: {
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.red,
   },
 });

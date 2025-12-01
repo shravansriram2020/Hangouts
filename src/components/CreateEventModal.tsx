@@ -94,8 +94,9 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.5,
       base64: true,
+      exif: false,
     });
 
     if (!result.canceled && result.assets[0].base64) {

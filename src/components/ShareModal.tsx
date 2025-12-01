@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   Share,
   TextInput,
   Alert,
+  Image,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
+import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 
 interface ShareModalProps {
@@ -20,12 +24,24 @@ interface ShareModalProps {
   eventTitle: string;
 }
 
+interface UserResult {
+  id: string;
+  username: string;
+  firstName: string;
+  profilePhoto: string | null;
+}
+
 const REPLIT_DOMAIN = 'dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev';
 
 export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
   const [activeTab, setActiveTab] = useState<'url' | 'username'>('url');
   const [copied, setCopied] = useState(false);
   const [username, setUsername] = useState('');
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [invitingUser, setInvitingUser] = useState<string | null>(null);
+  
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const eventLink = `https://${REPLIT_DOMAIN}/event/${eventId}`;
 
@@ -59,14 +75,51 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
     }
   };
 
-  const handleInviteByUsername = async () => {
-    if (!username.trim()) {
-      Alert.alert('Error', 'Please enter a username');
+  const searchUsers = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setUserResults([]);
+      setSearchingUsers(false);
       return;
     }
-    Alert.alert('Invite Sent', `Invitation sent to @${username}`);
-    setUsername('');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    setSearchingUsers(true);
+    try {
+      const results = await api.get(`/users/search?q=${encodeURIComponent(query)}`);
+      setUserResults(results);
+    } catch (error) {
+      console.error('User search failed:', error);
+    } finally {
+      setSearchingUsers(false);
+    }
+  }, []);
+
+  const handleUsernameChange = (text: string) => {
+    setUsername(text);
+    
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    
+    searchTimeout.current = setTimeout(() => {
+      searchUsers(text);
+    }, 300);
+  };
+
+  const handleInviteUser = async (user: UserResult) => {
+    setInvitingUser(user.id);
+    try {
+      await api.post(`/events/${eventId}/invite`, { userId: user.id });
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('Invite Sent', `Invitation sent to @${user.username}`);
+      setUserResults(userResults.filter(u => u.id !== user.id));
+      setUsername('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to send invite');
+    } finally {
+      setInvitingUser(null);
+    }
   };
 
   return (
@@ -136,21 +189,54 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
               <TextInput
                 style={styles.usernameInput}
                 value={username}
-                onChangeText={setUsername}
-                placeholder="Enter username..."
+                onChangeText={handleUsernameChange}
+                placeholder="Search by username..."
                 placeholderTextColor={Colors.grayMedium}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              {searchingUsers && (
+                <ActivityIndicator size="small" color={Colors.primary} style={styles.searchLoader} />
+              )}
             </View>
-            <TouchableOpacity 
-              style={[styles.inviteButton, !username.trim() && styles.inviteButtonDisabled]}
-              onPress={handleInviteByUsername}
-              disabled={!username.trim()}
-            >
-              <Ionicons name="paper-plane" size={18} color={Colors.white} />
-              <Text style={styles.inviteButtonText}>Send Invite</Text>
-            </TouchableOpacity>
+            
+            {userResults.length > 0 && (
+              <View style={styles.userResultsList}>
+                {userResults.slice(0, 5).map((user) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={styles.userResultItem}
+                    onPress={() => handleInviteUser(user)}
+                    disabled={invitingUser === user.id}
+                  >
+                    {user.profilePhoto ? (
+                      <Image source={{ uri: user.profilePhoto }} style={styles.userAvatar} />
+                    ) : (
+                      <View style={styles.userAvatarPlaceholder}>
+                        <Text style={styles.userAvatarText}>
+                          {user.username.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.userInfo}>
+                      <Text style={styles.userDisplayName}>{user.firstName}</Text>
+                      <Text style={styles.userUsername}>@{user.username}</Text>
+                    </View>
+                    {invitingUser === user.id ? (
+                      <ActivityIndicator size="small" color={Colors.green} />
+                    ) : (
+                      <View style={styles.inviteIcon}>
+                        <Ionicons name="paper-plane" size={16} color={Colors.white} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            
+            <Text style={styles.helperText}>
+              Start typing a username to search and invite
+            </Text>
           </>
         )}
 
@@ -288,6 +374,70 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  searchLoader: {
+    marginLeft: 8,
+  },
+  userResultsList: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  userResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  userAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userAvatarText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  userDisplayName: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+  },
+  userUsername: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+  },
+  inviteIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.green,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  helperText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   mainShareButton: {
     flexDirection: 'row',

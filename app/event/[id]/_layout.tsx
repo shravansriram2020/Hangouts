@@ -8,11 +8,13 @@ import {
   Animated,
   Share,
   Alert,
+  Platform,
 } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../../constants/theme';
 import { EventProvider, useEvent } from '../../../context/EventContext';
 import LoadingDots from '../../../src/components/LoadingDots';
@@ -74,6 +76,9 @@ function EventLayoutContent() {
 
   const handleTabPress = (tabKey: string) => {
     if (tabKey !== currentTab) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       router.replace(`/event/${id}/${tabKey}`);
     }
   };

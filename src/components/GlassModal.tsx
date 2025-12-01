@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -9,9 +9,11 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
 
 const { width, height } = Dimensions.get('window');
@@ -26,6 +28,41 @@ interface Props {
 
 export default function GlassModal({ visible, onClose, title, children, fullHeight = false }: Props) {
   const modalHeight = fullHeight ? height * 0.85 : height * 0.7;
+  
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    if (visible) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 120,
+          friction: 10,
+        }),
+        Animated.spring(translateYAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 120,
+          friction: 10,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      scaleAnim.setValue(0.8);
+      opacityAnim.setValue(0);
+      translateYAnim.setValue(50);
+    }
+  }, [visible]);
 
   const renderContent = () => (
     <View style={[styles.modalContent, { maxHeight: modalHeight }]}>
@@ -49,34 +86,48 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          activeOpacity={1} 
-          onPress={onClose}
-        />
+        <Animated.View 
+          style={[styles.backdrop, { opacity: opacityAnim }]}
+        >
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={onClose}
+          />
+        </Animated.View>
         
-        {Platform.OS === 'web' ? (
-          <View style={styles.webGlassContainer}>
-            {renderContent()}
-          </View>
-        ) : (
-          <BlurView
-            intensity={90}
-            tint="light"
-            style={styles.blurContainer}
-          >
-            <View style={styles.glassOverlay}>
+        <Animated.View
+          style={{
+            transform: [
+              { scale: scaleAnim },
+              { translateY: translateYAnim },
+            ],
+            opacity: opacityAnim,
+          }}
+        >
+          {Platform.OS === 'web' ? (
+            <View style={styles.webGlassContainer}>
               {renderContent()}
             </View>
-          </BlurView>
-        )}
+          ) : (
+            <BlurView
+              intensity={90}
+              tint="light"
+              style={styles.blurContainer}
+            >
+              <View style={styles.glassOverlay}>
+                {renderContent()}
+              </View>
+            </BlurView>
+          )}
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
