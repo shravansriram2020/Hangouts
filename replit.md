@@ -26,11 +26,16 @@ Preferred communication style: Simple, everyday language.
 app/                    # Expo Router routes only
   _layout.tsx           # Root layout with AuthProvider and fonts
   index.tsx             # Main entry point (auth flow)
-  event/[id].tsx        # Dynamic event detail route
+  event/[id]/           # Event detail with tab-based navigation
+    _layout.tsx         # Tab bar layout with pill navigation
+    details.tsx         # Event details tab (info, attendees, action buttons)
+    messages.tsx        # Chat/messaging tab
+    map.tsx             # TomTom map with live location sharing
+    photos.tsx          # Ephemeral photo album tab
 src/                    # Application code
   screens/              # All screen components
-  components/           # Reusable UI components
-context/                # React Context providers
+  components/           # Reusable UI components (GlassCard, GlassModal, etc.)
+context/                # React Context providers (AuthContext, EventContext)
 services/               # API service layer
 constants/              # Theme, colors, fonts
 server/                 # Express.js backend
@@ -118,10 +123,11 @@ Document databases (MongoDB) were considered but relational model chosen for com
 ### External Dependencies
 
 **Location Services:**
-- TomTom Maps API for location search and POI suggestions
-- expo-location for device GPS access and real-time location updates
-- react-native-maps for map visualization
+- TomTom Maps API for location search, POI suggestions, and map visualization
+- TomTom Maps SDK embedded via iframe (web) and WebView (native) for cross-platform compatibility
+- expo-location for device GPS access and real-time location updates with watchPositionAsync
 - Location permissions: "Always and When in Use" for friend location sharing
+- Live location sharing with continuous background updates
 
 **Image Handling:**
 - expo-image-picker for photo selection from device library

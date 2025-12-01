@@ -20,6 +20,10 @@ export const Colors = {
   blueLight: '#DBEAFE',
   orange: '#F97316',
   stickyNote: '#FEF08A',
+  glass: 'rgba(255, 255, 255, 0.25)',
+  glassLight: 'rgba(255, 255, 255, 0.4)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)',
+  glassOverlay: 'rgba(255, 255, 255, 0.15)',
 };
 
 export const Fonts = {
