@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -120,8 +121,18 @@ export default function DetailsScreen() {
 
   const isHost = event.host_id === user?.id;
 
+  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
+    ? [event.gradient_color1, event.gradient_color2]
+    : ['#1E3A5F', '#2D5A8B'];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <BlurView intensity={60} tint="light" style={styles.headerCard}>
         <View style={styles.headerContent}>
           <View style={styles.headerRow}>
@@ -299,17 +310,16 @@ export default function DetailsScreen() {
             <Text style={styles.hostLabel}>HOST</Text>
             <Text style={styles.hostName}>{event.host_first_name}</Text>
           </View>
+          {isHost && (
+            <TouchableOpacity 
+              style={styles.hostOptionsButton}
+              onPress={() => setShowOptions(true)}
+            >
+              <Ionicons name="ellipsis-vertical" size={18} color={Colors.secondary} />
+            </TouchableOpacity>
+          )}
         </View>
       </BlurView>
-
-      {isHost && (
-        <TouchableOpacity 
-          style={styles.optionsButton}
-          onPress={() => setShowOptions(true)}
-        >
-          <Ionicons name="ellipsis-vertical" size={20} color={Colors.secondary} />
-        </TouchableOpacity>
-      )}
 
       <View style={styles.bottomSpacer} />
 
@@ -368,11 +378,15 @@ export default function DetailsScreen() {
         onEventDeleted={() => router.replace('/')}
         onAttendeeRemoved={refreshEvent}
       />
-    </ScrollView>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
