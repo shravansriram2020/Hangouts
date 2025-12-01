@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 
@@ -29,75 +30,88 @@ export default function EventCard({ event, onPress }: EventCardProps) {
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.dateBox}>
-        <Text style={styles.dateMonth}>{month}</Text>
-        <Text style={styles.dateDay}>{day}</Text>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
-          {isHost && (
-            <View style={styles.hostBadge}>
-              <Ionicons name="ribbon-outline" size={12} color={Colors.secondary} />
-              <Text style={styles.hostText}>Host</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Ionicons name="time-outline" size={14} color={Colors.gray} />
-            <Text style={styles.detailText}>{formatTime(event.event_time)}</Text>
+      <BlurView intensity={60} tint="light" style={styles.blurContainer}>
+        <View style={styles.cardContent}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateMonth}>{month}</Text>
+            <Text style={styles.dateDay}>{day}</Text>
           </View>
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={14} color={Colors.gray} />
-            <Text style={styles.detailText} numberOfLines={1}>
-              {event.location_address || event.location_name || 'TBD'}
-            </Text>
-          </View>
-        </View>
 
-        <View style={styles.footer}>
-          {event.attendees && event.attendees.length > 0 ? (
-            <View style={styles.attendeesRow}>
-              {event.attendees.slice(0, 3).map((attendee: any, index: number) => (
-                <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }]}>
-                  {attendee.profile_photo ? (
-                    <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
-                  ) : (
-                    <View style={[styles.attendeePlaceholder, { backgroundColor: Colors.primary }]}>
-                      <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
-                    </View>
-                  )}
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+              {isHost && (
+                <View style={styles.hostBadge}>
+                  <Ionicons name="ribbon-outline" size={12} color={Colors.secondary} />
+                  <Text style={styles.hostText}>Host</Text>
                 </View>
-              ))}
-              <Text style={styles.attendeeCount}>{event.attendee_count || event.attendees.length} attending</Text>
+              )}
             </View>
-          ) : (
-            <View style={styles.attendeesRow}>
-              <Ionicons name="people-outline" size={14} color={Colors.gray} />
-              <Text style={styles.attendeeCount}>{event.attendee_count || 1} attending</Text>
+
+            <View style={styles.details}>
+              <View style={styles.detailRow}>
+                <Ionicons name="time-outline" size={14} color={Colors.gray} />
+                <Text style={styles.detailText}>{formatTime(event.event_time)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Ionicons name="location-outline" size={14} color={Colors.gray} />
+                <Text style={styles.detailText} numberOfLines={1}>
+                  {event.location_address || event.location_name || 'TBD'}
+                </Text>
+              </View>
             </View>
-          )}
+
+            <View style={styles.footer}>
+              {event.attendees && event.attendees.length > 0 ? (
+                <View style={styles.attendeesRow}>
+                  {event.attendees.slice(0, 3).map((attendee: any, index: number) => (
+                    <View key={attendee.id} style={[styles.attendeeAvatar, { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }]}>
+                      {attendee.profile_photo ? (
+                        <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
+                      ) : (
+                        <View style={[styles.attendeePlaceholder, { backgroundColor: Colors.primary }]}>
+                          <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                  <Text style={styles.attendeeCount}>{event.attendee_count || event.attendees.length} attending</Text>
+                </View>
+              ) : (
+                <View style={styles.attendeesRow}>
+                  <Ionicons name="people-outline" size={14} color={Colors.gray} />
+                  <Text style={styles.attendeeCount}>{event.attendee_count || 1} attending</Text>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
-      </View>
+      </BlurView>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 12,
     marginBottom: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+  },
+  blurContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 12,
   },
   dateBox: {
     width: 50,
@@ -139,12 +153,12 @@ const styles = StyleSheet.create({
   hostBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: Colors.grayLight,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   hostText: {
     fontSize: 10,
@@ -180,7 +194,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     overflow: 'hidden',
   },
   attendeePhoto: {

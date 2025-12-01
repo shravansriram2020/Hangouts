@@ -319,8 +319,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputLabel: {
-    fontSize: 11,
-    color: Colors.gray,
+    fontSize: 12,
+    color: Colors.grayDark,
     fontFamily: 'Prompt-Medium',
     marginBottom: 5,
   },
@@ -334,8 +334,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
   },
   inputHelper: {
-    fontSize: 10,
-    color: Colors.grayMedium,
+    fontSize: 11,
+    color: Colors.gray,
     fontFamily: 'Prompt-Regular',
     marginTop: 3,
   },
@@ -365,8 +365,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Medium',
   },
   switchDescription: {
-    fontSize: 11,
-    color: Colors.gray,
+    fontSize: 12,
+    color: Colors.grayDark,
     fontFamily: 'Prompt-Regular',
   },
   actionButton: {
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 13,
-    color: Colors.primary,
+    color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
     textDecorationLine: 'underline',
     marginBottom: 10,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.secondary,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',

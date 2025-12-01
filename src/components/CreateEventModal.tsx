@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
@@ -284,17 +285,19 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
     <GlassModal visible={visible} onClose={onClose} title="Create New Hangout" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>Hangout Image</Text>
-            <TouchableOpacity style={styles.imageUpload} onPress={handlePickImage}>
-              {eventImage ? (
-                <Image source={{ uri: eventImage }} style={styles.uploadedImage} />
-              ) : (
-                <View style={styles.uploadPlaceholder}>
-                  <Ionicons name="cloud-upload-outline" size={28} color={Colors.grayMedium} />
-                  <Text style={styles.uploadText}>Upload Hangout</Text>
-                  <Text style={styles.uploadText}>Image</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.imageUploadContainer}>
+              <TouchableOpacity style={styles.imageUpload} onPress={handlePickImage}>
+                {eventImage ? (
+                  <Image source={{ uri: eventImage }} style={styles.uploadedImage} />
+                ) : (
+                  <View style={styles.uploadPlaceholder}>
+                    <Ionicons name="cloud-upload-outline" size={28} color={Colors.grayMedium} />
+                    <Text style={styles.uploadText}>Upload Hangout</Text>
+                    <Text style={styles.uploadText}>Image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.sectionTitle}>Hangout Title</Text>
             <TextInput
@@ -334,75 +337,50 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             </View>
 
             {showDatePicker && (
-              <View style={styles.inlinePicker}>
-                <View style={styles.pickerHeader}>
-                  <Text style={styles.pickerTitle}>Select Date</Text>
-                  <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                    <Text style={styles.pickerDone}>Done</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.dateGrid}>
-                  {Array.from({ length: 30 }, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() + i);
-                    const isSelected = eventDate && 
-                      date.toDateString() === eventDate.toDateString();
-                    return (
-                      <TouchableOpacity
-                        key={i}
-                        style={[styles.dateOption, isSelected && styles.dateOptionSelected]}
-                        onPress={() => {
-                          setEventDate(date);
-                          setShowDatePicker(false);
-                        }}
-                      >
-                        <Text style={[styles.dateOptionDay, isSelected && styles.dateOptionTextSelected]}>
-                          {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                        </Text>
-                        <Text style={[styles.dateOptionNum, isSelected && styles.dateOptionTextSelected]}>
-                          {date.getDate()}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
+              <DateTimePicker
+                value={eventDate || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (selectedDate) {
+                    setEventDate(selectedDate);
+                  }
+                  if (Platform.OS === 'android') {
+                    setShowDatePicker(false);
+                  }
+                }}
+                minimumDate={new Date()}
+              />
             )}
 
             {showTimePicker && (
-              <View style={styles.inlinePicker}>
-                <View style={styles.pickerHeader}>
-                  <Text style={styles.pickerTitle}>Select Time</Text>
-                  <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                    <Text style={styles.pickerDone}>Done</Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.timeGrid} horizontal showsHorizontalScrollIndicator={false}>
-                  {Array.from({ length: 48 }, (_, i) => {
-                    const hours = Math.floor(i / 2);
-                    const minutes = (i % 2) * 30;
-                    const time = new Date();
-                    time.setHours(hours, minutes, 0, 0);
-                    const isSelected = eventTime && 
-                      time.getHours() === eventTime.getHours() &&
-                      time.getMinutes() === eventTime.getMinutes();
-                    return (
-                      <TouchableOpacity
-                        key={i}
-                        style={[styles.timeOption, isSelected && styles.timeOptionSelected]}
-                        onPress={() => {
-                          setEventTime(time);
-                          setShowTimePicker(false);
-                        }}
-                      >
-                        <Text style={[styles.timeOptionText, isSelected && styles.timeOptionTextSelected]}>
-                          {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
+              <DateTimePicker
+                value={eventTime || new Date()}
+                mode="time"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedTime) => {
+                  setShowTimePicker(Platform.OS === 'ios');
+                  if (selectedTime) {
+                    setEventTime(selectedTime);
+                  }
+                  if (Platform.OS === 'android') {
+                    setShowTimePicker(false);
+                  }
+                }}
+              />
+            )}
+            
+            {Platform.OS === 'ios' && (showDatePicker || showTimePicker) && (
+              <TouchableOpacity 
+                style={styles.pickerDoneButton}
+                onPress={() => {
+                  setShowDatePicker(false);
+                  setShowTimePicker(false);
+                }}
+              >
+                <Text style={styles.pickerDoneText}>Done</Text>
+              </TouchableOpacity>
             )}
 
             <Text style={styles.sectionTitle}>Location</Text>
@@ -569,9 +547,9 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
                   <ActivityIndicator size="small" color={Colors.white} />
                 ) : (
                   <>
-                    <Ionicons name="add" size={20} color={isFormValid ? Colors.white : Colors.grayMedium} />
+                    <Ionicons name="add" size={16} color={isFormValid ? Colors.white : Colors.grayMedium} />
                     <Text style={[styles.createButtonText, !isFormValid && styles.createButtonTextDisabled]}>
-                      Create Event
+                      Create
                     </Text>
                   </>
                 )}
@@ -608,6 +586,10 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
     marginTop: 16,
+    marginBottom: 8,
+  },
+  imageUploadContainer: {
+    alignItems: 'center',
     marginBottom: 8,
   },
   imageUpload: {
@@ -699,60 +681,17 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
   },
-  pickerDone: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontFamily: 'Prompt-SemiBold',
-  },
-  dateGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  dateOption: {
-    width: 50,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: Colors.grayLight,
-    justifyContent: 'center',
+  pickerDoneButton: {
     alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: Colors.secondary,
+    borderRadius: 10,
+    marginTop: 8,
   },
-  dateOptionSelected: {
-    backgroundColor: Colors.primary,
-  },
-  dateOptionDay: {
-    fontSize: 10,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Medium',
-  },
-  dateOptionNum: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-  },
-  dateOptionTextSelected: {
-    color: Colors.white,
-  },
-  timeGrid: {
-    flexDirection: 'row',
-  },
-  timeOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.grayLight,
-    marginRight: 8,
-  },
-  timeOptionSelected: {
-    backgroundColor: Colors.primary,
-  },
-  timeOptionText: {
+  pickerDoneText: {
     fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-  },
-  timeOptionTextSelected: {
     color: Colors.white,
+    fontFamily: 'Prompt-SemiBold',
   },
   locationInputRow: {
     position: 'relative',
@@ -808,7 +747,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.secondary,
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 12,
@@ -899,26 +838,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 24,
     marginBottom: 24,
-    gap: 12,
+    gap: 10,
   },
   cancelButton: {
     flex: 1,
     backgroundColor: Colors.white,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
   },
   createButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: Colors.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: Colors.secondary,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -926,10 +865,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.grayLight,
   },
   createButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
-    marginLeft: 6,
+    marginLeft: 4,
   },
   createButtonTextDisabled: {
     color: Colors.grayMedium,
