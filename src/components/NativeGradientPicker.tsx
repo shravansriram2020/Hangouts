@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -65,6 +65,13 @@ export default function NativeGradientPicker({
   const [color2, setColor2] = useState(selectedColor2 || '');
   const [activeColorPicker, setActiveColorPicker] = useState<1 | 2 | null>(null);
   const [tempColor, setTempColor] = useState('#3B82F6');
+
+  useEffect(() => {
+    if (visible) {
+      setColor1(selectedColor1 || '');
+      setColor2(selectedColor2 || '');
+    }
+  }, [visible, selectedColor1, selectedColor2]);
 
   const handleColorFieldPress = (field: 1 | 2) => {
     if (Platform.OS !== 'web') {

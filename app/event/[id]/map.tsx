@@ -20,19 +20,6 @@ import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 
-let MapView: any = null;
-let Marker: any = null;
-let Polyline: any = null;
-let Callout: any = null;
-
-if (Platform.OS !== 'web') {
-  const RNMaps = require('react-native-maps');
-  MapView = RNMaps.default;
-  Marker = RNMaps.Marker;
-  Polyline = RNMaps.Polyline;
-  Callout = RNMaps.Callout;
-}
-
 const TOMTOM_API_KEY = process.env.EXPO_PUBLIC_TOMTOM_API_KEY || 'zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -60,9 +47,7 @@ const ROUTE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#E
 export default function MapScreen() {
   const { event } = useEvent();
   const { user } = useAuth();
-  const mapRef = useRef<any>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
-  const isInitialMount = useRef(true);
   
   const [locationSharing, setLocationSharing] = useState(false);
   const [isOnMyWay, setIsOnMyWay] = useState(false);
@@ -332,113 +317,14 @@ export default function MapScreen() {
     );
   };
 
-  const renderNativeMap = () => {
-    if (!MapView) {
-      return renderFallbackMap();
-    }
-
-    return (
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={initialRegion}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
-        mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
-      >
-        <Marker
-          coordinate={{ latitude: eventLat, longitude: eventLng }}
-          anchor={{ x: 0.5, y: 0.5 }}
-        >
-          <View style={styles.eventMarkerContainer}>
-            <View style={styles.eventMarker}>
-              <Ionicons name="location" size={20} color="white" />
-            </View>
-          </View>
-        </Marker>
-
-        {currentLocation && locationSharing && (
-          <Marker
-            coordinate={{ latitude: currentLocation.lat, longitude: currentLocation.lng }}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <View style={styles.userMarkerContainer}>
-              {user?.profile_image ? (
-                <Image source={{ uri: user.profile_image }} style={styles.userMarkerImage} />
-              ) : (
-                <View style={styles.userMarkerPlaceholder}>
-                  <Text style={styles.userMarkerInitial}>{user?.first_name?.charAt(0) || '?'}</Text>
-                </View>
-              )}
-              <View style={styles.userMarkerPulse} />
-            </View>
-          </Marker>
-        )}
-
-        {locationSharingAttendees.map((attendee, index) => (
-          <Marker
-            key={attendee.user_id}
-            coordinate={{ latitude: attendee.lat, longitude: attendee.lng }}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <View style={[styles.attendeeMarkerContainer, attendee.is_on_my_way && styles.attendeeMarkerOnMyWay]}>
-              {attendee.profile_image ? (
-                <Image source={{ uri: attendee.profile_image }} style={styles.attendeeMarkerImage} />
-              ) : (
-                <View style={styles.attendeeMarkerPlaceholder}>
-                  <Text style={styles.attendeeMarkerInitial}>{attendee.user_name?.charAt(0) || '?'}</Text>
-                </View>
-              )}
-              {attendee.is_on_my_way && (
-                <View style={styles.onMyWayBadge}>
-                  <Ionicons name="car" size={10} color="white" />
-                </View>
-              )}
-            </View>
-            {Callout && (
-              <Callout tooltip>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.calloutName}>{attendee.user_name}</Text>
-                  {attendee.distance && (
-                    <Text style={styles.calloutDistance}>{attendee.distance} mi away</Text>
-                  )}
-                  {attendee.eta && attendee.is_on_my_way && (
-                    <Text style={styles.calloutEta}>ETA: {formatETA(attendee.eta)}</Text>
-                  )}
-                </View>
-              </Callout>
-            )}
-          </Marker>
-        ))}
-
-        {routes.map((route, index) => (
-          <Polyline
-            key={route.userId}
-            coordinates={route.points}
-            strokeColor={ROUTE_COLORS[index % ROUTE_COLORS.length]}
-            strokeWidth={4}
-            lineDashPattern={[1]}
-          />
-        ))}
-
-        {myRoute && (
-          <Polyline
-            coordinates={myRoute.points}
-            strokeColor="#10B981"
-            strokeWidth={5}
-          />
-        )}
-      </MapView>
-    );
+  const renderMap = () => {
+    return renderFallbackMap();
   };
 
   return (
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
       <View style={styles.mapContainer}>
-        {renderNativeMap()}
+        {renderMap()}
         
         <View style={styles.mapInfoCard}>
           <Text style={styles.mapTitle}>{event?.title || 'Event Location'}</Text>
