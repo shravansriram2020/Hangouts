@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -44,6 +45,10 @@ export default function MapScreen() {
   const [onMyWayList, setOnMyWayList] = useState<AttendeeLocation[]>([]);
   const [showOnMyWayPanel, setShowOnMyWayPanel] = useState(false);
   const [mapKey, setMapKey] = useState(0);
+
+  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
+    ? [event.gradient_color1, event.gradient_color2]
+    : ['#1E3A5F', '#2D5A8B'];
 
   useEffect(() => {
     if (event?.id) {
@@ -428,7 +433,8 @@ export default function MapScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <View style={styles.innerContainer}>
       <View style={styles.header}>
         <View style={styles.sharingInfo}>
           <Ionicons name="people-outline" size={18} color={Colors.secondary} />

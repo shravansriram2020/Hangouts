@@ -27,6 +27,9 @@ interface Message {
   created_at: string;
   has_time_suggestion: boolean;
   has_location_suggestion: boolean;
+  reply_to_id?: string;
+  reply_to_content?: string;
+  reply_to_user?: string;
 }
 
 export default function MessagesScreen() {
@@ -35,6 +38,7 @@ export default function MessagesScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -63,8 +67,10 @@ export default function MessagesScreen() {
       await api.post('/messages', {
         eventId: event.id,
         content: newMessage.trim(),
+        replyToId: replyingTo?.id,
       });
       setNewMessage('');
+      setReplyingTo(null);
       await fetchMessages();
       flatListRef.current?.scrollToEnd();
     } catch (error) {
@@ -143,7 +149,10 @@ export default function MessagesScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity style={styles.replyButton}>
+          <TouchableOpacity 
+            style={styles.replyButton}
+            onPress={() => setReplyingTo(item)}
+          >
             <Text style={styles.replyText}>← Reply</Text>
           </TouchableOpacity>
         </View>
@@ -188,6 +197,17 @@ export default function MessagesScreen() {
       />
       
       <View style={styles.inputArea}>
+        {replyingTo && (
+          <View style={styles.replyPreview}>
+            <View style={styles.replyPreviewContent}>
+              <Text style={styles.replyPreviewLabel}>Replying to {replyingTo.user_name}</Text>
+              <Text style={styles.replyPreviewText} numberOfLines={1}>{replyingTo.content}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setReplyingTo(null)}>
+              <Ionicons name="close" size={18} color={Colors.gray} />
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -349,6 +369,32 @@ const styles = StyleSheet.create({
   },
   inputArea: {
     padding: 16,
+  },
+  replyPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  replyPreviewContent: {
+    flex: 1,
+  },
+  replyPreviewLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.gray,
+    marginBottom: 2,
+  },
+  replyPreviewText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
   },
   inputContainer: {
     flexDirection: 'row',

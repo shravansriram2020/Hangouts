@@ -91,6 +91,18 @@ export default function DetailsScreen() {
 
   const attendeeCount = event?.attendees?.length || 0;
 
+  const updateGradient = async (color1: string, color2: string) => {
+    try {
+      await api.put(`/events/${event?.id}`, {
+        gradientColor1: color1,
+        gradientColor2: color2,
+      });
+      refreshEvent();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update background');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -357,6 +369,15 @@ export default function DetailsScreen() {
         attendees={event.attendees || []}
         onCreated={refreshEvent}
       />
+      <CreateConflictsModal
+        visible={showCreateConflicts}
+        onClose={() => setShowCreateConflicts(false)}
+        eventId={event.id}
+        onCreated={() => {
+          fetchConflictCount();
+          refreshEvent();
+        }}
+      />
       <ConflictsModal
         visible={showConflicts}
         onClose={() => setShowConflicts(false)}
@@ -379,6 +400,16 @@ export default function DetailsScreen() {
         attendees={event.attendees || []}
         onEventDeleted={() => router.replace('/')}
         onAttendeeRemoved={refreshEvent}
+        onGradientChange={() => {
+          Alert.alert('Background Color', 'Choose a new background gradient', [
+            { text: 'Blue', onPress: () => updateGradient('#1E3A5F', '#2D5A8B') },
+            { text: 'Purple', onPress: () => updateGradient('#6B46C1', '#9333EA') },
+            { text: 'Green', onPress: () => updateGradient('#059669', '#10B981') },
+            { text: 'Orange', onPress: () => updateGradient('#D97706', '#F97316') },
+            { text: 'Pink', onPress: () => updateGradient('#EC4899', '#F472B6') },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
+        }}
       />
       </ScrollView>
     </LinearGradient>
