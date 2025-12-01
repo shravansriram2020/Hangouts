@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -15,6 +14,7 @@ import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -113,20 +113,8 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
   const otherAttendees = attendees?.filter(a => a.id !== user?.id) || [];
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Ionicons name="cash-outline" size={22} color={Colors.green} />
-              <Text style={styles.headerTitle}>Money</Text>
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <GlassModal visible={visible} onClose={onClose} title="Money" fullHeight>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {showCreateRequest ? (
               <View style={styles.createForm}>
                 <Text style={styles.formTitle}>Request Payment</Text>
@@ -294,48 +282,12 @@ export default function MoneyModal({ visible, onClose, eventId, attendees }: Pro
               </>
             )}
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '95%',
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-    marginLeft: 8,
-  },
   content: {
-    flex: 1,
     padding: 16,
   },
   createButton: {

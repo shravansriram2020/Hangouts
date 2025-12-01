@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -17,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import GlassModal from './GlassModal';
 
 const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing';
 const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing';
@@ -123,20 +123,8 @@ export default function SettingsModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Ionicons name="settings-outline" size={22} color={Colors.secondary} />
-              <Text style={styles.headerTitle}>Settings</Text>
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <GlassModal visible={visible} onClose={onClose} title="Settings" fullHeight>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.profileSection}>
               <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
                 {profilePhoto ? (
@@ -278,49 +266,12 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.version}>Version 1.0</Text>
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '95%',
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-    marginLeft: 8,
-  },
   content: {
-    flex: 1,
     paddingHorizontal: 20,
   },
   profileSection: {

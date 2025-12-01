@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   Share,
@@ -14,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -69,17 +69,8 @@ export default function ShareEventModal({ visible, onClose, eventId }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.container} onStartShouldSetResponder={() => true}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Share Event</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tabs}>
+    <GlassModal visible={visible} onClose={onClose} title="Share Event">
+      <View style={styles.tabs}>
             <TouchableOpacity
               style={[styles.tab, activeTab === 'link' && styles.activeTab]}
               onPress={() => setActiveTab('link')}
@@ -155,39 +146,13 @@ export default function ShareEventModal({ visible, onClose, eventId }: Props) {
               </View>
             )}
           </ScrollView>
-        </View>
-      </TouchableOpacity>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    maxHeight: '90%',
-  },
   scrollContent: {
     maxHeight: '100%',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
   },
   tabs: {
     flexDirection: 'row',

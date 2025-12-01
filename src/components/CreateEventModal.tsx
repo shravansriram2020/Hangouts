@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -17,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -281,20 +281,8 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   const isFormValid = title && eventDate && eventTime;
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.headerTitle}>Create New Hangout</Text>
-              <Text style={styles.headerSubtitle}>Plan something awesome with your friends</Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <GlassModal visible={visible} onClose={onClose} title="Create New Hangout" fullHeight>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>Hangout Image</Text>
             <TouchableOpacity style={styles.imageUpload} onPress={handlePickImage}>
               {eventImage ? (
@@ -590,35 +578,14 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  container: {
-    backgroundColor: Colors.grayLight,
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '95%',
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: Colors.white,
+    paddingBottom: 24,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
