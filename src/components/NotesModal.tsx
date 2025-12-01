@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -14,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -55,20 +55,8 @@ export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdd
   };
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.container} onStartShouldSetResponder={() => true}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.noteEmoji}>📝</Text>
-              <Text style={styles.headerTitle}>Event Notes</Text>
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputSection}>
+    <GlassModal visible={visible} onClose={onClose} title="Event Notes" fullHeight>
+      <View style={styles.inputSection}>
             <TextInput
               style={styles.input}
               value={newNote}
@@ -119,45 +107,11 @@ export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdd
               ))
             )}
           </ScrollView>
-        </View>
-      </TouchableOpacity>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    maxHeight: '70%',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  noteEmoji: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-  },
   inputSection: {
     padding: 16,
     borderBottomWidth: 1,

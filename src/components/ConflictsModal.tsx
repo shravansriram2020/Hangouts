@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -13,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -20,6 +20,7 @@ interface Props {
   eventId: string;
   isHost?: boolean;
   onConflictUpdate?: () => void;
+  onEventUpdated?: () => void;
 }
 
 const CONFLICT_TYPES = [
@@ -28,7 +29,7 @@ const CONFLICT_TYPES = [
   { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate, onEventUpdated }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [showCreateConflict, setShowCreateConflict] = useState(false);
@@ -124,20 +125,11 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   };
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.container} onStartShouldSetResponder={() => true}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Event Conflicts</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.headerSubtitle}>
-            Report and vote on conflicts for this event
-          </Text>
-
-          <ScrollView style={styles.content}>
+    <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
+      <Text style={styles.headerSubtitle}>
+        Report and vote on conflicts for this event
+      </Text>
+      <ScrollView style={styles.content}>
             {showCreateConflict ? (
               <View style={styles.createForm}>
                 <Text style={styles.formLabel}>Conflict Type</Text>
@@ -318,36 +310,11 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
               </>
             )}
           </ScrollView>
-        </View>
-      </TouchableOpacity>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    maxHeight: '80%',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-  },
   headerSubtitle: {
     fontSize: 12,
     color: Colors.gray,

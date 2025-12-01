@@ -603,11 +603,6 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
   sectionTitle: {
     fontSize: 14,
     color: Colors.secondary,
