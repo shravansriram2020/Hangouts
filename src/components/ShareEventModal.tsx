@@ -9,6 +9,7 @@ import {
   Share,
   Image,
   FlatList,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
@@ -97,60 +98,63 @@ export default function ShareEventModal({ visible, onClose, eventId }: Props) {
             </TouchableOpacity>
           </View>
 
-          {activeTab === 'link' ? (
-            <View style={styles.linkSection}>
-              <Text style={styles.label}>Share this link with friends</Text>
-              <View style={styles.linkRow}>
-                <TextInput
-                  style={styles.linkInput}
-                  value={shareLink}
-                  editable={false}
-                />
-                <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                  <Text style={styles.shareButtonText}>Share</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.usernameSection}>
-              <Text style={styles.label}>Search by Username</Text>
-              <TextInput
-                style={styles.input}
-                value={searchQuery}
-                onChangeText={(text) => {
-                  setSearchQuery(text);
-                  searchUsers(text);
-                }}
-                placeholder="Search..."
-                placeholderTextColor={Colors.grayMedium}
-              />
-
-              <FlatList
-                data={userResults}
-                keyExtractor={(item) => item.id}
-                style={styles.userList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.userItem}
-                    onPress={() => inviteUser(item.id)}
-                  >
-                    {item.profilePhoto ? (
-                      <Image source={{ uri: item.profilePhoto }} style={styles.userAvatar} />
-                    ) : (
-                      <View style={styles.userAvatarPlaceholder}>
-                        <Text style={styles.userAvatarText}>
-                          {item.username.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <View style={styles.userInfo}>
-                      <Text style={styles.userName}>@{item.username}</Text>
-                    </View>
+          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {activeTab === 'link' ? (
+              <View style={styles.linkSection}>
+                <Text style={styles.label}>Share this link with friends</Text>
+                <View style={styles.linkRow}>
+                  <TextInput
+                    style={styles.linkInput}
+                    value={shareLink}
+                    editable={false}
+                  />
+                  <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                    <Text style={styles.shareButtonText}>Share</Text>
                   </TouchableOpacity>
-                )}
-              />
-            </View>
-          )}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.usernameSection}>
+                <Text style={styles.label}>Search by Username</Text>
+                <TextInput
+                  style={styles.input}
+                  value={searchQuery}
+                  onChangeText={(text) => {
+                    setSearchQuery(text);
+                    searchUsers(text);
+                  }}
+                  placeholder="Search..."
+                  placeholderTextColor={Colors.grayMedium}
+                />
+
+                <FlatList
+                  data={userResults}
+                  keyExtractor={(item) => item.id}
+                  style={styles.userList}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.userItem}
+                      onPress={() => inviteUser(item.id)}
+                    >
+                      {item.profilePhoto ? (
+                        <Image source={{ uri: item.profilePhoto }} style={styles.userAvatar} />
+                      ) : (
+                        <View style={styles.userAvatarPlaceholder}>
+                          <Text style={styles.userAvatarText}>
+                            {item.username.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.userInfo}>
+                        <Text style={styles.userName}>@{item.username}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+          </ScrollView>
         </View>
       </TouchableOpacity>
     </Modal>
@@ -167,7 +171,10 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
     borderRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '90%',
+  },
+  scrollContent: {
+    maxHeight: '100%',
   },
   header: {
     flexDirection: 'row',

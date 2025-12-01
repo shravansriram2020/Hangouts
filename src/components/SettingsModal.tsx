@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     width: '100%',
-    maxHeight: '90%',
+    maxHeight: '95%',
     overflow: 'hidden',
   },
   header: {

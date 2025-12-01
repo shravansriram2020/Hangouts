@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     width: '100%',
-    maxHeight: '85%',
+    maxHeight: '95%',
     overflow: 'hidden',
   },
   header: {
