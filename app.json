@@ -47,7 +47,8 @@
         {
           "photosPermission": "Allow Hangouts to access your photos to share with friends."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
