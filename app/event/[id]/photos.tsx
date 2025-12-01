@@ -35,7 +35,7 @@ export default function PhotosScreen() {
 
   const gradientColors = event?.gradient_color1 && event?.gradient_color2 
     ? [event.gradient_color1, event.gradient_color2]
-    : ['#1E3A5F', '#2D5A8B'];
+    : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
 
   useEffect(() => {
     if (event?.id) {

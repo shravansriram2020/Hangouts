@@ -124,20 +124,20 @@ export default function OptionsMenu({
                   <TouchableOpacity
                     style={[
                       styles.menuItem,
-                      attendees.length === 0 && styles.menuItemDisabled,
+                      attendees.length <= 1 && styles.menuItemDisabled,
                     ]}
                     onPress={() => setShowRemoveAttendee(true)}
-                    disabled={attendees.length === 0}
+                    disabled={attendees.length <= 1}
                   >
                     <Ionicons 
                       name="person-remove-outline" 
                       size={18} 
-                      color={attendees.length === 0 ? Colors.grayMedium : Colors.secondary} 
+                      color={attendees.length <= 1 ? Colors.grayMedium : Colors.secondary} 
                     />
                     <Text 
                       style={[
                         styles.menuItemText,
-                        attendees.length === 0 && styles.menuItemTextDisabled,
+                        attendees.length <= 1 && styles.menuItemTextDisabled,
                       ]}
                     >
                       Remove Attendees
