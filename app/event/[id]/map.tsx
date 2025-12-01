@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import MapView, { Marker, Polyline, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -47,6 +48,7 @@ const ROUTE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#E
 export default function MapScreen() {
   const { event } = useEvent();
   const { user } = useAuth();
+  const mapRef = useRef<MapView>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   
   const [locationSharing, setLocationSharing] = useState(false);
@@ -317,8 +319,108 @@ export default function MapScreen() {
     );
   };
 
+  const renderNativeMap = () => {
+    return (
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={Platform.OS === 'android' ? PROVIDER_DEFAULT : undefined}
+        initialRegion={initialRegion}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+      >
+        <Marker
+          coordinate={{ latitude: eventLat, longitude: eventLng }}
+          anchor={{ x: 0.5, y: 0.5 }}
+        >
+          <View style={styles.eventMarkerContainer}>
+            <View style={styles.eventMarker}>
+              <Ionicons name="location" size={20} color="white" />
+            </View>
+          </View>
+        </Marker>
+
+        {currentLocation && locationSharing && (
+          <Marker
+            coordinate={{ latitude: currentLocation.lat, longitude: currentLocation.lng }}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={styles.userMarkerContainer}>
+              {user?.profile_image ? (
+                <Image source={{ uri: user.profile_image }} style={styles.userMarkerImage} />
+              ) : (
+                <View style={styles.userMarkerPlaceholder}>
+                  <Text style={styles.userMarkerInitial}>{user?.first_name?.charAt(0) || '?'}</Text>
+                </View>
+              )}
+              <View style={styles.userMarkerPulse} />
+            </View>
+          </Marker>
+        )}
+
+        {locationSharingAttendees.map((attendee, index) => (
+          <Marker
+            key={attendee.user_id}
+            coordinate={{ latitude: attendee.lat, longitude: attendee.lng }}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={[styles.attendeeMarkerContainer, attendee.is_on_my_way && styles.attendeeMarkerOnMyWay]}>
+              {attendee.profile_image ? (
+                <Image source={{ uri: attendee.profile_image }} style={styles.attendeeMarkerImage} />
+              ) : (
+                <View style={styles.attendeeMarkerPlaceholder}>
+                  <Text style={styles.attendeeMarkerInitial}>{attendee.user_name?.charAt(0) || '?'}</Text>
+                </View>
+              )}
+              {attendee.is_on_my_way && (
+                <View style={styles.onMyWayBadge}>
+                  <Ionicons name="car" size={10} color="white" />
+                </View>
+              )}
+            </View>
+            <Callout tooltip>
+              <View style={styles.calloutContainer}>
+                <Text style={styles.calloutName}>{attendee.user_name}</Text>
+                {attendee.distance && (
+                  <Text style={styles.calloutDistance}>{attendee.distance} mi away</Text>
+                )}
+                {attendee.eta && attendee.is_on_my_way && (
+                  <Text style={styles.calloutEta}>ETA: {formatETA(attendee.eta)}</Text>
+                )}
+              </View>
+            </Callout>
+          </Marker>
+        ))}
+
+        {routes.map((route, index) => (
+          <Polyline
+            key={route.userId}
+            coordinates={route.points}
+            strokeColor={ROUTE_COLORS[index % ROUTE_COLORS.length]}
+            strokeWidth={4}
+            lineDashPattern={[1]}
+          />
+        ))}
+
+        {myRoute && (
+          <Polyline
+            coordinates={myRoute.points}
+            strokeColor="#10B981"
+            strokeWidth={5}
+          />
+        )}
+      </MapView>
+    );
+  };
+
   const renderMap = () => {
-    return renderFallbackMap();
+    if (Platform.OS === 'web') {
+      return renderFallbackMap();
+    }
+    return renderNativeMap();
   };
 
   return (

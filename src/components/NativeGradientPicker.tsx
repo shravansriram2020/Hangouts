@@ -13,7 +13,15 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import ColorPicker from 'react-native-wheel-color-picker';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ColorPicker, { 
+  Panel1, 
+  Swatches, 
+  Preview, 
+  OpacitySlider, 
+  HueSlider,
+  PreviewText,
+} from 'reanimated-color-picker';
 import { Colors, Fonts } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,8 +48,8 @@ export const GRADIENT_PRESETS: GradientPreset[] = [
 ];
 
 const QUICK_COLORS = [
-  '#000000', '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
-  '#F97316', '#EC4899', '#A855F7', '#6366F1', '#8B5CF6',
+  '#000000', '#FFFFFF', '#3B82F6', '#10B981', '#F59E0B', 
+  '#EF4444', '#F97316', '#EC4899', '#A855F7', '#6366F1',
 ];
 
 interface Props {
@@ -90,11 +98,8 @@ export default function NativeGradientPicker({
     setActiveColorPicker(null);
   };
 
-  const handleQuickColorSelect = (selectedColor: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setTempColor(selectedColor);
+  const handleColorChange = ({ hex }: { hex: string }) => {
+    setTempColor(hex);
   };
 
   const handleApply = () => {
@@ -229,51 +234,35 @@ export default function NativeGradientPicker({
         presentationStyle="pageSheet"
         onRequestClose={() => setActiveColorPicker(null)}
       >
-        <SafeAreaView style={styles.colorPickerModal}>
-          <View style={styles.colorPickerHeader}>
-            <TouchableOpacity onPress={() => setActiveColorPicker(null)} style={styles.cancelButton}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.colorPickerTitle}>Colors</Text>
-            <TouchableOpacity onPress={handleColorConfirm} style={styles.doneButton}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.selectedColorPreview}>
-            <View style={[styles.selectedColorBox, { backgroundColor: tempColor }]} />
-            <Text style={styles.selectedColorHex}>{tempColor.toUpperCase()}</Text>
-          </View>
-
-          <View style={styles.colorPickerContainer}>
-            <ColorPicker
-              color={tempColor}
-              onColorChangeComplete={setTempColor}
-              thumbSize={30}
-              sliderSize={30}
-              noSnap={true}
-              row={false}
-              swatches={false}
-            />
-          </View>
-
-          <View style={styles.quickColorsSection}>
-            <Text style={styles.quickColorsLabel}>Quick Colors</Text>
-            <View style={styles.quickColorsRow}>
-              {QUICK_COLORS.map((qc) => (
-                <TouchableOpacity
-                  key={qc}
-                  style={[
-                    styles.quickColorButton,
-                    { backgroundColor: qc },
-                    tempColor.toLowerCase() === qc.toLowerCase() && styles.quickColorSelected
-                  ]}
-                  onPress={() => handleQuickColorSelect(qc)}
-                />
-              ))}
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={styles.colorPickerModal}>
+            <View style={styles.colorPickerHeader}>
+              <TouchableOpacity onPress={() => setActiveColorPicker(null)} style={styles.cancelButton}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.colorPickerTitle}>Colors</Text>
+              <TouchableOpacity onPress={handleColorConfirm} style={styles.doneButton}>
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-        </SafeAreaView>
+
+            <View style={styles.colorPickerContainer}>
+              <ColorPicker
+                value={tempColor}
+                onComplete={handleColorChange}
+                style={styles.colorPickerInner}
+              >
+                <Preview style={styles.colorPreview} />
+                <Panel1 style={styles.colorPanel} />
+                <HueSlider style={styles.colorSlider} />
+                <Swatches 
+                  colors={QUICK_COLORS}
+                  style={styles.swatches}
+                />
+              </ColorPicker>
+            </View>
+          </SafeAreaView>
+        </GestureHandlerRootView>
       </Modal>
     </>
   );
@@ -461,63 +450,29 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: '#007AFF',
   },
-  selectedColorPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  selectedColorBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  selectedColorHex: {
-    fontSize: 17,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-  },
   colorPickerContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 16,
+    flex: 1,
     padding: 20,
+  },
+  colorPickerInner: {
+    flex: 1,
+    gap: 16,
+  },
+  colorPreview: {
+    height: 60,
     borderRadius: 12,
-    height: 300,
   },
-  quickColorsSection: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
+  colorPanel: {
+    flex: 1,
     borderRadius: 12,
   },
-  quickColorsLabel: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-    color: Colors.gray,
-    marginBottom: 12,
+  colorSlider: {
+    height: 40,
+    borderRadius: 20,
   },
-  quickColorsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  quickColorButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  quickColorSelected: {
-    borderColor: '#007AFF',
-    borderWidth: 3,
+  swatches: {
+    marginTop: 8,
+    flexWrap: 'nowrap',
+    gap: 10,
   },
 });

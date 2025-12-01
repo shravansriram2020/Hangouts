@@ -56,7 +56,13 @@
           "photosPermission": "Allow Hangouts to access your photos to share with friends."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": ""
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -68,6 +74,7 @@
       "eas": {
         "projectId": "59c0731e-8620-4760-a6f3-db92530623b6"
       }
-    }
+    },
+    "owner": "hangouts-devteam"
   }
 }
