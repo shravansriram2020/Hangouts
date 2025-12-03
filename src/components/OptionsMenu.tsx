@@ -276,35 +276,41 @@ export default function OptionsMenu({
       />
 
       <Modal visible={showTitleEdit} transparent animationType="fade">
-        <View style={styles.overlay}>
+        <TouchableOpacity 
+          style={styles.overlay} 
+          activeOpacity={1} 
+          onPress={() => setShowTitleEdit(false)}
+        >
           <Animated.View 
             style={[styles.titleEditModal, { transform: [{ translateY: titleSlideAnim }] }]}
           >
-            <View style={styles.titleEditHeader}>
-              <Text style={styles.titleEditTitle}>Change Hangout Title</Text>
-              <TouchableOpacity onPress={() => setShowTitleEdit(false)}>
-                <Ionicons name="close" size={24} color={Colors.secondary} />
+            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+              <View style={styles.titleEditHeader}>
+                <Text style={styles.titleEditTitle}>Change Hangout Title</Text>
+                <TouchableOpacity onPress={() => setShowTitleEdit(false)}>
+                  <Ionicons name="close" size={24} color={Colors.secondary} />
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.titleInput}
+                value={newTitle}
+                onChangeText={setNewTitle}
+                placeholder="Enter new title"
+                placeholderTextColor={Colors.grayMedium}
+                autoFocus
+              />
+              <TouchableOpacity
+                style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                onPress={handleSaveTitle}
+                disabled={saving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Saving...' : 'Save'}
+                </Text>
               </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.titleInput}
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="Enter new title"
-              placeholderTextColor={Colors.grayMedium}
-              autoFocus
-            />
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSaveTitle}
-              disabled={saving}
-            >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save'}
-              </Text>
             </TouchableOpacity>
           </Animated.View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );
