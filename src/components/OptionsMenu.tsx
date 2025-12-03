@@ -11,6 +11,7 @@ import {
   Animated,
   TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -276,41 +277,46 @@ export default function OptionsMenu({
       />
 
       <Modal visible={showTitleEdit} transparent animationType="fade">
-        <TouchableOpacity 
-          style={styles.overlay} 
-          activeOpacity={1} 
-          onPress={() => setShowTitleEdit(false)}
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <Animated.View 
-            style={[styles.titleEditModal, { transform: [{ translateY: titleSlideAnim }] }]}
+          <TouchableOpacity 
+            style={styles.overlay} 
+            activeOpacity={1} 
+            onPress={() => setShowTitleEdit(false)}
           >
-            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-              <View style={styles.titleEditHeader}>
-                <Text style={styles.titleEditTitle}>Change Hangout Title</Text>
-                <TouchableOpacity onPress={() => setShowTitleEdit(false)}>
-                  <Ionicons name="close" size={24} color={Colors.secondary} />
+            <Animated.View 
+              style={[styles.titleEditModal, { transform: [{ translateY: titleSlideAnim }] }]}
+            >
+              <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+                <View style={styles.titleEditHeader}>
+                  <Text style={styles.titleEditTitle}>Change Hangout Title</Text>
+                  <TouchableOpacity onPress={() => setShowTitleEdit(false)}>
+                    <Ionicons name="close" size={24} color={Colors.secondary} />
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.titleInput}
+                  value={newTitle}
+                  onChangeText={setNewTitle}
+                  placeholder="Enter new title"
+                  placeholderTextColor={Colors.grayMedium}
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                  onPress={handleSaveTitle}
+                  disabled={saving}
+                >
+                  <Text style={styles.saveButtonText}>
+                    {saving ? 'Saving...' : 'Save'}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-              <TextInput
-                style={styles.titleInput}
-                value={newTitle}
-                onChangeText={setNewTitle}
-                placeholder="Enter new title"
-                placeholderTextColor={Colors.grayMedium}
-                autoFocus
-              />
-              <TouchableOpacity
-                style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-                onPress={handleSaveTitle}
-                disabled={saving}
-              >
-                <Text style={styles.saveButtonText}>
-                  {saving ? 'Saving...' : 'Save'}
-                </Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          </Animated.View>
-        </TouchableOpacity>
+            </Animated.View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,24 @@ import {
   Platform,
   Modal,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import GlassModal from './GlassModal';
+
+interface LocationSuggestion {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  distanceMiles?: string;
+}
 
 interface Props {
   visible: boolean;
@@ -42,9 +53,20 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const [suggestedDate, setSuggestedDate] = useState<Date | null>(null);
   const [suggestedTime, setSuggestedTime] = useState<Date | null>(null);
   const [suggestedLocation, setSuggestedLocation] = useState('');
+  const [suggestedLocationName, setSuggestedLocationName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  // Location search state
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [suggestingLocation, setSuggestingLocation] = useState(false);
+  
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
   
   const datePickerSlideAnim = useRef(new Animated.Value(300)).current;
   const datePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
@@ -135,8 +157,103 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   useEffect(() => {
     if (visible) {
       fetchConflicts();
+      getCurrentLocation();
     }
   }, [visible]);
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to get location:', error);
+    }
+  };
+
+  const searchLocations = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setLocationSuggestions([]);
+      setSearchingLocation(false);
+      return;
+    }
+
+    if (locationCache.current.has(query)) {
+      setLocationSuggestions(locationCache.current.get(query) || []);
+      setSearchingLocation(false);
+      return;
+    }
+
+    setSearchingLocation(true);
+    try {
+      const params = new URLSearchParams({
+        query,
+        ...(currentLocation && {
+          lat: currentLocation.lat.toString(),
+          lng: currentLocation.lng.toString(),
+        }),
+        radius: '50000',
+      });
+
+      const results = await api.get(`/location/search?${params}`);
+      locationCache.current.set(query, results);
+      setLocationSuggestions(results);
+    } catch (error) {
+      console.error('Location search failed:', error);
+    } finally {
+      setSearchingLocation(false);
+    }
+  }, [currentLocation]);
+
+  const handleLocationQueryChange = (text: string) => {
+    setLocationQuery(text);
+    setSuggestedLocationName('');
+    setSuggestedLocation('');
+    
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    
+    searchTimeout.current = setTimeout(() => {
+      searchLocations(text);
+    }, 300);
+  };
+
+  const selectLocation = (location: LocationSuggestion) => {
+    setSuggestedLocationName(location.name);
+    setSuggestedLocation(location.address);
+    setLocationQuery('');
+    setLocationSuggestions([]);
+  };
+
+  const handleSuggestLocation = async () => {
+    if (!currentLocation) {
+      Alert.alert('Location Required', 'Please enable location services');
+      return;
+    }
+
+    setSuggestingLocation(true);
+    try {
+      const params = new URLSearchParams({
+        title: 'hangout',
+        lat: currentLocation.lat.toString(),
+        lng: currentLocation.lng.toString(),
+        radius: '50000',
+      });
+
+      const results = await api.get(`/location/suggest?${params}`);
+      setLocationSuggestions(results);
+    } catch (error) {
+      console.error('Location suggestion failed:', error);
+    } finally {
+      setSuggestingLocation(false);
+    }
+  };
 
   const fetchConflicts = async () => {
     try {
@@ -180,6 +297,9 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
       setSuggestedDate(null);
       setSuggestedTime(null);
       setSuggestedLocation('');
+      setSuggestedLocationName('');
+      setLocationQuery('');
+      setLocationSuggestions([]);
       fetchConflicts();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to report conflict');
@@ -284,17 +404,73 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                 {selectedType === 'location' && (
                   <>
                     <Text style={styles.formLabel}>Suggested Location *</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={suggestedLocation}
-                      onChangeText={setSuggestedLocation}
-                      placeholder="Enter a new location"
-                      placeholderTextColor={Colors.grayMedium}
-                    />
+                    {suggestedLocationName ? (
+                      <View style={styles.selectedLocationCard}>
+                        <View style={styles.selectedLocationInfo}>
+                          <Text style={styles.selectedLocationName}>{suggestedLocationName}</Text>
+                          <Text style={styles.selectedLocationAddress} numberOfLines={1}>{suggestedLocation}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => {
+                          setSuggestedLocationName('');
+                          setSuggestedLocation('');
+                        }}>
+                          <Ionicons name="close-circle" size={22} color={Colors.gray} />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <>
+                        <View style={styles.locationInputContainer}>
+                          <Ionicons name="search" size={18} color={Colors.gray} style={styles.searchIcon} />
+                          <TextInput
+                            style={styles.locationInput}
+                            value={locationQuery}
+                            onChangeText={handleLocationQueryChange}
+                            placeholder="Search for a location..."
+                            placeholderTextColor={Colors.grayMedium}
+                          />
+                          {searchingLocation && (
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                          )}
+                        </View>
 
-                    <TouchableOpacity style={styles.suggestButton}>
-                      <Ionicons name="sparkles" size={18} color={Colors.white} />
-                      <Text style={styles.suggestButtonText}>Have Hangouts Suggest a Location</Text>
+                        {locationSuggestions.length > 0 && (
+                          <View style={styles.suggestionsList}>
+                            {locationSuggestions.slice(0, 5).map((loc) => (
+                              <TouchableOpacity
+                                key={loc.id}
+                                style={styles.suggestionItem}
+                                onPress={() => selectLocation(loc)}
+                              >
+                                <Ionicons name="location" size={16} color={Colors.primary} />
+                                <View style={styles.suggestionItemText}>
+                                  <Text style={styles.suggestionName}>{loc.name}</Text>
+                                  <Text style={styles.suggestionAddress} numberOfLines={1}>{loc.address}</Text>
+                                </View>
+                                {loc.distanceMiles && (
+                                  <View style={styles.distanceBadge}>
+                                    <Text style={styles.distanceText}>{loc.distanceMiles} mi</Text>
+                                  </View>
+                                )}
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </>
+                    )}
+
+                    <TouchableOpacity 
+                      style={styles.suggestButton}
+                      onPress={handleSuggestLocation}
+                      disabled={suggestingLocation}
+                    >
+                      {suggestingLocation ? (
+                        <ActivityIndicator size="small" color={Colors.white} />
+                      ) : (
+                        <>
+                          <Ionicons name="sparkles" size={18} color={Colors.white} />
+                          <Text style={styles.suggestButtonText}>Have Hangouts Suggest a Location</Text>
+                        </>
+                      )}
                     </TouchableOpacity>
                   </>
                 )}
@@ -302,7 +478,17 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                 <View style={styles.formButtons}>
                   <TouchableOpacity
                     style={styles.cancelButton}
-                    onPress={() => setShowCreateConflict(false)}
+                    onPress={() => {
+                      setShowCreateConflict(false);
+                      setSelectedType('');
+                      setReason('');
+                      setSuggestedDate(null);
+                      setSuggestedTime(null);
+                      setSuggestedLocation('');
+                      setSuggestedLocationName('');
+                      setLocationQuery('');
+                      setLocationSuggestions([]);
+                    }}
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
@@ -780,5 +966,85 @@ const styles = StyleSheet.create({
   iosDatePicker: {
     width: '100%',
     height: 200,
+  },
+  locationInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  locationInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Regular',
+    paddingVertical: 10,
+  },
+  selectedLocationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    borderRadius: 12,
+    padding: 14,
+  },
+  selectedLocationInfo: {
+    flex: 1,
+  },
+  selectedLocationName: {
+    fontSize: 14,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-SemiBold',
+  },
+  selectedLocationAddress: {
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 2,
+  },
+  suggestionsList: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.grayLight,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grayLight,
+  },
+  suggestionItemText: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  suggestionName: {
+    fontSize: 14,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
+  },
+  suggestionAddress: {
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 2,
+  },
+  distanceBadge: {
+    backgroundColor: Colors.grayLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  distanceText: {
+    fontSize: 11,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Medium',
   },
 });

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import GlassModal from './GlassModal';
 
 interface Props {
@@ -25,12 +26,16 @@ interface Props {
 }
 
 export default function CreateMoneyModal({ visible, onClose, eventId, attendees, onCreated }: Props) {
+  const { user } = useAuth();
   const [selectedOwer, setSelectedOwer] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [showAttendeesList, setShowAttendeesList] = useState(false);
 
-  const selectedAttendee = attendees?.find(a => a.id === selectedOwer);
+  // Filter out current user from attendees list
+  const otherAttendees = attendees?.filter((a: any) => a.id !== user?.id) || [];
+  const hasAttendees = otherAttendees.length > 0;
+  const selectedAttendee = otherAttendees.find(a => a.id === selectedOwer);
 
   const handleCreateRequest = async () => {
     if (!selectedOwer || !amount) {
@@ -64,9 +69,6 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
     setDescription('');
     onClose();
   };
-
-  const otherAttendees = attendees?.filter((a: any) => true) || [];
-  const hasAttendees = attendees && attendees.length > 0;
 
   return (
     <GlassModal visible={visible} onClose={handleClose} title="Request Payment" fullHeight>

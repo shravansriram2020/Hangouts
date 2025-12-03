@@ -99,7 +99,7 @@ export default function PhotosScreen() {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.5,
         base64: true,
         exif: false,
@@ -356,6 +356,7 @@ const styles = StyleSheet.create({
   photoImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   photoModal: {
     flex: 1,
