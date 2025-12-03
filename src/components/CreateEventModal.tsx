@@ -349,62 +349,32 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             </View>
 
             {Platform.OS === 'ios' && showDatePicker && (
-              <Modal visible={showDatePicker} transparent animationType="slide">
-                <View style={styles.pickerModalOverlay}>
-                  <View style={styles.pickerModalContainer}>
-                    <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                        <Text style={styles.pickerModalCancel}>Cancel</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.pickerModalTitle}>Select Date</Text>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                        <Text style={styles.pickerModalDone}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <DateTimePicker
-                      value={eventDate || new Date()}
-                      mode="date"
-                      display="spinner"
-                      onChange={(event, selectedDate) => {
-                        if (selectedDate) {
-                          setEventDate(selectedDate);
-                        }
-                      }}
-                      minimumDate={new Date()}
-                      style={styles.iosPicker}
-                    />
-                  </View>
-                </View>
-              </Modal>
+              <DateTimePicker
+                value={eventDate || new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setEventDate(selectedDate);
+                  }
+                }}
+                minimumDate={new Date()}
+              />
             )}
 
             {Platform.OS === 'ios' && showTimePicker && (
-              <Modal visible={showTimePicker} transparent animationType="slide">
-                <View style={styles.pickerModalOverlay}>
-                  <View style={styles.pickerModalContainer}>
-                    <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                        <Text style={styles.pickerModalCancel}>Cancel</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.pickerModalTitle}>Select Time</Text>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                        <Text style={styles.pickerModalDone}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <DateTimePicker
-                      value={eventTime || new Date()}
-                      mode="time"
-                      display="spinner"
-                      onChange={(event, selectedTime) => {
-                        if (selectedTime) {
-                          setEventTime(selectedTime);
-                        }
-                      }}
-                      style={styles.iosPicker}
-                    />
-                  </View>
-                </View>
-              </Modal>
+              <DateTimePicker
+                value={eventTime || new Date()}
+                mode="time"
+                display="default"
+                onChange={(event, selectedTime) => {
+                  setShowTimePicker(false);
+                  if (selectedTime) {
+                    setEventTime(selectedTime);
+                  }
+                }}
+              />
             )}
 
             {Platform.OS === 'android' && showDatePicker && (

@@ -37,10 +37,6 @@ localPort = 40091
 externalPort = 3000
 
 [[ports]]
-localPort = 42869
-externalPort = 6000
-
-[[ports]]
 localPort = 43405
 externalPort = 3003
 
@@ -105,24 +101,23 @@ name = "Backend API"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server/index.js"
-waitForPort = 3000
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Expo Mobile"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "bash start-expo.sh"
-waitForPort = 5000
 
 [agent]
 expertMode = true

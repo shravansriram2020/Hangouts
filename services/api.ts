@@ -13,7 +13,7 @@ const getApiUrl = () => {
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
   if (debuggerHost) {
     const host = debuggerHost.split(':')[0];
-    return `http://${host}:3000/api`;
+    return `http://${host}:5000/api`;
   }
   
   return 'https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api';
