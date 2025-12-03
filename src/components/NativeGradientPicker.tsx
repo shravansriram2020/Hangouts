@@ -352,17 +352,26 @@ export default function NativeGradientPicker({
             </View>
 
             <View style={styles.colorPickerContent}>
-              <View style={[styles.colorPreviewBox, { backgroundColor: tempColor }]} />
-              <ColorPicker
-                color={tempColor}
-                onColorChangeComplete={onColorChange}
-                thumbSize={30}
-                sliderSize={30}
-                noSnap={true}
-                row={false}
-                swatches={false}
-                discrete={false}
-              />
+              <View style={styles.previewSection}>
+                <View style={[styles.colorPreviewBox, { backgroundColor: tempColor }]} />
+                <Text style={styles.previewLabel}>Preview</Text>
+              </View>
+              <View style={styles.colorWheelContainer}>
+                <ColorPicker
+                  color={tempColor}
+                  onColorChange={onColorChange}
+                  thumbSize={40}
+                  sliderSize={40}
+                  noSnap={true}
+                  row={false}
+                  swatches={false}
+                  discrete={false}
+                  shadeWheelThumb={true}
+                  shadeSliderThumb={true}
+                  autoResetSlider={true}
+                  gapSize={0}
+                />
+              </View>
             </View>
           </Animated.View>
         </View>
@@ -557,10 +566,24 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
+  previewSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   colorPreviewBox: {
     width: '100%',
     height: 60,
     borderRadius: 12,
-    marginBottom: 20,
+  },
+  previewLabel: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    color: Colors.gray,
+    marginTop: 8,
+  },
+  colorWheelContainer: {
+    width: SCREEN_WIDTH - 60,
+    height: SCREEN_WIDTH - 60,
   },
 });
