@@ -6,7 +6,6 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,43 +21,45 @@ interface Props {
 const tutorialSteps = [
   {
     title: 'Welcome to Hangouts!',
-    description: 'The easiest way to plan and coordinate events with your friends.',
-    icon: 'calendar-outline',
+    description: 'Making plans with your friends just got easier.',
+    icon: 'heart',
+    iconColor: '#EC4899',
+    bgColor: 'rgba(236, 72, 153, 0.15)',
   },
   {
-    title: 'Create Hangouts',
-    description: 'Plan events with custom details, locations, and invite your friends to join.',
-    icon: 'add-circle-outline',
+    title: 'Coordinate Everything',
+    description: 'Coordinate rides, manage money, add notes, and vote on conflicts on Hangout detail pages.',
+    icon: 'grid',
+    iconColor: '#8B5CF6',
+    bgColor: 'rgba(139, 92, 246, 0.15)',
   },
   {
-    title: 'Coordinate Rides',
-    description: 'Offer or request rides to events. See who can drive and carpool together.',
-    icon: 'car-outline',
+    title: 'Smart Chat',
+    description: 'Communicate through Smart Chat, where Hangouts can detect Location and Time conflicts from natural language.',
+    icon: 'chatbubbles',
+    iconColor: '#3B82F6',
+    bgColor: 'rgba(59, 130, 246, 0.15)',
   },
   {
-    title: 'Split Costs',
-    description: 'Request and track money between friends. Keep expenses organized.',
-    icon: 'cash-outline',
+    title: "Track Your Friends' ETAs",
+    description: "You'll never be questioning how far your friends are from your Hangout.",
+    icon: 'navigate',
+    iconColor: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.15)',
   },
   {
-    title: 'Live Location',
-    description: 'Share your location with friends. See ETAs and who is on their way.',
-    icon: 'location-outline',
-  },
-  {
-    title: 'Report Conflicts',
-    description: "Can't make the time or location? Report conflicts and vote on changes.",
-    icon: 'alert-circle-outline',
-  },
-  {
-    title: 'Share Photos',
-    description: 'Upload and share photos with your group. Access them for 30 days.',
-    icon: 'images-outline',
+    title: 'Share Memories',
+    description: 'Upload photos to a group photo album to share the memories! Photos are saved for download for 30 days.',
+    icon: 'images',
+    iconColor: '#F59E0B',
+    bgColor: 'rgba(245, 158, 11, 0.15)',
   },
   {
     title: "You're All Set!",
     description: 'Start creating hangouts and connecting with friends!',
-    icon: 'checkmark-circle-outline',
+    icon: 'checkmark-circle',
+    iconColor: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.15)',
   },
 ];
 
@@ -117,8 +118,8 @@ export default function TutorialScreen({ onComplete }: Props) {
       >
         {tutorialSteps.map((step, index) => (
           <View key={index} style={styles.slide}>
-            <View style={styles.iconContainer}>
-              <Ionicons name={step.icon as any} size={100} color={Colors.secondary} />
+            <View style={[styles.iconContainer, { backgroundColor: step.bgColor }]}>
+              <Ionicons name={step.icon as any} size={80} color={step.iconColor} />
             </View>
             <Text style={styles.title}>{step.title}</Text>
             <Text style={styles.description}>{step.description}</Text>
@@ -178,16 +179,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   iconContainer: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     color: Colors.secondary,
     fontFamily: 'Prompt-Bold',
     textAlign: 'center',
@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     lineHeight: 24,
+    paddingHorizontal: 10,
   },
   pagination: {
     flexDirection: 'row',

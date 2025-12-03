@@ -22,7 +22,7 @@ import ConflictsModal from '../../../src/components/ConflictsModal';
 import NotesModal from '../../../src/components/NotesModal';
 import LoadingDots from '../../../src/components/LoadingDots';
 import OptionsMenu from '../../../src/components/OptionsMenu';
-import RSVPDropdown from '../../../src/components/RSVPDropdown';
+import RSVPButtons from '../../../src/components/RSVPButtons';
 import CreateRideModal from '../../../src/components/CreateRideModal';
 import CreateMoneyModal from '../../../src/components/CreateMoneyModal';
 import CreateConflictsModal from '../../../src/components/CreateConflictsModal';
@@ -54,12 +54,35 @@ export default function DetailsScreen() {
   const [showCreateConflicts, setShowCreateConflicts] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [userStatus, setUserStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (event?.id) {
       fetchConflictCount();
+      fetchUserStatus();
     }
   }, [event?.id]);
+
+  const fetchUserStatus = async () => {
+    if (!event?.id) return;
+    try {
+      const response = await api.get(`/events/${event.id}/user-status`);
+      const { status } = response.data || response;
+      setUserStatus(status);
+    } catch (error) {
+      console.error('Failed to fetch user status:', error);
+      setUserStatus(null);
+    }
+  };
+
+  const handleRSVPChange = (status: string | null, removed?: boolean) => {
+    if (removed) {
+      router.replace('/');
+    } else {
+      setUserStatus(status);
+      refreshEvent();
+    }
+  };
 
   const fetchConflictCount = async () => {
     if (!event?.id) return;
@@ -211,12 +234,27 @@ export default function DetailsScreen() {
         </ScrollView>
       </View>
 
+      {!isHost && userStatus !== 'accepted' && (
+        <RSVPButtons
+          eventId={event.id}
+          currentStatus={userStatus}
+          isHost={isHost}
+          onStatusChanged={handleRSVPChange}
+        />
+      )}
+
       <View style={styles.actionCardsRow}>
         <TouchableOpacity 
           style={styles.actionCardContainer}
-          onPress={() => setShowRides(true)}
+          onPress={() => {
+            if (!isHost && userStatus !== 'accepted') {
+              Alert.alert('RSVP Required', 'Please RSVP to access Rides.');
+              return;
+            }
+            setShowRides(true);
+          }}
         >
-          <BlurView intensity={60} tint="light" style={styles.actionCard}>
+          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted') && styles.actionCardDisabled]}>
             <View style={styles.actionCardContent}>
               <Image source={ridesImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Rides</Text>
@@ -225,9 +263,15 @@ export default function DetailsScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionCardContainer}
-          onPress={() => setShowMoney(true)}
+          onPress={() => {
+            if (!isHost && userStatus !== 'accepted') {
+              Alert.alert('RSVP Required', 'Please RSVP to access Money.');
+              return;
+            }
+            setShowMoney(true);
+          }}
         >
-          <BlurView intensity={60} tint="light" style={styles.actionCard}>
+          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted') && styles.actionCardDisabled]}>
             <View style={styles.actionCardContent}>
               <Image source={moneyImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Money</Text>
@@ -259,7 +303,13 @@ export default function DetailsScreen() {
             <Text style={styles.notesSectionTitle}>Notes</Text>
             <TouchableOpacity 
               style={styles.addNotesButton}
-              onPress={() => setShowNotes(true)}
+              onPress={() => {
+                if (!isHost && userStatus !== 'accepted') {
+                  Alert.alert('RSVP Required', 'Please RSVP to access Notes.');
+                  return;
+                }
+                setShowNotes(true);
+              }}
             >
               <Ionicons name="add" size={16} color={Colors.secondary} />
               <Text style={styles.addNotesText}>Add/View</Text>
@@ -298,7 +348,13 @@ export default function DetailsScreen() {
             <Text style={styles.notesSectionTitle}>Notes</Text>
             <TouchableOpacity 
               style={styles.addNotesButton}
-              onPress={() => setShowNotes(true)}
+              onPress={() => {
+                if (!isHost && userStatus !== 'accepted') {
+                  Alert.alert('RSVP Required', 'Please RSVP to access Notes.');
+                  return;
+                }
+                setShowNotes(true);
+              }}
             >
               <Ionicons name="add" size={16} color={Colors.secondary} />
               <Text style={styles.addNotesText}>Add/View</Text>
@@ -596,6 +652,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  actionCardDisabled: {
+    opacity: 0.5,
   },
   actionCardContent: {
     paddingVertical: 20,

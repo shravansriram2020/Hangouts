@@ -297,4 +297,54 @@ router.delete('/:eventId/notes/:noteId', authenticateToken, async (req, res) => 
   }
 });
 
+router.post('/:id/rsvp', authenticateToken, async (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['going', 'maybe', 'not_going'];
+  
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    if (status === 'not_going') {
+      await pool.query(
+        'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+        [req.params.id, req.user.id]
+      );
+      return res.json({ message: 'Removed from event', removed: true });
+    }
+
+    const dbStatus = status === 'going' ? 'accepted' : 'maybe';
+    
+    await pool.query(
+      `UPDATE event_attendees SET status = $1 
+       WHERE event_id = $2 AND user_id = $3`,
+      [dbStatus, req.params.id, req.user.id]
+    );
+    
+    res.json({ message: 'RSVP updated', status: dbStatus });
+  } catch (error) {
+    console.error('RSVP error:', error);
+    res.status(500).json({ error: 'Failed to update RSVP' });
+  }
+});
+
+router.get('/:id/user-status', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT status FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+      [req.params.id, req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.json({ status: null });
+    }
+    
+    res.json({ status: result.rows[0].status });
+  } catch (error) {
+    console.error('Get user status error:', error);
+    res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
 module.exports = router;
