@@ -11,7 +11,11 @@ import {
   ActivityIndicator,
   Platform,
   Modal,
+  Animated,
+  Dimensions,
 } from 'react-native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -72,12 +76,93 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
+  
+  const datePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const datePickerSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const timePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const timePickerSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
     if (visible) {
       getCurrentLocation();
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (showDatePicker) {
+      Animated.parallel([
+        Animated.timing(datePickerOverlayOpacity, {
+          toValue: 1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(datePickerSlideAnim, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      datePickerSlideAnim.setValue(SCREEN_HEIGHT);
+      datePickerOverlayOpacity.setValue(0);
+    }
+  }, [showDatePicker]);
+
+  useEffect(() => {
+    if (showTimePicker) {
+      Animated.parallel([
+        Animated.timing(timePickerOverlayOpacity, {
+          toValue: 1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(timePickerSlideAnim, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      timePickerSlideAnim.setValue(SCREEN_HEIGHT);
+      timePickerOverlayOpacity.setValue(0);
+    }
+  }, [showTimePicker]);
+
+  const closeDatePicker = () => {
+    Animated.parallel([
+      Animated.timing(datePickerSlideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(datePickerOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowDatePicker(false);
+    });
+  };
+
+  const closeTimePicker = () => {
+    Animated.parallel([
+      Animated.timing(timePickerSlideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(timePickerOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowTimePicker(false);
+    });
+  };
 
   const getCurrentLocation = async () => {
     try {
@@ -351,35 +436,48 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             {Platform.OS === 'ios' && showDatePicker && (
               <Modal
                 transparent
-                animationType="slide"
+                animationType="none"
                 visible={showDatePicker}
-                onRequestClose={() => setShowDatePicker(false)}
+                onRequestClose={closeDatePicker}
               >
-                <View style={styles.pickerModalOverlay}>
-                  <View style={styles.pickerModalContent}>
+                <View style={styles.pickerModalRoot}>
+                  <Animated.View 
+                    style={[styles.pickerModalOverlayAnimated, { opacity: datePickerOverlayOpacity }]}
+                  >
+                    <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeDatePicker} activeOpacity={1} />
+                  </Animated.View>
+                  
+                  <Animated.View 
+                    style={[
+                      styles.pickerModalContent,
+                      { transform: [{ translateY: datePickerSlideAnim }] }
+                    ]}
+                  >
                     <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <TouchableOpacity onPress={closeDatePicker}>
                         <Text style={styles.pickerModalCancel}>Cancel</Text>
                       </TouchableOpacity>
                       <Text style={styles.pickerModalTitle}>Select Date</Text>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <TouchableOpacity onPress={closeDatePicker}>
                         <Text style={styles.pickerModalDone}>Done</Text>
                       </TouchableOpacity>
                     </View>
-                    <DateTimePicker
-                      value={eventDate || new Date()}
-                      mode="date"
-                      display="spinner"
-                      onChange={(event, selectedDate) => {
-                        if (selectedDate) {
-                          setEventDate(selectedDate);
-                        }
-                      }}
-                      minimumDate={new Date()}
-                      style={styles.iosDatePicker}
-                      textColor={Colors.secondary}
-                    />
-                  </View>
+                    <View style={styles.pickerContainer}>
+                      <DateTimePicker
+                        value={eventDate || new Date()}
+                        mode="date"
+                        display="spinner"
+                        onChange={(event, selectedDate) => {
+                          if (selectedDate) {
+                            setEventDate(selectedDate);
+                          }
+                        }}
+                        minimumDate={new Date()}
+                        style={styles.iosDatePicker}
+                        textColor={Colors.secondary}
+                      />
+                    </View>
+                  </Animated.View>
                 </View>
               </Modal>
             )}
@@ -387,34 +485,47 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             {Platform.OS === 'ios' && showTimePicker && (
               <Modal
                 transparent
-                animationType="slide"
+                animationType="none"
                 visible={showTimePicker}
-                onRequestClose={() => setShowTimePicker(false)}
+                onRequestClose={closeTimePicker}
               >
-                <View style={styles.pickerModalOverlay}>
-                  <View style={styles.pickerModalContent}>
+                <View style={styles.pickerModalRoot}>
+                  <Animated.View 
+                    style={[styles.pickerModalOverlayAnimated, { opacity: timePickerOverlayOpacity }]}
+                  >
+                    <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeTimePicker} activeOpacity={1} />
+                  </Animated.View>
+                  
+                  <Animated.View 
+                    style={[
+                      styles.pickerModalContent,
+                      { transform: [{ translateY: timePickerSlideAnim }] }
+                    ]}
+                  >
                     <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                      <TouchableOpacity onPress={closeTimePicker}>
                         <Text style={styles.pickerModalCancel}>Cancel</Text>
                       </TouchableOpacity>
                       <Text style={styles.pickerModalTitle}>Select Time</Text>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                      <TouchableOpacity onPress={closeTimePicker}>
                         <Text style={styles.pickerModalDone}>Done</Text>
                       </TouchableOpacity>
                     </View>
-                    <DateTimePicker
-                      value={eventTime || new Date()}
-                      mode="time"
-                      display="spinner"
-                      onChange={(event, selectedTime) => {
-                        if (selectedTime) {
-                          setEventTime(selectedTime);
-                        }
-                      }}
-                      style={styles.iosDatePicker}
-                      textColor={Colors.secondary}
-                    />
-                  </View>
+                    <View style={styles.pickerContainer}>
+                      <DateTimePicker
+                        value={eventTime || new Date()}
+                        mode="time"
+                        display="spinner"
+                        onChange={(event, selectedTime) => {
+                          if (selectedTime) {
+                            setEventTime(selectedTime);
+                          }
+                        }}
+                        style={styles.iosDatePicker}
+                        textColor={Colors.secondary}
+                      />
+                    </View>
+                  </Animated.View>
                 </View>
               </Modal>
             )}
@@ -989,12 +1100,23 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     marginTop: 2,
   },
+  pickerModalRoot: {
+    flex: 1,
+  },
   pickerModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
+  pickerModalOverlayAnimated: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
   pickerModalContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -1027,5 +1149,10 @@ const styles = StyleSheet.create({
   iosDatePicker: {
     height: 216,
     backgroundColor: '#FFFFFF',
+  },
+  pickerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
   },
 });
