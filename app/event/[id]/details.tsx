@@ -474,6 +474,8 @@ export default function DetailsScreen() {
         onEventDeleted={() => router.replace('/')}
         onAttendeeRemoved={refreshEvent}
         onGradientChange={(color1, color2) => updateGradient(color1, color2)}
+        onTitleChange={() => refreshEvent()}
+        currentTitle={event.title}
       />
       </ScrollView>
     </LinearGradient>

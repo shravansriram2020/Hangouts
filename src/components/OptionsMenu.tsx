@@ -9,8 +9,11 @@ import {
   ScrollView,
   Image,
   Animated,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import NativeGradientPicker from './NativeGradientPicker';
@@ -24,6 +27,8 @@ interface Props {
   onEventDeleted: () => void;
   onAttendeeRemoved: () => void;
   onGradientChange?: (color1: string, color2: string) => void;
+  onTitleChange?: (newTitle: string) => void;
+  currentTitle?: string;
 }
 
 export default function OptionsMenu({
@@ -35,14 +40,23 @@ export default function OptionsMenu({
   onEventDeleted,
   onAttendeeRemoved,
   onGradientChange,
+  onTitleChange,
+  currentTitle,
 }: Props) {
   const [showRemoveAttendee, setShowRemoveAttendee] = useState(false);
   const [showGradientPicker, setShowGradientPicker] = useState(false);
+  const [showTitleEdit, setShowTitleEdit] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
   const [removing, setRemoving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const slideAnim = useRef(new Animated.Value(400)).current;
+  const titleSlideAnim = useRef(new Animated.Value(400)).current;
 
   useEffect(() => {
     if (visible) {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
@@ -53,6 +67,37 @@ export default function OptionsMenu({
       slideAnim.setValue(400);
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (showTitleEdit) {
+      setNewTitle(currentTitle || '');
+      Animated.spring(titleSlideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 10,
+      }).start();
+    } else {
+      titleSlideAnim.setValue(400);
+    }
+  }, [showTitleEdit]);
+
+  const handleSaveTitle = async () => {
+    if (!newTitle.trim()) {
+      Alert.alert('Required', 'Please enter a title');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put(`/events/${eventId}`, { title: newTitle.trim() });
+      onTitleChange?.(newTitle.trim());
+      setShowTitleEdit(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update title');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDeleteEvent = async () => {
     Alert.alert(
@@ -140,6 +185,17 @@ export default function OptionsMenu({
                     style={styles.menuItem}
                     onPress={() => {
                       onClose();
+                      setTimeout(() => setShowTitleEdit(true), 100);
+                    }}
+                  >
+                    <Ionicons name="pencil-outline" size={18} color={Colors.secondary} />
+                    <Text style={styles.menuItemText}>Change Hangout Title</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      onClose();
                       setTimeout(() => setShowGradientPicker(true), 100);
                     }}
                   >
@@ -218,6 +274,38 @@ export default function OptionsMenu({
         }}
         title="Choose Background"
       />
+
+      <Modal visible={showTitleEdit} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <Animated.View 
+            style={[styles.titleEditModal, { transform: [{ translateY: titleSlideAnim }] }]}
+          >
+            <View style={styles.titleEditHeader}>
+              <Text style={styles.titleEditTitle}>Change Hangout Title</Text>
+              <TouchableOpacity onPress={() => setShowTitleEdit(false)}>
+                <Ionicons name="close" size={24} color={Colors.secondary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.titleInput}
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder="Enter new title"
+              placeholderTextColor={Colors.grayMedium}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+              onPress={handleSaveTitle}
+              disabled={saving}
+            >
+              <Text style={styles.saveButtonText}>
+                {saving ? 'Saving...' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -325,5 +413,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.medium,
     color: Colors.secondary,
+  },
+  titleEditModal: {
+    backgroundColor: Colors.white,
+    marginTop: 'auto',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  titleEditHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  titleEditTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+    color: Colors.secondary,
+  },
+  titleInput: {
+    backgroundColor: Colors.grayLight,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: Colors.secondary,
+    fontFamily: Fonts.regular,
+    marginBottom: 20,
+  },
+  saveButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    color: Colors.white,
+    fontFamily: Fonts.semiBold,
   },
 });

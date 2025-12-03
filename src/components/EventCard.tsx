@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+
+const DATE_BOX_COLORS = ['#E67E5A', '#E6B85A', '#5AACE6'];
 
 interface EventCardProps {
   event: any;
@@ -27,12 +29,17 @@ export default function EventCard({ event, onPress }: EventCardProps) {
 
   const { month, day } = formatDate(event.event_date);
   const isHost = event.isHost;
+  
+  const dateBoxColor = useMemo(() => {
+    const index = Math.floor(Math.random() * DATE_BOX_COLORS.length);
+    return DATE_BOX_COLORS[index];
+  }, [event.id]);
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <BlurView intensity={60} tint="light" style={styles.blurContainer}>
         <View style={styles.cardContent}>
-          <View style={styles.dateBox}>
+          <View style={[styles.dateBox, { backgroundColor: dateBoxColor }]}>
             <Text style={styles.dateMonth}>{month}</Text>
             <Text style={styles.dateDay}>{day}</Text>
           </View>
@@ -116,7 +123,6 @@ const styles = StyleSheet.create({
   dateBox: {
     width: 50,
     height: 50,
-    backgroundColor: Colors.secondary,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',

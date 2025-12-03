@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,11 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Platform,
+  Modal,
+  Animated,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
@@ -35,9 +39,98 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const [showCreateConflict, setShowCreateConflict] = useState(false);
   const [selectedType, setSelectedType] = useState('');
   const [reason, setReason] = useState('');
-  const [suggestedTime, setSuggestedTime] = useState('');
+  const [suggestedDate, setSuggestedDate] = useState<Date | null>(null);
+  const [suggestedTime, setSuggestedTime] = useState<Date | null>(null);
   const [suggestedLocation, setSuggestedLocation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  const datePickerSlideAnim = useRef(new Animated.Value(300)).current;
+  const datePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const timePickerSlideAnim = useRef(new Animated.Value(300)).current;
+  const timePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+    Animated.parallel([
+      Animated.timing(datePickerOverlayOpacity, {
+        toValue: 1,
+        duration: 0,
+        useNativeDriver: true,
+      }),
+      Animated.spring(datePickerSlideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 10,
+      }),
+    ]).start();
+  };
+
+  const closeDatePicker = () => {
+    Animated.parallel([
+      Animated.timing(datePickerOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(datePickerSlideAnim, {
+        toValue: 300,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowDatePicker(false));
+  };
+
+  const openTimePicker = () => {
+    setShowTimePicker(true);
+    Animated.parallel([
+      Animated.timing(timePickerOverlayOpacity, {
+        toValue: 1,
+        duration: 0,
+        useNativeDriver: true,
+      }),
+      Animated.spring(timePickerSlideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 10,
+      }),
+    ]).start();
+  };
+
+  const closeTimePicker = () => {
+    Animated.parallel([
+      Animated.timing(timePickerOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(timePickerSlideAnim, {
+        toValue: 300,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowTimePicker(false));
+  };
+
+  const formatDisplayDate = (date: Date | null) => {
+    if (!date) return 'Select Date';
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const formatDisplayTime = (time: Date | null) => {
+    if (!time) return 'Select Time';
+    return time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  const formatSuggestedDateTime = () => {
+    if (!suggestedDate || !suggestedTime) return null;
+    const date = formatDisplayDate(suggestedDate);
+    const time = formatDisplayTime(suggestedTime);
+    return `${date} ${time}`;
+  };
 
   useEffect(() => {
     if (visible) {
@@ -60,8 +153,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
       return;
     }
 
-    if (selectedType === 'time' && !suggestedTime) {
-      Alert.alert('Required', 'Please enter a suggested time');
+    if (selectedType === 'time' && (!suggestedDate || !suggestedTime)) {
+      Alert.alert('Required', 'Please select a suggested date and time');
       return;
     }
 
@@ -72,18 +165,20 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 
     setLoading(true);
     try {
+      const formattedDateTime = formatSuggestedDateTime();
       await api.post('/conflicts', {
         eventId,
         conflictType: selectedType,
         reason,
-        suggestedTime: selectedType === 'time' ? suggestedTime : null,
+        suggestedTime: selectedType === 'time' ? formattedDateTime : null,
         suggestedLocation: selectedType === 'location' ? suggestedLocation : null,
       });
 
       setShowCreateConflict(false);
       setSelectedType('');
       setReason('');
-      setSuggestedTime('');
+      setSuggestedDate(null);
+      setSuggestedTime(null);
       setSuggestedLocation('');
       fetchConflicts();
     } catch (error: any) {
@@ -125,6 +220,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   };
 
   return (
+    <>
     <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
       <ScrollView style={styles.content}>
             {showCreateConflict ? (
@@ -161,14 +257,27 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 
                 {selectedType === 'time' && (
                   <>
-                    <Text style={styles.formLabel}>Suggested Time *</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={suggestedTime}
-                      onChangeText={setSuggestedTime}
-                      placeholder="mm/dd/yyyy --:-- --"
-                      placeholderTextColor={Colors.grayMedium}
-                    />
+                    <Text style={styles.formLabel}>Suggested Date & Time *</Text>
+                    <View style={styles.dateTimeRow}>
+                      <TouchableOpacity 
+                        style={styles.dateTimeButton}
+                        onPress={openDatePicker}
+                      >
+                        <Ionicons name="calendar-outline" size={18} color={Colors.gray} />
+                        <Text style={[styles.dateTimeText, !suggestedDate && styles.dateTimePlaceholder]}>
+                          {formatDisplayDate(suggestedDate)}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.dateTimeButton}
+                        onPress={openTimePicker}
+                      >
+                        <Ionicons name="time-outline" size={18} color={Colors.gray} />
+                        <Text style={[styles.dateTimeText, !suggestedTime && styles.dateTimePlaceholder]}>
+                          {formatDisplayTime(suggestedTime)}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </>
                 )}
 
@@ -308,6 +417,107 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
             )}
           </ScrollView>
     </GlassModal>
+
+    {Platform.OS === 'ios' && showDatePicker && (
+      <Modal transparent animationType="none" visible={showDatePicker}>
+        <View style={styles.pickerModalRoot}>
+          <Animated.View style={[styles.pickerModalOverlay, { opacity: datePickerOverlayOpacity }]}>
+            <TouchableOpacity style={{ flex: 1 }} onPress={closeDatePicker} activeOpacity={1} />
+          </Animated.View>
+          <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: datePickerSlideAnim }] }]}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={closeDatePicker}>
+                <Text style={styles.pickerModalCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Select Date</Text>
+              <TouchableOpacity onPress={closeDatePicker}>
+                <Text style={styles.pickerModalDone}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={suggestedDate || new Date()}
+                mode="date"
+                display="spinner"
+                onChange={(event, selectedDate) => {
+                  if (selectedDate) {
+                    setSuggestedDate(selectedDate);
+                  }
+                }}
+                minimumDate={new Date()}
+                style={styles.iosDatePicker}
+                textColor={Colors.secondary}
+              />
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    )}
+
+    {Platform.OS === 'ios' && showTimePicker && (
+      <Modal transparent animationType="none" visible={showTimePicker}>
+        <View style={styles.pickerModalRoot}>
+          <Animated.View style={[styles.pickerModalOverlay, { opacity: timePickerOverlayOpacity }]}>
+            <TouchableOpacity style={{ flex: 1 }} onPress={closeTimePicker} activeOpacity={1} />
+          </Animated.View>
+          <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: timePickerSlideAnim }] }]}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={closeTimePicker}>
+                <Text style={styles.pickerModalCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Select Time</Text>
+              <TouchableOpacity onPress={closeTimePicker}>
+                <Text style={styles.pickerModalDone}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={suggestedTime || new Date()}
+                mode="time"
+                display="spinner"
+                onChange={(event, selectedTime) => {
+                  if (selectedTime) {
+                    setSuggestedTime(selectedTime);
+                  }
+                }}
+                style={styles.iosDatePicker}
+                textColor={Colors.secondary}
+              />
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    )}
+
+    {Platform.OS === 'android' && showDatePicker && (
+      <DateTimePicker
+        value={suggestedDate || new Date()}
+        mode="date"
+        display="default"
+        onChange={(event, selectedDate) => {
+          setShowDatePicker(false);
+          if (selectedDate) {
+            setSuggestedDate(selectedDate);
+          }
+        }}
+        minimumDate={new Date()}
+      />
+    )}
+
+    {Platform.OS === 'android' && showTimePicker && (
+      <DateTimePicker
+        value={suggestedTime || new Date()}
+        mode="time"
+        display="default"
+        onChange={(event, selectedTime) => {
+          setShowTimePicker(false);
+          if (selectedTime) {
+            setSuggestedTime(selectedTime);
+          }
+        }}
+      />
+    )}
+    </>
   );
 }
 
@@ -503,5 +713,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  dateTimeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  dateTimeText: {
+    fontSize: 14,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Regular',
+  },
+  dateTimePlaceholder: {
+    color: Colors.grayMedium,
+  },
+  pickerModalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  pickerModalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  pickerModalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grayLight,
+  },
+  pickerModalTitle: {
+    fontSize: 17,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+  },
+  pickerModalCancel: {
+    fontSize: 17,
+    fontFamily: 'Prompt-Regular',
+    color: Colors.gray,
+  },
+  pickerModalDone: {
+    fontSize: 17,
+    fontFamily: 'Prompt-SemiBold',
+    color: '#007AFF',
+  },
+  pickerContainer: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  iosDatePicker: {
+    width: '100%',
+    height: 200,
   },
 });
