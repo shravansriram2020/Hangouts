@@ -158,7 +158,7 @@ export default function MessagesScreen() {
           </TouchableOpacity>
         </View>
         {isOwnMessage && (
-          <View style={styles.avatarContainer}>
+          <View style={[styles.avatarContainer, styles.avatarContainerOwn]}>
             {item.user_profile_image ? (
               <Image source={{ uri: item.user_profile_image }} style={styles.avatar} />
             ) : (
@@ -357,7 +357,11 @@ const styles = StyleSheet.create({
     color: Colors.gray,
   },
   avatarContainer: {
-    marginLeft: 8,
+    marginRight: 10,
+  },
+  avatarContainerOwn: {
+    marginRight: 0,
+    marginLeft: 10,
   },
   avatar: {
     width: 36,

@@ -99,6 +99,7 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
           )}
         </View>
         <View style={styles.messageFooter}>
+          {!isOwnMessage && <Text style={styles.senderName}>{item.first_name}</Text>}
           <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
           {item.profile_photo && !isOwnMessage ? (
             <Image source={{ uri: item.profile_photo }} style={styles.messageAvatar} />
@@ -226,7 +227,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 6,
-    gap: 8,
+    gap: 6,
+  },
+  senderName: {
+    fontSize: 11,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
+    marginRight: 4,
   },
   messageTime: {
     fontSize: 11,

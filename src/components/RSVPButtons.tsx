@@ -48,7 +48,6 @@ export default function RSVPButtons({ eventId, currentStatus, isHost, onStatusCh
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Are you attending?</Text>
       <View style={styles.buttonsRow}>
         <TouchableOpacity
           style={styles.buttonWrapper}
@@ -109,13 +108,6 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
-  title: {
-    fontSize: 16,
-    fontFamily: Fonts.semiBold,
-    color: Colors.secondary,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
   buttonsRow: {
     flexDirection: 'row',
     gap: 10,
@@ -130,7 +122,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',

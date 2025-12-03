@@ -20,7 +20,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
-import ColorWheelPicker, { GRADIENT_PRESETS } from './ColorWheelPicker';
+import NativeGradientPicker, { GRADIENT_PRESETS } from './NativeGradientPicker';
 
 interface Props {
   visible: boolean;
@@ -349,80 +349,32 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             </View>
 
             {Platform.OS === 'ios' && showDatePicker && (
-              <Modal
-                transparent
-                animationType="slide"
-                visible={showDatePicker}
-                onRequestClose={() => setShowDatePicker(false)}
-              >
-                <TouchableOpacity 
-                  style={styles.pickerModalOverlay} 
-                  activeOpacity={1}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <View style={styles.pickerModalContent}>
-                    <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                        <Text style={styles.pickerModalCancel}>Cancel</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.pickerModalTitle}>Select Date</Text>
-                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                        <Text style={styles.pickerModalDone}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <DateTimePicker
-                      value={eventDate || new Date()}
-                      mode="date"
-                      display="spinner"
-                      onChange={(event, selectedDate) => {
-                        if (selectedDate) {
-                          setEventDate(selectedDate);
-                        }
-                      }}
-                      minimumDate={new Date()}
-                      style={styles.iosDatePicker}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </Modal>
+              <DateTimePicker
+                value={eventDate || new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setEventDate(selectedDate);
+                  }
+                }}
+                minimumDate={new Date()}
+              />
             )}
 
             {Platform.OS === 'ios' && showTimePicker && (
-              <Modal
-                transparent
-                animationType="slide"
-                visible={showTimePicker}
-                onRequestClose={() => setShowTimePicker(false)}
-              >
-                <TouchableOpacity 
-                  style={styles.pickerModalOverlay} 
-                  activeOpacity={1}
-                  onPress={() => setShowTimePicker(false)}
-                >
-                  <View style={styles.pickerModalContent}>
-                    <View style={styles.pickerModalHeader}>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                        <Text style={styles.pickerModalCancel}>Cancel</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.pickerModalTitle}>Select Time</Text>
-                      <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                        <Text style={styles.pickerModalDone}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <DateTimePicker
-                      value={eventTime || new Date()}
-                      mode="time"
-                      display="spinner"
-                      onChange={(event, selectedTime) => {
-                        if (selectedTime) {
-                          setEventTime(selectedTime);
-                        }
-                      }}
-                      style={styles.iosDatePicker}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </Modal>
+              <DateTimePicker
+                value={eventTime || new Date()}
+                mode="time"
+                display="default"
+                onChange={(event, selectedTime) => {
+                  setShowTimePicker(false);
+                  if (selectedTime) {
+                    setEventTime(selectedTime);
+                  }
+                }}
+              />
             )}
 
             {Platform.OS === 'android' && showDatePicker && (
@@ -605,7 +557,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               Choose a background theme for your hangout page
             </Text>
             
-            <ColorWheelPicker
+            <NativeGradientPicker
               visible={showGradientPicker}
               onClose={() => setShowGradientPicker(false)}
               onSelect={(c1, c2) => {

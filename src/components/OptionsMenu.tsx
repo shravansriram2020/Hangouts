@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
-import ColorWheelPicker from './ColorWheelPicker';
+import NativeGradientPicker from './NativeGradientPicker';
 
 interface Props {
   visible: boolean;
@@ -210,7 +210,7 @@ export default function OptionsMenu({
         </TouchableOpacity>
       </Modal>
 
-      <ColorWheelPicker
+      <NativeGradientPicker
         visible={showGradientPicker}
         onClose={() => setShowGradientPicker(false)}
         onSelect={(color1, color2) => {

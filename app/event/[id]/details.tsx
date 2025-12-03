@@ -375,7 +375,7 @@ export default function DetailsScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.emptyNotesPlaceholder}>
-            <Text style={styles.emptyNotesPlaceholderText}>No Notes Yet</Text>
+            <Text style={[styles.emptyNotesPlaceholderText, isDark && styles.textLightMuted]}>No Notes Yet</Text>
           </View>
         </View>
       )}
@@ -618,8 +618,8 @@ const styles = StyleSheet.create({
   },
   attendeeItem: {
     alignItems: 'center',
-    marginRight: 20,
-    width: 80,
+    marginRight: 12,
+    width: 70,
   },
   attendeeAvatar: {
     width: 64,
@@ -740,9 +740,11 @@ const styles = StyleSheet.create({
   addNotesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 12,
     gap: 4,
   },
@@ -844,5 +846,8 @@ const styles = StyleSheet.create({
   },
   textLight: {
     color: Colors.white,
+  },
+  textLightMuted: {
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 });
