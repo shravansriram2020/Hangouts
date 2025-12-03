@@ -19,6 +19,8 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
+  userStatus?: string | null;
+  isHost?: boolean;
 }
 
 interface UserResult {
@@ -27,10 +29,12 @@ interface UserResult {
   profilePhoto: string | null;
 }
 
-export default function ShareEventModal({ visible, onClose, eventId }: Props) {
+export default function ShareEventModal({ visible, onClose, eventId, userStatus, isHost }: Props) {
   const [activeTab, setActiveTab] = useState<'link' | 'username'>('link');
   const [searchQuery, setSearchQuery] = useState('');
   const [userResults, setUserResults] = useState<UserResult[]>([]);
+
+  const canShare = isHost || userStatus === 'accepted' || userStatus === 'maybe';
 
   const shareLink = `https://hangouts.app/event/${eventId}`;
 
@@ -70,7 +74,13 @@ export default function ShareEventModal({ visible, onClose, eventId }: Props) {
 
   return (
     <GlassModal visible={visible} onClose={onClose} title="Share Event">
-      <View style={styles.tabs}>
+      {!canShare ? (
+        <View style={styles.rsvpRequiredContainer}>
+          <Text style={styles.rsvpRequiredText}>Please RSVP to use Share.</Text>
+        </View>
+      ) : (
+        <>
+          <View style={styles.tabs}>
             <TouchableOpacity
               style={[styles.tab, activeTab === 'link' && styles.activeTab]}
               onPress={() => setActiveTab('link')}
@@ -146,11 +156,24 @@ export default function ShareEventModal({ visible, onClose, eventId }: Props) {
               </View>
             )}
           </ScrollView>
+        </>
+      )}
     </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
+  rsvpRequiredContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rsvpRequiredText: {
+    fontSize: 16,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Medium',
+    textAlign: 'center',
+  },
   scrollContent: {
     maxHeight: '100%',
   },

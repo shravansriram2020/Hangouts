@@ -23,7 +23,7 @@ interface Props {
 export default function RSVPButtons({ eventId, currentStatus, isHost, onStatusChanged }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  if (isHost || currentStatus === 'accepted') {
+  if (isHost) {
     return null;
   }
 
@@ -55,15 +55,13 @@ export default function RSVPButtons({ eventId, currentStatus, isHost, onStatusCh
           onPress={() => handleRSVP('going')}
           disabled={loading !== null}
         >
-          <BlurView intensity={60} tint="light" style={styles.button}>
+          <BlurView intensity={60} tint="light" style={[styles.button, currentStatus === 'accepted' && styles.buttonSelected]}>
             {loading === 'going' ? (
               <ActivityIndicator size="small" color={Colors.green} />
             ) : (
               <>
-                <View style={[styles.iconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                  <Ionicons name="checkmark-circle" size={28} color={Colors.green} />
-                </View>
-                <Text style={[styles.buttonText, { color: Colors.green }]}>Going</Text>
+                <Ionicons name="checkmark-circle" size={20} color={currentStatus === 'accepted' ? Colors.white : Colors.green} />
+                <Text style={[styles.buttonText, { color: currentStatus === 'accepted' ? Colors.white : Colors.green }]}>Going</Text>
               </>
             )}
           </BlurView>
@@ -74,15 +72,13 @@ export default function RSVPButtons({ eventId, currentStatus, isHost, onStatusCh
           onPress={() => handleRSVP('maybe')}
           disabled={loading !== null}
         >
-          <BlurView intensity={60} tint="light" style={styles.button}>
+          <BlurView intensity={60} tint="light" style={[styles.button, currentStatus === 'maybe' && styles.buttonSelectedMaybe]}>
             {loading === 'maybe' ? (
               <ActivityIndicator size="small" color={Colors.yellow} />
             ) : (
               <>
-                <View style={[styles.iconCircle, { backgroundColor: 'rgba(230, 184, 90, 0.15)' }]}>
-                  <Ionicons name="help-circle" size={28} color={Colors.yellow} />
-                </View>
-                <Text style={[styles.buttonText, { color: Colors.yellow }]}>Maybe</Text>
+                <Ionicons name="help-circle" size={20} color={currentStatus === 'maybe' ? Colors.white : Colors.yellow} />
+                <Text style={[styles.buttonText, { color: currentStatus === 'maybe' ? Colors.white : Colors.yellow }]}>Maybe</Text>
               </>
             )}
           </BlurView>
@@ -98,9 +94,7 @@ export default function RSVPButtons({ eventId, currentStatus, isHost, onStatusCh
               <ActivityIndicator size="small" color={Colors.red} />
             ) : (
               <>
-                <View style={[styles.iconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                  <Ionicons name="close-circle" size={28} color={Colors.red} />
-                </View>
+                <Ionicons name="close-circle" size={20} color={Colors.red} />
                 <Text style={[styles.buttonText, { color: Colors.red }]}>Not Going</Text>
               </>
             )}
@@ -132,24 +126,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   button: {
+    flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 90,
   },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
+  buttonSelected: {
+    backgroundColor: Colors.green,
+  },
+  buttonSelectedMaybe: {
+    backgroundColor: Colors.yellow,
   },
   buttonText: {
     fontSize: 13,
     fontFamily: Fonts.semiBold,
+    marginLeft: 6,
   },
 });

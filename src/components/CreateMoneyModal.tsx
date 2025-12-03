@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
@@ -25,6 +28,9 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
   const [selectedOwer, setSelectedOwer] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [showAttendeesList, setShowAttendeesList] = useState(false);
+
+  const selectedAttendee = attendees?.find(a => a.id === selectedOwer);
 
   const handleCreateRequest = async () => {
     if (!selectedOwer || !amount) {
@@ -67,23 +73,80 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
       <View style={styles.content}>
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Who owes you money?</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedOwer}
-              onValueChange={setSelectedOwer}
-              style={styles.picker}
-              enabled={hasAttendees}
-            >
-              <Picker.Item label={hasAttendees ? "Select a person" : "No attendees added"} value="" />
-              {otherAttendees.map((attendee: any) => (
-                <Picker.Item
-                  key={attendee.id}
-                  label={attendee.first_name}
-                  value={attendee.id}
-                />
-              ))}
-            </Picker>
-          </View>
+          {Platform.OS === 'ios' ? (
+            <>
+              <TouchableOpacity 
+                style={styles.attendeeSelector}
+                onPress={() => hasAttendees && setShowAttendeesList(!showAttendeesList)}
+                disabled={!hasAttendees}
+              >
+                {selectedAttendee ? (
+                  <View style={styles.selectedAttendeeRow}>
+                    {selectedAttendee.profile_photo ? (
+                      <Image source={{ uri: selectedAttendee.profile_photo }} style={styles.attendeeAvatar} />
+                    ) : (
+                      <View style={styles.attendeeAvatarPlaceholder}>
+                        <Text style={styles.attendeeInitial}>{selectedAttendee.first_name?.charAt(0)}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.attendeeName}>{selectedAttendee.first_name}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.attendeePlaceholder}>
+                    {hasAttendees ? 'Tap to select a person' : 'No attendees added'}
+                  </Text>
+                )}
+                <Ionicons name="chevron-down" size={20} color={Colors.gray} />
+              </TouchableOpacity>
+              {showAttendeesList && hasAttendees && (
+                <ScrollView style={styles.attendeesList} nestedScrollEnabled>
+                  {otherAttendees.map((attendee: any) => (
+                    <TouchableOpacity
+                      key={attendee.id}
+                      style={[
+                        styles.attendeeItem,
+                        selectedOwer === attendee.id && styles.attendeeItemSelected
+                      ]}
+                      onPress={() => {
+                        setSelectedOwer(attendee.id);
+                        setShowAttendeesList(false);
+                      }}
+                    >
+                      {attendee.profile_photo ? (
+                        <Image source={{ uri: attendee.profile_photo }} style={styles.attendeeAvatar} />
+                      ) : (
+                        <View style={styles.attendeeAvatarPlaceholder}>
+                          <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
+                        </View>
+                      )}
+                      <Text style={styles.attendeeName}>{attendee.first_name}</Text>
+                      {selectedOwer === attendee.id && (
+                        <Ionicons name="checkmark-circle" size={20} color={Colors.green} style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </>
+          ) : (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedOwer}
+                onValueChange={setSelectedOwer}
+                style={styles.picker}
+                enabled={hasAttendees}
+              >
+                <Picker.Item label={hasAttendees ? "Select a person" : "No attendees added"} value="" />
+                {otherAttendees.map((attendee: any) => (
+                  <Picker.Item
+                    key={attendee.id}
+                    label={attendee.first_name}
+                    value={attendee.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -160,6 +223,71 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 48,
+  },
+  attendeeSelector: {
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectedAttendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  attendeePlaceholder: {
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
+  },
+  attendeesList: {
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    marginTop: 8,
+    maxHeight: 180,
+  },
+  attendeeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grayLight,
+  },
+  attendeeItemSelected: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  attendeeAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  attendeeAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  attendeeInitial: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    color: Colors.white,
+  },
+  attendeeName: {
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
+    flex: 1,
+  },
+  checkIcon: {
+    marginLeft: 8,
   },
   formButtons: {
     flexDirection: 'row',

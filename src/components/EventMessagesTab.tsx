@@ -225,13 +225,13 @@ const styles = StyleSheet.create({
   messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
+    gap: 8,
   },
   messageTime: {
     fontSize: 11,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
-    marginRight: 6,
   },
   messageAvatar: {
     width: 24,

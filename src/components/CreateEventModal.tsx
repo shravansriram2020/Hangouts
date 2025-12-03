@@ -20,7 +20,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
-import NativeGradientPicker, { GRADIENT_PRESETS } from './NativeGradientPicker';
+import ColorWheelPicker, { GRADIENT_PRESETS } from './ColorWheelPicker';
 
 interface Props {
   visible: boolean;
@@ -557,7 +557,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               Choose a background theme for your hangout page
             </Text>
             
-            <NativeGradientPicker
+            <ColorWheelPicker
               visible={showGradientPicker}
               onClose={() => setShowGradientPicker(false)}
               onSelect={(c1, c2) => {
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   suggestButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
     marginLeft: 8,

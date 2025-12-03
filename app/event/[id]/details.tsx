@@ -162,6 +162,20 @@ export default function DetailsScreen() {
     ? [event.gradient_color1, event.gradient_color2]
     : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
 
+  const isGradientDark = (colors: string[]) => {
+    const getLuminance = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    };
+    const avgLuminance = colors.reduce((sum, c) => sum + getLuminance(c), 0) / colors.length;
+    return avgLuminance < 0.5;
+  };
+
+  const isDark = isGradientDark(gradientColors);
+  const textColor = isDark ? Colors.white : Colors.secondary;
+
   return (
     <LinearGradient
       colors={gradientColors}
@@ -199,7 +213,7 @@ export default function DetailsScreen() {
         </View>
       </BlurView>
 
-      <Text style={styles.sectionTitle}>Attending</Text>
+      <Text style={[styles.sectionTitle, isDark && styles.textLight]}>Attending</Text>
       <View style={styles.attendeesContainer}>
         <ScrollView 
           horizontal 
@@ -218,7 +232,7 @@ export default function DetailsScreen() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.attendeeName} numberOfLines={1}>{attendee.first_name}</Text>
+                <Text style={[styles.attendeeName, isDark && styles.textLight]} numberOfLines={1}>{attendee.first_name}</Text>
               </View>
             ))
           ) : (
@@ -228,13 +242,13 @@ export default function DetailsScreen() {
                   <Text style={styles.attendeeInitial}>?</Text>
                 </View>
               </View>
-              <Text style={styles.attendeeName}>No attendees</Text>
+              <Text style={[styles.attendeeName, isDark && styles.textLight]}>No attendees</Text>
             </View>
           )}
         </ScrollView>
       </View>
 
-      {!isHost && userStatus !== 'accepted' && (
+      {!isHost && (
         <RSVPButtons
           eventId={event.id}
           currentStatus={userStatus}
@@ -247,14 +261,14 @@ export default function DetailsScreen() {
         <TouchableOpacity 
           style={styles.actionCardContainer}
           onPress={() => {
-            if (!isHost && userStatus !== 'accepted') {
-              Alert.alert('RSVP Required', 'Please RSVP to access Rides.');
+            if (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') {
+              Alert.alert('RSVP Required', 'Please RSVP to use Rides.');
               return;
             }
             setShowRides(true);
           }}
         >
-          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted') && styles.actionCardDisabled]}>
+          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') && styles.actionCardDisabled]}>
             <View style={styles.actionCardContent}>
               <Image source={ridesImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Rides</Text>
@@ -264,14 +278,14 @@ export default function DetailsScreen() {
         <TouchableOpacity 
           style={styles.actionCardContainer}
           onPress={() => {
-            if (!isHost && userStatus !== 'accepted') {
-              Alert.alert('RSVP Required', 'Please RSVP to access Money.');
+            if (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') {
+              Alert.alert('RSVP Required', 'Please RSVP to use Money.');
               return;
             }
             setShowMoney(true);
           }}
         >
-          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted') && styles.actionCardDisabled]}>
+          <BlurView intensity={60} tint="light" style={[styles.actionCard, (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') && styles.actionCardDisabled]}>
             <View style={styles.actionCardContent}>
               <Image source={moneyImage} style={styles.actionImage} />
               <Text style={styles.actionLabel}>Money</Text>
@@ -300,19 +314,19 @@ export default function DetailsScreen() {
       {event.notes && Array.isArray(event.notes) && event.notes.length > 0 && (
         <View style={styles.notesSection}>
           <View style={styles.notesSectionHeader}>
-            <Text style={styles.notesSectionTitle}>Notes</Text>
+            <Text style={[styles.notesSectionTitle, isDark && styles.textLight]}>Notes</Text>
             <TouchableOpacity 
               style={styles.addNotesButton}
               onPress={() => {
-                if (!isHost && userStatus !== 'accepted') {
-                  Alert.alert('RSVP Required', 'Please RSVP to access Notes.');
+                if (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') {
+                  Alert.alert('RSVP Required', 'Please RSVP to use Notes.');
                   return;
                 }
                 setShowNotes(true);
               }}
             >
-              <Ionicons name="add" size={16} color={Colors.secondary} />
-              <Text style={styles.addNotesText}>Add/View</Text>
+              <Ionicons name="add" size={16} color={isDark ? Colors.white : Colors.secondary} />
+              <Text style={[styles.addNotesText, isDark && styles.textLight]}>Add/View</Text>
             </TouchableOpacity>
           </View>
           <ScrollView 
@@ -345,19 +359,19 @@ export default function DetailsScreen() {
       {(!event.notes || event.notes.length === 0) && (
         <View style={styles.notesSection}>
           <View style={styles.notesSectionHeader}>
-            <Text style={styles.notesSectionTitle}>Notes</Text>
+            <Text style={[styles.notesSectionTitle, isDark && styles.textLight]}>Notes</Text>
             <TouchableOpacity 
               style={styles.addNotesButton}
               onPress={() => {
-                if (!isHost && userStatus !== 'accepted') {
-                  Alert.alert('RSVP Required', 'Please RSVP to access Notes.');
+                if (!isHost && userStatus !== 'accepted' && userStatus !== 'maybe') {
+                  Alert.alert('RSVP Required', 'Please RSVP to use Notes.');
                   return;
                 }
                 setShowNotes(true);
               }}
             >
-              <Ionicons name="add" size={16} color={Colors.secondary} />
-              <Text style={styles.addNotesText}>Add/View</Text>
+              <Ionicons name="add" size={16} color={isDark ? Colors.white : Colors.secondary} />
+              <Text style={[styles.addNotesText, isDark && styles.textLight]}>Add/View</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.emptyNotesPlaceholder}>
@@ -827,5 +841,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.medium,
     color: Colors.red,
+  },
+  textLight: {
+    color: Colors.white,
   },
 });
