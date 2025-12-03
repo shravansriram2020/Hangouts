@@ -20,6 +20,10 @@ Preferred communication style: Simple, everyday language.
 - **Messages Page**: All messages now display sender avatars with sender names for non-user messages
 - **GlassModal Animations**: Snappy spring transitions with tension: 120, friction: 10
 - **Tab Navigation**: Haptic feedback (vibration) when switching between pill tabs
+- **Three Dots Menu**: Haptic feedback on iOS when opening the options menu
+- **Change Hangout Title**: New option in three dots menu to edit event title with slide-up modal
+- **Event Card Date Colors**: Homepage event cards now show random date box background colors (orange, yellow, blue) using brand colors
+- **Conflicts Time Picker**: Native iOS spinner wheel picker for selecting suggested times (matches create event experience)
 
 ### Map Features
 - **Native Maps with Conditional Rendering**: Uses `react-native-maps` for iOS/Android (Expo Go compatible) with static TomTom image fallback for web
