@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,24 +13,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import ColorPicker from 'react-native-wheel-color-picker';
 import { Colors, Fonts } from '../../constants/theme';
-
-let ColorPicker: any = null;
-let Panel1: any = null;
-let HueSlider: any = null;
-let Preview: any = null;
-
-if (Platform.OS !== 'web') {
-  try {
-    const colorPickerModule = require('reanimated-color-picker');
-    ColorPicker = colorPickerModule.default;
-    Panel1 = colorPickerModule.Panel1;
-    HueSlider = colorPickerModule.HueSlider;
-    Preview = colorPickerModule.Preview;
-  } catch (e) {
-    console.log('Color picker not available');
-  }
-}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -155,9 +139,9 @@ export default function NativeGradientPicker({
     setActiveColorPicker(field);
   };
 
-  const onColorChange = useCallback((color: { hex: string }) => {
-    setTempColor(color.hex);
-  }, []);
+  const onColorChange = (color: string) => {
+    setTempColor(color);
+  };
 
   const handleColorConfirm = () => {
     if (Platform.OS !== 'web') {
@@ -230,8 +214,6 @@ export default function NativeGradientPicker({
     });
   };
 
-  const isColorPickerAvailable = Platform.OS !== 'web' && ColorPicker && Panel1 && HueSlider;
-
   if (!visible) return null;
 
   return (
@@ -281,7 +263,6 @@ export default function NativeGradientPicker({
                       color1 ? { backgroundColor: color1 } : styles.colorFieldEmpty
                     ]}
                     onPress={() => handleColorFieldPress(1)}
-                    disabled={!isColorPickerAvailable}
                   >
                     {!color1 && (
                       <Ionicons name="add" size={24} color={Colors.gray} />
@@ -297,7 +278,6 @@ export default function NativeGradientPicker({
                       color2 ? { backgroundColor: color2 } : styles.colorFieldEmpty
                     ]}
                     onPress={() => handleColorFieldPress(2)}
-                    disabled={!isColorPickerAvailable}
                   >
                     {!color2 && (
                       <Ionicons name="add" size={24} color={Colors.gray} />
@@ -305,18 +285,6 @@ export default function NativeGradientPicker({
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {!isColorPickerAvailable && (
-                <Text style={styles.webNotice}>
-                  Custom color selection requires a native device. Please use the preset gradients below.
-                </Text>
-              )}
-
-              {isColorPickerAvailable && (
-                <Text style={styles.hintText}>
-                  Tap a color box to open the color wheel. Both colors must be selected to apply custom gradient.
-                </Text>
-              )}
 
               {(color1 || color2) && (
                 <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
@@ -354,53 +322,51 @@ export default function NativeGradientPicker({
         </View>
       </Modal>
 
-      {isColorPickerAvailable && (
-        <Modal 
-          visible={activeColorPicker !== null} 
-          animationType="none" 
-          transparent
-          onRequestClose={handleColorPickerClose}
-        >
-          <View style={styles.modalRoot}>
-            <Animated.View 
-              style={[styles.overlay, { opacity: colorPickerOverlayOpacity }]}
-            >
-              <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleColorPickerClose} activeOpacity={1} />
-            </Animated.View>
-            
-            <Animated.View 
-              style={[
-                styles.colorPickerModal,
-                { transform: [{ translateY: colorPickerSlideAnim }] }
-              ]}
-            >
-              <View style={styles.colorPickerHeader}>
-                <TouchableOpacity onPress={handleColorPickerClose} style={styles.cancelButton}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.colorPickerTitle}>Select Color {activeColorPicker}</Text>
-                <TouchableOpacity onPress={handleColorConfirm} style={styles.doneButton}>
-                  <Text style={styles.doneButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
+      <Modal 
+        visible={activeColorPicker !== null} 
+        animationType="none" 
+        transparent
+        onRequestClose={handleColorPickerClose}
+      >
+        <View style={styles.modalRoot}>
+          <Animated.View 
+            style={[styles.overlay, { opacity: colorPickerOverlayOpacity }]}
+          >
+            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleColorPickerClose} activeOpacity={1} />
+          </Animated.View>
+          
+          <Animated.View 
+            style={[
+              styles.colorPickerModal,
+              { transform: [{ translateY: colorPickerSlideAnim }] }
+            ]}
+          >
+            <View style={styles.colorPickerHeader}>
+              <TouchableOpacity onPress={handleColorPickerClose} style={styles.cancelButton}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.colorPickerTitle}>Select Color {activeColorPicker}</Text>
+              <TouchableOpacity onPress={handleColorConfirm} style={styles.doneButton}>
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
 
-              <View style={styles.colorPickerContent}>
-                {ColorPicker && Panel1 && HueSlider && Preview && (
-                  <ColorPicker
-                    value={tempColor}
-                    onComplete={onColorChange}
-                    style={styles.colorWheel}
-                  >
-                    <Preview style={styles.colorPreviewBox} />
-                    <Panel1 style={styles.colorPanel} />
-                    <HueSlider style={styles.hueSlider} />
-                  </ColorPicker>
-                )}
-              </View>
-            </Animated.View>
-          </View>
-        </Modal>
-      )}
+            <View style={styles.colorPickerContent}>
+              <View style={[styles.colorPreviewBox, { backgroundColor: tempColor }]} />
+              <ColorPicker
+                color={tempColor}
+                onColorChangeComplete={onColorChange}
+                thumbSize={30}
+                sliderSize={30}
+                noSnap={true}
+                row={false}
+                swatches={false}
+                discrete={false}
+              />
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -472,7 +438,7 @@ const styles = StyleSheet.create({
   colorFieldsContainer: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   colorFieldWrapper: {
     flex: 1,
@@ -495,21 +461,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E5EA',
     borderStyle: 'dashed',
     borderColor: Colors.gray,
-  },
-  hintText: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    color: Colors.gray,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  webNotice: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    color: '#FF9500',
-    textAlign: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 20,
   },
   clearButton: {
     alignSelf: 'center',
@@ -606,21 +557,10 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  colorWheel: {
-    width: SCREEN_WIDTH - 40,
-    gap: 20,
-  },
   colorPreviewBox: {
+    width: '100%',
     height: 60,
     borderRadius: 12,
-    marginBottom: 10,
-  },
-  colorPanel: {
-    height: 200,
-    borderRadius: 12,
-  },
-  hueSlider: {
-    height: 40,
-    borderRadius: 12,
+    marginBottom: 20,
   },
 });
