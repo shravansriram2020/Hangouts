@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,25 @@ import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
+const getGradientLuminance = (color1: string, color2: string) => {
+  const rgb1 = hexToRgb(color1);
+  const rgb2 = hexToRgb(color2);
+  if (!rgb1 || !rgb2) return 1;
+  const avgR = (rgb1.r + rgb2.r) / 2;
+  const avgG = (rgb1.g + rgb2.g) / 2;
+  const avgB = (rgb1.b + rgb2.b) / 2;
+  return (0.299 * avgR + 0.587 * avgG + 0.114 * avgB) / 255;
+};
+
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 16) / 2;
 
@@ -40,9 +59,19 @@ export default function PhotosScreen() {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
-    ? [event.gradient_color1, event.gradient_color2]
-    : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
+  const gradientColors = useMemo(() => {
+    return event?.gradient_color1 && event?.gradient_color2 
+      ? [event.gradient_color1, event.gradient_color2]
+      : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
+  }, [event?.gradient_color1, event?.gradient_color2]);
+
+  const isDarkGradient = useMemo(() => {
+    const lum = getGradientLuminance(gradientColors[0], gradientColors[1]);
+    return lum < 0.5;
+  }, [gradientColors]);
+
+  const textColor = isDarkGradient ? Colors.white : Colors.secondary;
+  const mutedTextColor = isDarkGradient ? 'rgba(255,255,255,0.7)' : Colors.grayMedium;
 
   useEffect(() => {
     if (event?.id) {
@@ -183,9 +212,9 @@ export default function PhotosScreen() {
 
       {photos.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="camera-outline" size={64} color={Colors.grayMedium} />
-          <Text style={styles.emptyTitle}>No photos yet</Text>
-          <Text style={styles.emptySubtitle}>Be the first to share a moment!</Text>
+          <Ionicons name="camera-outline" size={64} color={mutedTextColor} />
+          <Text style={[styles.emptyTitle, { color: textColor }]}>No photos yet</Text>
+          <Text style={[styles.emptySubtitle, { color: mutedTextColor }]}>Be the first to share a moment!</Text>
         </View>
       ) : (
         <FlatList

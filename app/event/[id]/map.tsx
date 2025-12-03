@@ -21,6 +21,25 @@ import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
+const getGradientLuminance = (color1: string, color2: string) => {
+  const rgb1 = hexToRgb(color1);
+  const rgb2 = hexToRgb(color2);
+  if (!rgb1 || !rgb2) return 1;
+  const avgR = (rgb1.r + rgb2.r) / 2;
+  const avgG = (rgb1.g + rgb2.g) / 2;
+  const avgB = (rgb1.b + rgb2.b) / 2;
+  return (0.299 * avgR + 0.587 * avgG + 0.114 * avgB) / 255;
+};
+
 const TOMTOM_API_KEY = process.env.EXPO_PUBLIC_TOMTOM_API_KEY || 'zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -65,6 +84,14 @@ export default function MapScreen() {
       ? [event.gradient_color1, event.gradient_color2]
       : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
   }, [event?.gradient_color1, event?.gradient_color2]);
+
+  const isDarkGradient = useMemo(() => {
+    const lum = getGradientLuminance(gradientColors[0], gradientColors[1]);
+    return lum < 0.5;
+  }, [gradientColors]);
+
+  const textColor = isDarkGradient ? Colors.white : Colors.secondary;
+  const mutedTextColor = isDarkGradient ? 'rgba(255,255,255,0.7)' : Colors.grayMedium;
 
   const eventLat = event?.location_lat || 34.15791;
   const eventLng = event?.location_lng || -118.634725;
@@ -444,8 +471,8 @@ export default function MapScreen() {
       {locationSharingAttendees.length > 0 && (
         <View style={styles.attendeesSection}>
           <View style={styles.attendeesSectionHeader}>
-            <Ionicons name="location" size={16} color={Colors.secondary} />
-            <Text style={styles.attendeesSectionTitle}>Live Locations ({locationSharingAttendees.length})</Text>
+            <Ionicons name="location" size={16} color={textColor} />
+            <Text style={[styles.attendeesSectionTitle, { color: textColor }]}>Live Locations ({locationSharingAttendees.length})</Text>
           </View>
           <ScrollView 
             horizontal 
@@ -468,12 +495,12 @@ export default function MapScreen() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.attendeeName} numberOfLines={1}>{attendee.user_name?.split(' ')[0]}</Text>
+                <Text style={[styles.attendeeName, { color: textColor }]} numberOfLines={1}>{attendee.user_name?.split(' ')[0]}</Text>
                 {attendee.distance && (
-                  <Text style={styles.attendeeDistance}>{attendee.distance} mi</Text>
+                  <Text style={[styles.attendeeDistance, { color: mutedTextColor }]}>{attendee.distance} mi</Text>
                 )}
                 {attendee.eta && attendee.is_on_my_way && (
-                  <Text style={styles.attendeeEta}>{formatETA(attendee.eta)}</Text>
+                  <Text style={[styles.attendeeEta, { color: mutedTextColor }]}>{formatETA(attendee.eta)}</Text>
                 )}
               </View>
             ))}
@@ -487,9 +514,9 @@ export default function MapScreen() {
             <Ionicons 
               name={locationSharing ? "location" : "location-outline"} 
               size={20} 
-              color={locationSharing ? "#10B981" : Colors.secondary} 
+              color={locationSharing ? "#10B981" : textColor} 
             />
-            <Text style={styles.sharingText}>Share my location</Text>
+            <Text style={[styles.sharingText, { color: textColor }]}>Share my location</Text>
           </View>
           <Switch
             value={locationSharing}
@@ -501,7 +528,7 @@ export default function MapScreen() {
 
         {locationSharing && (
           <View style={styles.sharingStatus}>
-            <Text style={styles.sharingStatusText}>
+            <Text style={[styles.sharingStatusText, { color: mutedTextColor }]}>
               {sharingCount} {sharingCount === 1 ? 'person' : 'people'} sharing location
             </Text>
           </View>
@@ -514,9 +541,9 @@ export default function MapScreen() {
           <Ionicons 
             name="car" 
             size={20} 
-            color={isOnMyWay ? "white" : Colors.secondary} 
+            color={isOnMyWay ? "white" : textColor} 
           />
-          <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive]}>
+          <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive, !isOnMyWay && { color: textColor }]}>
             {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
           </Text>
         </TouchableOpacity>

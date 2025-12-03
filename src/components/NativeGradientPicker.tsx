@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,11 @@ import {
   ScrollView,
   Platform,
   Dimensions,
-  SafeAreaView,
-  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import ColorPicker, { Panel1, HueSlider, Preview } from 'reanimated-color-picker';
 import { Colors, Fonts } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -39,12 +38,6 @@ export const GRADIENT_PRESETS: GradientPreset[] = [
   { name: 'Coral', color1: '#FB7185', color2: '#F472B6' },
 ];
 
-const QUICK_COLORS = [
-  '#000000', '#FFFFFF', '#EF4444', '#F97316', '#F59E0B', 
-  '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#A855F7',
-  '#1E3A5F', '#2D5A8B', '#059669', '#D97706', '#BE185D',
-];
-
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -65,7 +58,7 @@ export default function NativeGradientPicker({
   const [color1, setColor1] = useState(selectedColor1 || '');
   const [color2, setColor2] = useState(selectedColor2 || '');
   const [activeColorPicker, setActiveColorPicker] = useState<1 | 2 | null>(null);
-  const [hexInput, setHexInput] = useState('');
+  const [tempColor, setTempColor] = useState('#1E3A5F');
 
   useEffect(() => {
     if (visible) {
@@ -78,26 +71,25 @@ export default function NativeGradientPicker({
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setHexInput(field === 1 ? (color1 || '') : (color2 || ''));
+    const currentColor = field === 1 ? color1 : color2;
+    setTempColor(currentColor || '#1E3A5F');
     setActiveColorPicker(field);
   };
 
-  const handleQuickColorSelect = (hex: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setHexInput(hex);
-  };
+  const onColorChange = useCallback((color: { hex: string }) => {
+    setTempColor(color.hex);
+  }, []);
 
   const handleColorConfirm = () => {
-    const validHex = hexInput.match(/^#[0-9A-Fa-f]{6}$/) ? hexInput : '';
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     if (activeColorPicker === 1) {
-      setColor1(validHex);
+      setColor1(tempColor);
     } else if (activeColorPicker === 2) {
-      setColor2(validHex);
+      setColor2(tempColor);
     }
     setActiveColorPicker(null);
-    setHexInput('');
   };
 
   const handleApply = () => {
@@ -187,7 +179,7 @@ export default function NativeGradientPicker({
               </View>
 
               <Text style={styles.hintText}>
-                Leave empty to use the default gradient. Both colors must be selected to apply custom gradient.
+                Tap a color box to open the color wheel. Both colors must be selected to apply custom gradient.
               </Text>
 
               {(color1 || color2) && (
@@ -245,55 +237,15 @@ export default function NativeGradientPicker({
             </View>
 
             <View style={styles.colorPickerContent}>
-              {hexInput ? (
-                <View style={[styles.colorPreviewBox, { backgroundColor: hexInput }]} />
-              ) : (
-                <View style={[styles.colorPreviewBox, styles.colorPreviewEmpty]}>
-                  <Text style={styles.colorPreviewEmptyText}>Select a color</Text>
-                </View>
-              )}
-
-              <Text style={styles.inputLabel}>Hex Color Code</Text>
-              <TextInput
-                style={styles.hexInput}
-                value={hexInput}
-                onChangeText={(text) => {
-                  let formatted = text.toUpperCase();
-                  if (!formatted.startsWith('#')) {
-                    formatted = '#' + formatted;
-                  }
-                  if (formatted.length <= 7) {
-                    setHexInput(formatted);
-                  }
-                }}
-                placeholder="#000000"
-                placeholderTextColor={Colors.gray}
-                autoCapitalize="characters"
-                maxLength={7}
-              />
-
-              <Text style={styles.quickColorsLabel}>Quick Colors</Text>
-              <View style={styles.quickColorsGrid}>
-                {QUICK_COLORS.map((hex) => (
-                  <TouchableOpacity
-                    key={hex}
-                    style={[
-                      styles.quickColorButton,
-                      { backgroundColor: hex },
-                      hexInput === hex && styles.quickColorSelected
-                    ]}
-                    onPress={() => handleQuickColorSelect(hex)}
-                  >
-                    {hexInput === hex && (
-                      <Ionicons 
-                        name="checkmark" 
-                        size={18} 
-                        color={hex === '#FFFFFF' || hex === '#F59E0B' ? '#000000' : '#FFFFFF'} 
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <ColorPicker
+                value={tempColor}
+                onComplete={onColorChange}
+                style={styles.colorWheel}
+              >
+                <Preview style={styles.colorPreviewBox} />
+                <Panel1 style={styles.colorPanel} />
+                <HueSlider style={styles.hueSlider} />
+              </ColorPicker>
             </View>
           </View>
         </View>
@@ -375,29 +327,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   colorField: {
-    height: 56,
-    borderRadius: 10,
+    height: 80,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   colorFieldEmpty: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E5E5EA',
+    backgroundColor: '#E5E5EA',
     borderStyle: 'dashed',
+    borderColor: Colors.gray,
   },
   hintText: {
     fontSize: 13,
     fontFamily: Fonts.regular,
     color: Colors.gray,
     textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 18,
+    marginBottom: 16,
   },
   clearButton: {
     alignSelf: 'center',
@@ -411,10 +358,10 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: Fonts.semiBold,
     color: Colors.secondary,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   presetsGrid: {
     flexDirection: 'row',
@@ -432,21 +379,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   presetSelected: {
-    borderWidth: 3,
     borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   presetName: {
     fontSize: 11,
     fontFamily: Fonts.medium,
-    color: Colors.gray,
-    marginTop: 6,
+    color: Colors.secondary,
+    marginTop: 4,
     textAlign: 'center',
   },
   colorPickerOverlay: {
@@ -455,22 +403,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   colorPickerModal: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    paddingBottom: 40,
   },
   colorPickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
   colorPickerTitle: {
     fontSize: 17,
@@ -495,63 +440,23 @@ const styles = StyleSheet.create({
   },
   colorPickerContent: {
     padding: 20,
+    alignItems: 'center',
+  },
+  colorWheel: {
+    width: SCREEN_WIDTH - 40,
+    gap: 20,
   },
   colorPreviewBox: {
-    height: 80,
+    height: 60,
     borderRadius: 12,
-    marginBottom: 20,
+    marginBottom: 10,
   },
-  colorPreviewEmpty: {
-    backgroundColor: '#E5E5EA',
-    justifyContent: 'center',
-    alignItems: 'center',
+  colorPanel: {
+    height: 200,
+    borderRadius: 12,
   },
-  colorPreviewEmptyText: {
-    fontSize: 15,
-    fontFamily: Fonts.regular,
-    color: Colors.gray,
-  },
-  inputLabel: {
-    fontSize: 15,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-    marginBottom: 8,
-  },
-  hexInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 17,
-    fontFamily: Fonts.medium,
-    color: Colors.secondary,
-    marginBottom: 20,
-  },
-  quickColorsLabel: {
-    fontSize: 15,
-    fontFamily: Fonts.semiBold,
-    color: Colors.secondary,
-    marginBottom: 12,
-  },
-  quickColorsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  quickColorButton: {
-    width: (SCREEN_WIDTH - 40 - 40) / 5,
-    aspectRatio: 1,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  quickColorSelected: {
-    borderWidth: 3,
-    borderColor: '#007AFF',
+  hueSlider: {
+    height: 40,
+    borderRadius: 12,
   },
 });

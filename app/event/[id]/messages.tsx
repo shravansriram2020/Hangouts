@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,25 @@ import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
+const getGradientLuminance = (color1: string, color2: string) => {
+  const rgb1 = hexToRgb(color1);
+  const rgb2 = hexToRgb(color2);
+  if (!rgb1 || !rgb2) return 1;
+  const avgR = (rgb1.r + rgb2.r) / 2;
+  const avgG = (rgb1.g + rgb2.g) / 2;
+  const avgB = (rgb1.b + rgb2.b) / 2;
+  return (0.299 * avgR + 0.587 * avgG + 0.114 * avgB) / 255;
+};
 
 interface Message {
   id: string;
@@ -41,6 +60,17 @@ export default function MessagesScreen() {
   const [sending, setSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  const gradientColors = useMemo(() => {
+    return event?.gradient_color1 && event?.gradient_color2 
+      ? [event.gradient_color1, event.gradient_color2]
+      : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
+  }, [event?.gradient_color1, event?.gradient_color2]);
+
+  const isDarkGradient = useMemo(() => {
+    const lum = getGradientLuminance(gradientColors[0], gradientColors[1]);
+    return lum < 0.5;
+  }, [gradientColors]);
 
   useEffect(() => {
     if (event?.id) {
@@ -174,9 +204,8 @@ export default function MessagesScreen() {
     );
   };
 
-  const gradientColors = event?.gradient_color1 && event?.gradient_color2 
-    ? [event.gradient_color1, event.gradient_color2]
-    : [Colors.backgroundGradientStart, Colors.backgroundGradientEnd];
+  const textColor = isDarkGradient ? Colors.white : Colors.secondary;
+  const mutedTextColor = isDarkGradient ? 'rgba(255,255,255,0.7)' : Colors.grayMedium;
 
   return (
     <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -195,9 +224,9 @@ export default function MessagesScreen() {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={48} color={Colors.grayMedium} />
-            <Text style={styles.emptyText}>No messages yet</Text>
-            <Text style={styles.emptySubtext}>Start the conversation!</Text>
+            <Ionicons name="chatbubbles-outline" size={48} color={mutedTextColor} />
+            <Text style={[styles.emptyText, { color: textColor }]}>No messages yet</Text>
+            <Text style={[styles.emptySubtext, { color: mutedTextColor }]}>Start the conversation!</Text>
           </View>
         }
       />
@@ -232,7 +261,7 @@ export default function MessagesScreen() {
             <Ionicons name="send" size={20} color={Colors.white} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.helperText}>
+        <Text style={[styles.helperText, { color: mutedTextColor }]}>
           Hangouts can detect messages that suggest a new location or time and add them as conflicts.
         </Text>
       </View>
