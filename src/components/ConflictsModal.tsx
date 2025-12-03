@@ -64,6 +64,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const [searchingLocation, setSearchingLocation] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{lat: number; lng: number} | null>(null);
   const [suggestingLocation, setSuggestingLocation] = useState(false);
+  const [suggestedLat, setSuggestedLat] = useState<number | null>(null);
+  const [suggestedLng, setSuggestedLng] = useState<number | null>(null);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
@@ -227,6 +229,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const selectLocation = (location: LocationSuggestion) => {
     setSuggestedLocationName(location.name);
     setSuggestedLocation(location.address);
+    setSuggestedLat(location.lat);
+    setSuggestedLng(location.lng);
     setLocationQuery('');
     setLocationSuggestions([]);
   };
@@ -282,13 +286,25 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 
     setLoading(true);
     try {
-      const formattedDateTime = formatSuggestedDateTime();
+      // Combine date and time into ISO format for database storage
+      let isoDateTime: string | null = null;
+      if (selectedType === 'time' && suggestedDate && suggestedTime) {
+        const combined = new Date(suggestedDate);
+        combined.setHours(suggestedTime.getHours());
+        combined.setMinutes(suggestedTime.getMinutes());
+        combined.setSeconds(0);
+        combined.setMilliseconds(0);
+        isoDateTime = combined.toISOString();
+      }
+      
       await api.post('/conflicts', {
         eventId,
         conflictType: selectedType,
         reason,
-        suggestedTime: selectedType === 'time' ? formattedDateTime : null,
+        suggestedTime: isoDateTime,
         suggestedLocation: selectedType === 'location' ? suggestedLocation : null,
+        suggestedLat: selectedType === 'location' ? suggestedLat : null,
+        suggestedLng: selectedType === 'location' ? suggestedLng : null,
       });
 
       setShowCreateConflict(false);
@@ -298,6 +314,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
       setSuggestedTime(null);
       setSuggestedLocation('');
       setSuggestedLocationName('');
+      setSuggestedLat(null);
+      setSuggestedLng(null);
       setLocationQuery('');
       setLocationSuggestions([]);
       fetchConflicts();
@@ -318,7 +336,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   };
 
   const handleResolve = async (conflictId: string) => {
-    Alert.alert('Resolve Conflict', 'Accept this change?', [
+    Alert.alert('Resolve Conflict', 'Accept this change? The event will be updated accordingly.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Accept',
@@ -327,6 +345,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
             await api.put(`/conflicts/${conflictId}/resolve`, {});
             fetchConflicts();
             onConflictUpdate?.();
+            onEventUpdated?.();
           } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to resolve conflict');
           }
@@ -413,6 +432,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                         <TouchableOpacity onPress={() => {
                           setSuggestedLocationName('');
                           setSuggestedLocation('');
+                          setSuggestedLat(null);
+                          setSuggestedLng(null);
                         }}>
                           <Ionicons name="close-circle" size={22} color={Colors.gray} />
                         </TouchableOpacity>
@@ -486,6 +507,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                       setSuggestedTime(null);
                       setSuggestedLocation('');
                       setSuggestedLocationName('');
+                      setSuggestedLat(null);
+                      setSuggestedLng(null);
                       setLocationQuery('');
                       setLocationSuggestions([]);
                     }}
@@ -924,16 +947,20 @@ const styles = StyleSheet.create({
   },
   pickerModalRoot: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
   pickerModalOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   pickerModalContent: {
-    backgroundColor: Colors.white,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    paddingBottom: 20,
   },
   pickerModalHeader: {
     flexDirection: 'row',
@@ -952,7 +979,7 @@ const styles = StyleSheet.create({
   pickerModalCancel: {
     fontSize: 17,
     fontFamily: 'Prompt-Regular',
-    color: Colors.gray,
+    color: '#007AFF',
   },
   pickerModalDone: {
     fontSize: 17,

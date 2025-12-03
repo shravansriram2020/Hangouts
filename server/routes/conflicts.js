@@ -92,7 +92,7 @@ router.post('/:id/vote', authenticateToken, async (req, res) => {
 router.put('/:id/resolve', authenticateToken, async (req, res) => {
   try {
     const conflictCheck = await pool.query(
-      `SELECT c.*, e.host_id FROM conflicts c
+      `SELECT c.*, e.host_id, e.notes FROM conflicts c
        JOIN events e ON c.event_id = e.id
        WHERE c.id = $1`,
       [req.params.id]
@@ -102,16 +102,51 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Conflict not found' });
     }
 
-    if (conflictCheck.rows[0].host_id !== req.user.id) {
+    const conflict = conflictCheck.rows[0];
+
+    if (conflict.host_id !== req.user.id) {
       return res.status(403).json({ error: 'Only the host can resolve conflicts' });
     }
 
+    // Update event based on conflict type
+    if (conflict.conflict_type === 'time' && conflict.suggested_time) {
+      // Update event date/time
+      await pool.query(
+        'UPDATE events SET date_time = $1, updated_at = NOW() WHERE id = $2',
+        [conflict.suggested_time, conflict.event_id]
+      );
+    } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
+      // Update event location - only update coordinates if they exist
+      if (conflict.suggested_lat != null && conflict.suggested_lng != null) {
+        await pool.query(
+          'UPDATE events SET location = $1, location_lat = $2, location_lng = $3, updated_at = NOW() WHERE id = $4',
+          [conflict.suggested_location, conflict.suggested_lat, conflict.suggested_lng, conflict.event_id]
+        );
+      } else {
+        // Only update location name if coordinates are missing
+        await pool.query(
+          'UPDATE events SET location = $1, updated_at = NOW() WHERE id = $2',
+          [conflict.suggested_location, conflict.event_id]
+        );
+      }
+    } else if (conflict.conflict_type === 'other' && conflict.reason) {
+      // Add the conflict reason as a note to the event
+      const currentNotes = conflict.notes || '';
+      const newNote = `[Resolved Conflict] ${conflict.reason}`;
+      const updatedNotes = currentNotes ? `${currentNotes}\n\n${newNote}` : newNote;
+      await pool.query(
+        'UPDATE events SET notes = $1, updated_at = NOW() WHERE id = $2',
+        [updatedNotes, conflict.event_id]
+      );
+    }
+
+    // Mark conflict as resolved
     await pool.query(
       'UPDATE conflicts SET is_resolved = true WHERE id = $1',
       [req.params.id]
     );
 
-    res.json({ message: 'Conflict resolved' });
+    res.json({ message: 'Conflict resolved', conflictType: conflict.conflict_type });
   } catch (error) {
     console.error('Resolve conflict error:', error);
     res.status(500).json({ error: 'Failed to resolve conflict' });

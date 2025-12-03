@@ -40,7 +40,7 @@ const getGradientLuminance = (color1: string, color2: string) => {
 };
 
 const { width } = Dimensions.get('window');
-const PHOTO_SIZE = (width - 48 - 16) / 2;
+const PHOTO_SIZE = (width - 32 - 8) / 2;
 
 interface Photo {
   id: string;
@@ -98,24 +98,30 @@ export default function PhotosScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: 10,
         quality: 0.5,
         base64: true,
         exif: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets.length > 0) {
         setUploading(true);
         try {
-          const photoData = `data:image/jpeg;base64,${result.assets[0].base64}`;
-          await api.post('/photos', {
-            eventId: event?.id,
-            photoUrl: photoData,
-          });
+          for (const asset of result.assets) {
+            if (asset.base64) {
+              const photoData = `data:image/jpeg;base64,${asset.base64}`;
+              await api.post('/photos', {
+                eventId: event?.id,
+                photoUrl: photoData,
+              });
+            }
+          }
           await fetchPhotos();
         } catch (error) {
-          console.error('Failed to upload photo:', error);
+          console.error('Failed to upload photos:', error);
+          Alert.alert('Error', 'Some photos failed to upload');
         } finally {
           setUploading(false);
         }
@@ -194,9 +200,9 @@ export default function PhotosScreen() {
           onPress={handleAddPhoto}
           disabled={uploading}
         >
-          <Ionicons name="camera-outline" size={20} color={Colors.secondary} />
+          <Ionicons name="images-outline" size={20} color={Colors.secondary} />
           <Text style={styles.addPhotoText}>
-            {uploading ? 'Uploading...' : 'Add Photo'}
+            {uploading ? 'Uploading...' : 'Add Photos'}
           </Text>
         </TouchableOpacity>
         {photos.length > 0 && (
@@ -223,6 +229,7 @@ export default function PhotosScreen() {
           renderItem={renderPhoto}
           numColumns={2}
           contentContainerStyle={styles.photoGrid}
+          columnWrapperStyle={styles.photoRow}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -343,15 +350,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   photoGrid: {
-    gap: 8,
+    paddingBottom: 20,
+  },
+  photoRow: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   photoItem: {
     width: PHOTO_SIZE,
     height: PHOTO_SIZE,
     borderRadius: 12,
     overflow: 'hidden',
-    marginRight: 8,
-    marginBottom: 8,
   },
   photoImage: {
     width: '100%',
