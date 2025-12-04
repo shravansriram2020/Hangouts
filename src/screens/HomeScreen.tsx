@@ -7,9 +7,11 @@ import {
   ScrollView,
   RefreshControl,
   Image,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -80,13 +82,23 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setShowSettings(true)}
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              setShowSettings(true);
+            }}
           >
             <Ionicons name="settings-outline" size={24} color={Colors.secondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setShowNotifications(true)}
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              setShowNotifications(true);
+            }}
           >
             <Ionicons name="notifications-outline" size={24} color={Colors.secondary} />
             {unreadCount > 0 && (

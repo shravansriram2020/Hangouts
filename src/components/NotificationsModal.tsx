@@ -6,9 +6,11 @@ import {
   Modal,
   TouchableOpacity,
   FlatList,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
+import { BlurView } from 'expo-blur';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 
 interface Props {
@@ -59,6 +61,12 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         return 'cash-outline';
       case 'conflict':
         return 'alert-circle-outline';
+      case 'rsvp':
+        return 'checkmark-circle-outline';
+      case 'message':
+        return 'chatbubble-outline';
+      case 'photo':
+        return 'image-outline';
       default:
         return 'notifications-outline';
     }
@@ -93,35 +101,41 @@ export default function NotificationsModal({ visible, onClose }: Props) {
     </View>
   );
 
-  return (
-    <Modal visible={visible} animationType="none" transparent>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Notifications</Text>
-            <Text style={styles.headerSubtitle}>All caught up!</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={Colors.gray} />
-            </TouchableOpacity>
-          </View>
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
-          {notifications.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="notifications-off" size={28} color={Colors.secondary} />
-              </View>
-              <Text style={styles.emptyTitle}>No notifications</Text>
-              <Text style={styles.emptyDescription}>You're all caught up!</Text>
+  return (
+    <Modal visible={visible} animationType="fade" transparent>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity activeOpacity={1} style={styles.containerWrapper}>
+          <BlurView intensity={80} tint="light" style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Notifications</Text>
+              <Text style={styles.headerSubtitle}>
+                {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
+              </Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Ionicons name="close" size={20} color={Colors.secondary} />
+              </TouchableOpacity>
             </View>
-          ) : (
-            <FlatList
-              data={notifications}
-              renderItem={renderNotification}
-              keyExtractor={(item) => item.id}
-              style={styles.list}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
+
+            {notifications.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconContainer}>
+                  <Ionicons name="notifications-off" size={28} color={Colors.white} />
+                </View>
+                <Text style={styles.emptyTitle}>No notifications</Text>
+                <Text style={styles.emptyDescription}>You're all caught up!</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={notifications}
+                renderItem={renderNotification}
+                keyExtractor={(item) => item.id}
+                style={styles.list}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </BlurView>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -135,20 +149,25 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     paddingHorizontal: 20,
   },
-  container: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    maxHeight: 320,
+  containerWrapper: {
+    borderRadius: 20,
     overflow: 'hidden',
+    maxHeight: 360,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  container: {
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.92)',
+    overflow: 'hidden',
   },
   header: {
     padding: 16,
     paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   headerTitle: {
     fontSize: 18,
@@ -174,10 +193,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.grayLight,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   unread: {
-    backgroundColor: Colors.blueLight,
+    backgroundColor: 'rgba(30, 58, 95, 0.08)',
     marginHorizontal: -16,
     paddingHorizontal: 16,
   },
@@ -185,7 +204,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.grayLight,
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,

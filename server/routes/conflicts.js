@@ -147,6 +147,36 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
       [req.params.id]
     );
 
+    // Notify all attendees about the conflict resolution
+    const attendees = await pool.query(
+      'SELECT user_id FROM event_attendees WHERE event_id = $1',
+      [conflict.event_id]
+    );
+    const eventResult = await pool.query(
+      'SELECT title FROM events WHERE id = $1',
+      [conflict.event_id]
+    );
+
+    let resolutionMessage = '';
+    if (conflict.conflict_type === 'time' && conflict.suggested_time) {
+      const suggestedDateTime = new Date(conflict.suggested_time);
+      const formattedDate = suggestedDateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const formattedTime = suggestedDateTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      resolutionMessage = `Time changed to ${formattedDate} at ${formattedTime}`;
+    } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
+      resolutionMessage = `Location changed to ${conflict.suggested_location}`;
+    } else if (conflict.conflict_type === 'other') {
+      resolutionMessage = `A concern was addressed for ${eventResult.rows[0].title}`;
+    }
+
+    for (const attendee of attendees.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, event_id)
+         VALUES ($1, 'conflict', 'Conflict Resolved', $2, $3)`,
+        [attendee.user_id, resolutionMessage, conflict.event_id]
+      );
+    }
+
     res.json({ message: 'Conflict resolved', conflictType: conflict.conflict_type });
   } catch (error) {
     console.error('Resolve conflict error:', error);

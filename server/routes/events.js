@@ -306,6 +306,16 @@ router.post('/:id/rsvp', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Get user and event info for notification
+    const userResult = await pool.query(
+      'SELECT first_name FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const eventResult = await pool.query(
+      'SELECT title FROM events WHERE id = $1',
+      [req.params.id]
+    );
+
     if (status === 'not_going') {
       await pool.query(
         'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
@@ -321,6 +331,21 @@ router.post('/:id/rsvp', authenticateToken, async (req, res) => {
        WHERE event_id = $2 AND user_id = $3`,
       [dbStatus, req.params.id, req.user.id]
     );
+
+    // Notify other attendees about the RSVP
+    const attendees = await pool.query(
+      'SELECT user_id FROM event_attendees WHERE event_id = $1 AND user_id != $2',
+      [req.params.id, req.user.id]
+    );
+
+    const statusText = status === 'going' ? 'is going' : 'might be going';
+    for (const attendee of attendees.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, event_id)
+         VALUES ($1, 'rsvp', 'RSVP Update', $2, $3)`,
+        [attendee.user_id, `${userResult.rows[0].first_name} ${statusText} to ${eventResult.rows[0].title}`, req.params.id]
+      );
+    }
     
     res.json({ message: 'RSVP updated', status: dbStatus });
   } catch (error) {

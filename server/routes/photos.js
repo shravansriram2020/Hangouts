@@ -41,6 +41,28 @@ router.post('/', authenticateToken, async (req, res) => {
       [result.rows[0].id]
     );
 
+    // Notify other attendees about the new photo
+    const userResult = await pool.query(
+      'SELECT first_name FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const eventResult = await pool.query(
+      'SELECT title FROM events WHERE id = $1',
+      [eventId]
+    );
+    const attendees = await pool.query(
+      'SELECT user_id FROM event_attendees WHERE event_id = $1 AND user_id != $2',
+      [eventId, req.user.id]
+    );
+
+    for (const attendee of attendees.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, event_id)
+         VALUES ($1, 'photo', 'New Photo Added', $2, $3)`,
+        [attendee.user_id, `${userResult.rows[0].first_name} added a photo to ${eventResult.rows[0].title}`, eventId]
+      );
+    }
+
     res.status(201).json(photoWithUser.rows[0]);
   } catch (error) {
     console.error('Upload photo error:', error);

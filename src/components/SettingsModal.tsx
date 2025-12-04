@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,12 @@ import {
   Linking,
   Alert,
   Image,
+  Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -127,10 +130,53 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [currentView, setCurrentView] = useState<'settings' | 'credits'>('settings');
+  
+  const creditsAnimValue = useRef(new Animated.Value(0)).current;
+  const creditsSlideValue = useRef(new Animated.Value(30)).current;
 
   const handleClose = () => {
     setCurrentView('settings');
+    creditsAnimValue.setValue(0);
+    creditsSlideValue.setValue(30);
     onClose();
+  };
+
+  const openCredits = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setCurrentView('credits');
+    Animated.parallel([
+      Animated.spring(creditsAnimValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 12,
+      }),
+      Animated.spring(creditsSlideValue, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 12,
+      }),
+    ]).start();
+  };
+
+  const closeCredits = () => {
+    Animated.parallel([
+      Animated.timing(creditsAnimValue, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(creditsSlideValue, {
+        toValue: 30,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCurrentView('settings');
+    });
   };
 
   useEffect(() => {
@@ -223,16 +269,34 @@ export default function SettingsModal({ visible, onClose }: Props) {
       <GlassModal visible={visible} onClose={handleClose} title="Credits" fullHeight>
         <TouchableOpacity 
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8 }}
-          onPress={() => setCurrentView('settings')}
+          onPress={closeCredits}
         >
           <Ionicons name="chevron-back" size={20} color={Colors.secondary} />
           <Text style={{ fontFamily: Fonts.medium, color: Colors.secondary, marginLeft: 4 }}>Back to Settings</Text>
         </TouchableOpacity>
-        <View style={{ paddingBottom: 20 }}>
+        <Animated.View style={{ 
+          paddingBottom: 20, 
+          opacity: creditsAnimValue,
+          transform: [{ translateY: creditsSlideValue }]
+        }}>
           {CREDITS_DATA.map((section, sectionIndex) => {
             const isCompactSection = section.title === 'Advertisement Contributors' || section.title === 'Special Thanks';
             return (
-              <View key={sectionIndex} style={creditsStyles.section}>
+              <Animated.View 
+                key={sectionIndex} 
+                style={[
+                  creditsStyles.section,
+                  {
+                    opacity: creditsAnimValue,
+                    transform: [{
+                      translateY: creditsSlideValue.interpolate({
+                        inputRange: [0, 30],
+                        outputRange: [0, 15 + sectionIndex * 5],
+                      })
+                    }]
+                  }
+                ]}
+              >
                 <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
                 {section.entries.map((entry, entryIndex) => (
                   <View key={entryIndex} style={isCompactSection ? { marginBottom: 4 } : creditsStyles.entry}>
@@ -246,10 +310,10 @@ export default function SettingsModal({ visible, onClose }: Props) {
                     ) : null}
                   </View>
                 ))}
-              </View>
+              </Animated.View>
             );
           })}
-        </View>
+        </Animated.View>
       </GlassModal>
     );
   }
@@ -383,7 +447,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.sectionTitle}>Other</Text>
 
-            <TouchableOpacity style={styles.creditsButton} onPress={() => setCurrentView('credits')}>
+            <TouchableOpacity style={styles.creditsButton} onPress={openCredits}>
               <Ionicons name="people-outline" size={16} color={Colors.grayDark} />
               <Text style={styles.creditsButtonText}>Credits</Text>
               <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
