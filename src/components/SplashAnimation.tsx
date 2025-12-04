@@ -110,11 +110,7 @@ const styles = StyleSheet.create({
   },
   video: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
+    width: width * 1.15,
+    height: height * 1.15,
   },
 });
