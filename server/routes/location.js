@@ -121,45 +121,18 @@ router.get('/search', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Search both APIs in parallel for best results
-    const [nominatimResults, tomtomResults] = await Promise.all([
-      searchNominatim(query, lat, lng),
-      searchTomTom(query, lat, lng)
-    ]);
+    // Use only OpenStreetMap Nominatim for faster results
+    const results = await searchNominatim(query, lat, lng);
     
-    // Merge results, preferring TomTom for POIs but keeping Nominatim for addresses
-    const seenNames = new Set();
-    let allResults = [];
+    // Filter valid results and sort by distance
+    let validResults = results.filter(r => r.name && r.lat && r.lng);
     
-    // Add TomTom results first (usually better for businesses/POIs)
-    for (const result of tomtomResults) {
-      if (result.name && result.lat && result.lng) {
-        const key = `${result.name.toLowerCase()}-${result.lat.toFixed(3)}-${result.lng.toFixed(3)}`;
-        if (!seenNames.has(key)) {
-          seenNames.add(key);
-          allResults.push(result);
-        }
-      }
-    }
-    
-    // Add Nominatim results (good for addresses and less common places)
-    for (const result of nominatimResults) {
-      if (result.name && result.lat && result.lng) {
-        const key = `${result.name.toLowerCase()}-${result.lat.toFixed(3)}-${result.lng.toFixed(3)}`;
-        if (!seenNames.has(key)) {
-          seenNames.add(key);
-          allResults.push(result);
-        }
-      }
-    }
-    
-    // Sort by distance if user location is known
     if (lat && lng) {
-      allResults.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+      validResults.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     }
     
     // Return top 15 results
-    res.json(allResults.slice(0, 15));
+    res.json(validResults.slice(0, 15));
   } catch (error) {
     console.error('Location search error:', error);
     res.status(500).json({ error: 'Failed to search locations' });

@@ -575,8 +575,12 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             </View>
 
             {locationSuggestions.length > 0 && (
-              <View style={styles.suggestionsList}>
-                {locationSuggestions.slice(0, 5).map((loc) => (
+              <ScrollView 
+                style={styles.suggestionsScrollView}
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+              >
+                {locationSuggestions.map((loc) => (
                   <TouchableOpacity
                     key={loc.id}
                     style={styles.suggestionItem}
@@ -594,7 +598,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
                     )}
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             )}
 
             <Text style={styles.helperText}>
@@ -903,17 +907,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     marginTop: 6,
   },
+  suggestionsScrollView: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 180,
+  },
   suggestionsList: {
     backgroundColor: Colors.white,
     borderRadius: 12,
     marginTop: 4,
-    maxHeight: 200,
+    maxHeight: 180,
     overflow: 'hidden',
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
+    minHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
   },

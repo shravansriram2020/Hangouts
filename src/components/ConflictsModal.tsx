@@ -494,8 +494,12 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                         </View>
 
                         {locationSuggestions.length > 0 && (
-                          <View style={styles.suggestionsList}>
-                            {locationSuggestions.slice(0, 5).map((loc) => (
+                          <ScrollView 
+                            style={styles.suggestionsScrollView}
+                            nestedScrollEnabled={true}
+                            showsVerticalScrollIndicator={true}
+                          >
+                            {locationSuggestions.map((loc) => (
                               <TouchableOpacity
                                 key={loc.id}
                                 style={styles.suggestionItem}
@@ -513,7 +517,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                                 )}
                               </TouchableOpacity>
                             ))}
-                          </View>
+                          </ScrollView>
                         )}
                       </>
                     )}
@@ -1097,10 +1101,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
+  suggestionsScrollView: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    marginTop: 8,
+    maxHeight: 180,
+    borderWidth: 1,
+    borderColor: Colors.grayLight,
+  },
   suggestionsList: {
     backgroundColor: Colors.white,
     borderRadius: 12,
     marginTop: 8,
+    maxHeight: 180,
     borderWidth: 1,
     borderColor: Colors.grayLight,
     overflow: 'hidden',
@@ -1109,6 +1122,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
+    minHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
   },
