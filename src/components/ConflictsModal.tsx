@@ -11,14 +11,17 @@ import {
   Modal,
   Animated,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import GlassModal from './GlassModal';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface LocationSuggestion {
   id: string;
@@ -71,73 +74,87 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
   
-  const datePickerSlideAnim = useRef(new Animated.Value(300)).current;
+  // Animation refs - match CreateEventModal exactly
   const datePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
-  const timePickerSlideAnim = useRef(new Animated.Value(300)).current;
+  const datePickerSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const timePickerOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const timePickerSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  const openDatePicker = () => {
-    setShowDatePicker(true);
-    Animated.parallel([
-      Animated.timing(datePickerOverlayOpacity, {
-        toValue: 1,
-        duration: 0,
-        useNativeDriver: true,
-      }),
-      Animated.spring(datePickerSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 120,
-        friction: 10,
-      }),
-    ]).start();
-  };
+  // Animation effects matching CreateEventModal exactly
+  useEffect(() => {
+    if (showDatePicker) {
+      Animated.parallel([
+        Animated.timing(datePickerOverlayOpacity, {
+          toValue: 1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(datePickerSlideAnim, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      datePickerSlideAnim.setValue(SCREEN_HEIGHT);
+      datePickerOverlayOpacity.setValue(0);
+    }
+  }, [showDatePicker]);
+
+  useEffect(() => {
+    if (showTimePicker) {
+      Animated.parallel([
+        Animated.timing(timePickerOverlayOpacity, {
+          toValue: 1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(timePickerSlideAnim, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      timePickerSlideAnim.setValue(SCREEN_HEIGHT);
+      timePickerOverlayOpacity.setValue(0);
+    }
+  }, [showTimePicker]);
 
   const closeDatePicker = () => {
     Animated.parallel([
+      Animated.timing(datePickerSlideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 250,
+        useNativeDriver: true,
+      }),
       Animated.timing(datePickerOverlayOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(datePickerSlideAnim, {
-        toValue: 300,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setShowDatePicker(false));
-  };
-
-  const openTimePicker = () => {
-    setShowTimePicker(true);
-    Animated.parallel([
-      Animated.timing(timePickerOverlayOpacity, {
-        toValue: 1,
-        duration: 0,
-        useNativeDriver: true,
-      }),
-      Animated.spring(timePickerSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 120,
-        friction: 10,
-      }),
-    ]).start();
+    ]).start(() => {
+      setShowDatePicker(false);
+    });
   };
 
   const closeTimePicker = () => {
     Animated.parallel([
+      Animated.timing(timePickerSlideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 250,
+        useNativeDriver: true,
+      }),
       Animated.timing(timePickerOverlayOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(timePickerSlideAnim, {
-        toValue: 300,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setShowTimePicker(false));
+    ]).start(() => {
+      setShowTimePicker(false);
+    });
   };
 
   const formatDisplayDate = (date: Date | null) => {
@@ -416,7 +433,10 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                     <View style={styles.dateTimeRow}>
                       <TouchableOpacity 
                         style={styles.dateTimeButton}
-                        onPress={openDatePicker}
+                        onPress={() => {
+                          setShowTimePicker(false);
+                          setShowDatePicker(true);
+                        }}
                       >
                         <Ionicons name="calendar-outline" size={18} color={Colors.gray} />
                         <Text style={[styles.dateTimeText, !suggestedDate && styles.dateTimePlaceholder]}>
@@ -425,7 +445,10 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.dateTimeButton}
-                        onPress={openTimePicker}
+                        onPress={() => {
+                          setShowDatePicker(false);
+                          setShowTimePicker(true);
+                        }}
                       >
                         <Ionicons name="time-outline" size={18} color={Colors.gray} />
                         <Text style={[styles.dateTimeText, !suggestedTime && styles.dateTimePlaceholder]}>
@@ -643,12 +666,25 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
           </ScrollView>
 
           {Platform.OS === 'ios' && showDatePicker && (
-            <Modal transparent animationType="none" visible={showDatePicker}>
+            <Modal
+              transparent
+              animationType="none"
+              visible={showDatePicker}
+              onRequestClose={closeDatePicker}
+            >
               <View style={styles.pickerModalRoot}>
-                <Animated.View style={[styles.pickerModalOverlay, { opacity: datePickerOverlayOpacity }]}>
-                  <TouchableOpacity style={{ flex: 1 }} onPress={closeDatePicker} activeOpacity={1} />
+                <Animated.View 
+                  style={[styles.pickerModalOverlayAnimated, { opacity: datePickerOverlayOpacity }]}
+                >
+                  <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeDatePicker} activeOpacity={1} />
                 </Animated.View>
-                <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: datePickerSlideAnim }] }]}>
+                
+                <Animated.View 
+                  style={[
+                    styles.pickerModalContent,
+                    { transform: [{ translateY: datePickerSlideAnim }] }
+                  ]}
+                >
                   <View style={styles.pickerModalHeader}>
                     <TouchableOpacity onPress={closeDatePicker}>
                       <Text style={styles.pickerModalCancel}>Cancel</Text>
@@ -679,12 +715,25 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
           )}
 
           {Platform.OS === 'ios' && showTimePicker && (
-            <Modal transparent animationType="none" visible={showTimePicker}>
+            <Modal
+              transparent
+              animationType="none"
+              visible={showTimePicker}
+              onRequestClose={closeTimePicker}
+            >
               <View style={styles.pickerModalRoot}>
-                <Animated.View style={[styles.pickerModalOverlay, { opacity: timePickerOverlayOpacity }]}>
-                  <TouchableOpacity style={{ flex: 1 }} onPress={closeTimePicker} activeOpacity={1} />
+                <Animated.View 
+                  style={[styles.pickerModalOverlayAnimated, { opacity: timePickerOverlayOpacity }]}
+                >
+                  <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeTimePicker} activeOpacity={1} />
                 </Animated.View>
-                <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: timePickerSlideAnim }] }]}>
+                
+                <Animated.View 
+                  style={[
+                    styles.pickerModalContent,
+                    { transform: [{ translateY: timePickerSlideAnim }] }
+                  ]}
+                >
                   <View style={styles.pickerModalHeader}>
                     <TouchableOpacity onPress={closeTimePicker}>
                       <Text style={styles.pickerModalCancel}>Cancel</Text>
@@ -963,7 +1012,7 @@ const styles = StyleSheet.create({
   pickerModalRoot: {
     flex: 1,
   },
-  pickerModalOverlay: {
+  pickerModalOverlayAnimated: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
