@@ -121,8 +121,8 @@ router.get('/search', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Use only OpenStreetMap Nominatim for faster results
-    const results = await searchNominatim(query, lat, lng);
+    // Use TomTom as primary search for reliability
+    const results = await searchTomTom(query, lat, lng);
     
     // Filter valid results and sort by distance
     let validResults = results.filter(r => r.name && r.lat && r.lng);

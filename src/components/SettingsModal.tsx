@@ -298,6 +298,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   };
 
   return (
+    <>
     <GlassModal visible={visible} onClose={onClose} title="Settings" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.profileSection}>
@@ -449,9 +450,10 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.version}>Version 1.0</Text>
           </ScrollView>
-
-      <CreditsModal visible={showCredits} onClose={() => setShowCredits(false)} />
     </GlassModal>
+    
+    <CreditsModal visible={showCredits} onClose={() => setShowCredits(false)} />
+    </>
   );
 }
 

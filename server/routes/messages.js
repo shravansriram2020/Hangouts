@@ -4,12 +4,14 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const TIME_KEYWORDS = ['change the time', 'different time', 'new time', 'move the time', "let's change the time", 'reschedule', 'postpone', 'earlier', 'later'];
 const LOCATION_KEYWORDS = ['change the location', 'different place', 'new location', 'move the location', "let's change the location", 'different location'];
 
 const detectSuggestion = (content) => {
   const lowerContent = content.toLowerCase();
+  const hasTimeSuggestion = TIME_KEYWORDS.some(keyword => lowerContent.includes(keyword));
   const hasLocationSuggestion = LOCATION_KEYWORDS.some(keyword => lowerContent.includes(keyword));
-  return { hasTimeSuggestion: false, hasLocationSuggestion };
+  return { hasTimeSuggestion, hasLocationSuggestion };
 };
 
 router.get('/event/:eventId', authenticateToken, async (req, res) => {

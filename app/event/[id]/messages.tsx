@@ -164,12 +164,6 @@ export default function MessagesScreen() {
           <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
           <View style={[styles.messageBubble, isOwnMessage ? styles.messageBubbleOwn : styles.messageBubbleOther]}>
             <Text style={[styles.messageText, !isOwnMessage && styles.messageTextOther]}>{item.content}</Text>
-            {item.has_time_suggestion && (
-              <View style={styles.suggestionBadge}>
-                <Ionicons name="time" size={12} color={Colors.blue} />
-                <Text style={styles.suggestionText}>Time suggestion</Text>
-              </View>
-            )}
             {(item.has_time_suggestion || item.has_location_suggestion) && (
               <TouchableOpacity 
                 style={styles.addToConflictsButton}
