@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -521,32 +522,47 @@ export default function MapScreen() {
     return eventDate.toDateString() === today.toDateString();
   }, [event?.event_date]);
 
+  const locationSharingCount = locationSharingAttendees.length + (locationSharing ? 1 : 0);
+
   return (
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
       <View style={styles.controls}>
-        <View style={styles.sharingToggle}>
-          <View style={styles.sharingInfo}>
-            <Ionicons 
-              name={locationSharing ? "location" : "location-outline"} 
-              size={20} 
-              color={locationSharing ? "#10B981" : textColor} 
+        {Platform.OS === 'web' ? (
+          <View style={styles.sharingToggleGlassWeb}>
+            <View style={styles.sharingInfo}>
+              <Ionicons 
+                name={locationSharing ? "location" : "location-outline"} 
+                size={20} 
+                color={locationSharing ? "#10B981" : Colors.secondary} 
+              />
+              <Text style={styles.sharingText}>Share my location</Text>
+            </View>
+            <Switch
+              value={locationSharing}
+              onValueChange={toggleLocationSharing}
+              trackColor={{ false: Colors.grayLight, true: '#10B981' }}
+              thumbColor="white"
             />
-            <Text style={[styles.sharingText, { color: textColor }]}>Share my location</Text>
           </View>
-          <Switch
-            value={locationSharing}
-            onValueChange={toggleLocationSharing}
-            trackColor={{ false: Colors.grayLight, true: '#10B981' }}
-            thumbColor="white"
-          />
-        </View>
-
-        {locationSharing && (
-          <View style={styles.sharingStatus}>
-            <Text style={[styles.sharingStatusText, { color: mutedTextColor }]}>
-              {sharingCount} {sharingCount === 1 ? 'person' : 'people'} sharing location
-            </Text>
-          </View>
+        ) : (
+          <BlurView intensity={80} tint="light" style={styles.sharingToggleGlass}>
+            <View style={styles.sharingToggleInner}>
+              <View style={styles.sharingInfo}>
+                <Ionicons 
+                  name={locationSharing ? "location" : "location-outline"} 
+                  size={20} 
+                  color={locationSharing ? "#10B981" : Colors.secondary} 
+                />
+                <Text style={styles.sharingText}>Share my location</Text>
+              </View>
+              <Switch
+                value={locationSharing}
+                onValueChange={toggleLocationSharing}
+                trackColor={{ false: Colors.grayLight, true: '#10B981' }}
+                thumbColor="white"
+              />
+            </View>
+          </BlurView>
         )}
 
         {isEventDay && (
@@ -573,6 +589,13 @@ export default function MapScreen() {
           <View style={styles.onMyWayIndicator}>
             <Ionicons name="car" size={14} color="white" />
             <Text style={styles.onMyWayIndicatorText}>{onMyWayList.length} on the way</Text>
+          </View>
+        )}
+
+        {locationSharingCount > 0 && (
+          <View style={styles.sharingCountIndicator}>
+            <Ionicons name="people" size={14} color="white" />
+            <Text style={styles.sharingCountText}>{locationSharingCount} sharing location</Text>
           </View>
         )}
       </View>
@@ -840,6 +863,23 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: 'white',
   },
+  sharingCountIndicator: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  sharingCountText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    color: 'white',
+  },
   attendeesSection: {
     paddingHorizontal: 16,
     paddingBottom: 8,
@@ -922,15 +962,30 @@ const styles = StyleSheet.create({
   },
   controls: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
-  sharingToggle: {
+  sharingToggleGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  sharingToggleGlassWeb: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 12,
     padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  sharingToggleInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   sharingInfo: {
     flexDirection: 'row',
@@ -941,15 +996,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.medium,
     color: Colors.secondary,
-  },
-  sharingStatus: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  sharingStatusText: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    color: Colors.gray,
   },
   onMyWayButton: {
     flexDirection: 'row',

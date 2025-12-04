@@ -10,8 +10,10 @@ import {
   Modal,
   Share,
   Alert,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
@@ -195,24 +197,54 @@ export default function PhotosScreen() {
     <LinearGradient colors={gradientColors} style={styles.container} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
       <View style={styles.innerContainer}>
       <View style={styles.headerActions}>
-        <TouchableOpacity 
-          style={styles.addPhotoButton}
-          onPress={handleAddPhoto}
-          disabled={uploading}
-        >
-          <Ionicons name="images-outline" size={20} color={Colors.secondary} />
-          <Text style={styles.addPhotoText}>
-            {uploading ? 'Uploading...' : 'Add Photos'}
-          </Text>
-        </TouchableOpacity>
-        {photos.length > 0 && (
-          <TouchableOpacity 
-            style={styles.downloadAllButton}
-            onPress={handleDownloadAll}
-          >
-            <Ionicons name="download-outline" size={18} color={Colors.secondary} />
-            <Text style={styles.downloadAllText}>All</Text>
-          </TouchableOpacity>
+        {Platform.OS === 'web' ? (
+          <>
+            <TouchableOpacity 
+              style={styles.addPhotoButtonWeb}
+              onPress={handleAddPhoto}
+              disabled={uploading}
+            >
+              <Ionicons name="images-outline" size={20} color={Colors.secondary} />
+              <Text style={styles.addPhotoText}>
+                {uploading ? 'Uploading...' : 'Add Photos'}
+              </Text>
+            </TouchableOpacity>
+            {photos.length > 0 && (
+              <TouchableOpacity 
+                style={styles.downloadAllButtonWeb}
+                onPress={handleDownloadAll}
+              >
+                <Ionicons name="download-outline" size={18} color={Colors.secondary} />
+                <Text style={styles.downloadAllText}>All</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        ) : (
+          <>
+            <BlurView intensity={80} tint="light" style={styles.addPhotoButtonGlass}>
+              <TouchableOpacity 
+                style={styles.glassButtonInner}
+                onPress={handleAddPhoto}
+                disabled={uploading}
+              >
+                <Ionicons name="images-outline" size={20} color={Colors.secondary} />
+                <Text style={styles.addPhotoText}>
+                  {uploading ? 'Uploading...' : 'Add Photos'}
+                </Text>
+              </TouchableOpacity>
+            </BlurView>
+            {photos.length > 0 && (
+              <BlurView intensity={80} tint="light" style={styles.downloadAllButtonGlass}>
+                <TouchableOpacity 
+                  style={styles.glassButtonInnerSmall}
+                  onPress={handleDownloadAll}
+                >
+                  <Ionicons name="download-outline" size={18} color={Colors.secondary} />
+                  <Text style={styles.downloadAllText}>All</Text>
+                </TouchableOpacity>
+              </BlurView>
+            )}
+          </>
         )}
       </View>
 
@@ -302,29 +334,63 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
-  addPhotoButton: {
+  addPhotoButtonGlass: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  addPhotoButtonWeb: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  glassButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  glassButtonInnerSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   addPhotoText: {
     fontSize: 16,
     fontFamily: Fonts.medium,
     color: Colors.secondary,
   },
-  downloadAllButton: {
+  downloadAllButtonGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  downloadAllButtonWeb: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   downloadAllText: {
     fontSize: 14,

@@ -134,13 +134,10 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
         );
       }
     } else if (conflict.conflict_type === 'other' && conflict.reason) {
-      // Add the conflict reason as a note to the event
-      const eventResult = await pool.query('SELECT notes FROM events WHERE id = $1', [conflict.event_id]);
-      const currentNotes = eventResult.rows[0]?.notes || '';
-      const updatedNotes = currentNotes ? `${currentNotes}\n\n${conflict.reason}` : conflict.reason;
+      // Add the conflict reason as a sticky note to the event
       await pool.query(
-        'UPDATE events SET notes = $1, updated_at = NOW() WHERE id = $2',
-        [updatedNotes, conflict.event_id]
+        'INSERT INTO event_notes (event_id, user_id, content) VALUES ($1, $2, $3)',
+        [conflict.event_id, conflict.reporter_id, conflict.reason]
       );
     }
 
