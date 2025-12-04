@@ -10,10 +10,12 @@ import {
   Linking,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors } from '../../constants/theme';
+import { BlurView } from 'expo-blur';
+import { Colors, Fonts } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
@@ -26,6 +28,168 @@ interface Props {
   onClose: () => void;
 }
 
+interface CreditEntry {
+  role: string;
+  name: string;
+}
+
+interface CreditSection {
+  title: string;
+  entries: CreditEntry[];
+}
+
+const CREDITS_DATA: CreditSection[] = [
+  {
+    title: 'Hangouts Dev Team',
+    entries: [
+      { role: 'UI/UX, Feature Design, Concept', name: 'Jude Kerman' },
+      { role: 'Testing, Feature Design, Concept', name: 'Shravan Sriram' },
+      { role: 'Planning, Development', name: 'Deva Amruthurulu' },
+    ],
+  },
+  {
+    title: 'Development & Business Contributors',
+    entries: [
+      { role: 'Android Testing', name: 'Theodor Geertsen' },
+      { role: 'Development Support', name: 'Tudor Marinescu' },
+      { role: 'Business/Marketing Support', name: 'Jackson Siedon' },
+    ],
+  },
+  {
+    title: 'Brand Contributors',
+    entries: [
+      { role: 'Motion Graphics/Branding', name: 'David Kerman' },
+      { role: 'Opening SFX', name: 'Lily Ross' },
+    ],
+  },
+  {
+    title: 'Special Thanks',
+    entries: [
+      { role: '', name: 'Hangouts Team Friends, Family and Pets' },
+      { role: '', name: 'Joseph Keays & Other AHS Staff' },
+      { role: '', name: 'The Argylians' },
+      { role: '', name: '' },
+      { role: '', name: 'You! Thank you for supporting us!' },
+    ],
+  },
+];
+
+function CreditsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <View style={creditsStyles.overlay}>
+        <BlurView intensity={80} tint="light" style={creditsStyles.container}>
+          <View style={creditsStyles.header}>
+            <Text style={creditsStyles.title}>Credits</Text>
+            <TouchableOpacity onPress={onClose} style={creditsStyles.closeButton}>
+              <Ionicons name="close" size={24} color={Colors.secondary} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            style={creditsStyles.content} 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={creditsStyles.contentContainer}
+          >
+            {CREDITS_DATA.map((section, sectionIndex) => (
+              <View key={sectionIndex} style={creditsStyles.section}>
+                <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
+                {section.entries.map((entry, entryIndex) => (
+                  <View key={entryIndex} style={creditsStyles.entry}>
+                    {entry.role ? (
+                      <>
+                        <Text style={creditsStyles.role}>{entry.role}</Text>
+                        <Text style={creditsStyles.name}>{entry.name}</Text>
+                      </>
+                    ) : (
+                      <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
+        </BlurView>
+      </View>
+    </Modal>
+  );
+}
+
+const creditsStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  container: {
+    width: '100%',
+    maxHeight: '80%',
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  title: {
+    fontSize: 22,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.grayMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  entry: {
+    marginBottom: 10,
+  },
+  role: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    color: Colors.grayDark,
+    marginBottom: 2,
+  },
+  name: {
+    fontSize: 15,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
+  },
+  nameOnly: {
+    marginBottom: 4,
+  },
+});
+
 export default function SettingsModal({ visible, onClose }: Props) {
   const { user, updateUser, signOut } = useAuth();
   const [username, setUsername] = useState(user?.username || '');
@@ -36,6 +200,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -249,6 +414,14 @@ export default function SettingsModal({ visible, onClose }: Props) {
               </TouchableOpacity>
             </View>
 
+            <Text style={styles.sectionTitle}>Other</Text>
+
+            <TouchableOpacity style={styles.creditsButton} onPress={() => setShowCredits(true)}>
+              <Ionicons name="people-outline" size={16} color={Colors.grayDark} />
+              <Text style={styles.creditsButtonText}>Credits</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
+            </TouchableOpacity>
+
             <View style={styles.footer}>
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -266,6 +439,8 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.version}>Version 1.0</Text>
           </ScrollView>
+
+      <CreditsModal visible={showCredits} onClose={() => setShowCredits(false)} />
     </GlassModal>
   );
 }
@@ -469,5 +644,20 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     fontFamily: 'Prompt-Regular',
     marginBottom: 20,
+  },
+  creditsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  creditsButtonText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.grayDark,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 8,
   },
 });
