@@ -514,15 +514,60 @@ export default function MapScreen() {
     }
   };
 
+  const isEventDay = useMemo(() => {
+    if (!event?.event_date) return false;
+    const eventDate = new Date(event.event_date);
+    const today = new Date();
+    return eventDate.toDateString() === today.toDateString();
+  }, [event?.event_date]);
+
   return (
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
+      <View style={styles.controls}>
+        <View style={styles.sharingToggle}>
+          <View style={styles.sharingInfo}>
+            <Ionicons 
+              name={locationSharing ? "location" : "location-outline"} 
+              size={20} 
+              color={locationSharing ? "#10B981" : textColor} 
+            />
+            <Text style={[styles.sharingText, { color: textColor }]}>Share my location</Text>
+          </View>
+          <Switch
+            value={locationSharing}
+            onValueChange={toggleLocationSharing}
+            trackColor={{ false: Colors.grayLight, true: '#10B981' }}
+            thumbColor="white"
+          />
+        </View>
+
+        {locationSharing && (
+          <View style={styles.sharingStatus}>
+            <Text style={[styles.sharingStatusText, { color: mutedTextColor }]}>
+              {sharingCount} {sharingCount === 1 ? 'person' : 'people'} sharing location
+            </Text>
+          </View>
+        )}
+
+        {isEventDay && (
+          <TouchableOpacity
+            style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
+            onPress={handleMarkOnMyWay}
+          >
+            <Ionicons 
+              name="car" 
+              size={20} 
+              color={isOnMyWay ? "white" : textColor} 
+            />
+            <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive, !isOnMyWay && { color: textColor }]}>
+              {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <View style={styles.mapContainer}>
         {renderMap()}
-        
-        <View style={styles.mapInfoCard}>
-          <Text style={styles.mapTitle}>{event?.title || 'Event Location'}</Text>
-          <Text style={styles.mapSubtitle}>{event?.location_name || ''}</Text>
-        </View>
 
         {onMyWayList.length > 0 && (
           <View style={styles.onMyWayIndicator}>
@@ -571,47 +616,6 @@ export default function MapScreen() {
           </ScrollView>
         </View>
       )}
-
-      <View style={styles.controls}>
-        <View style={styles.sharingToggle}>
-          <View style={styles.sharingInfo}>
-            <Ionicons 
-              name={locationSharing ? "location" : "location-outline"} 
-              size={20} 
-              color={locationSharing ? "#10B981" : textColor} 
-            />
-            <Text style={[styles.sharingText, { color: textColor }]}>Share my location</Text>
-          </View>
-          <Switch
-            value={locationSharing}
-            onValueChange={toggleLocationSharing}
-            trackColor={{ false: Colors.grayLight, true: '#10B981' }}
-            thumbColor="white"
-          />
-        </View>
-
-        {locationSharing && (
-          <View style={styles.sharingStatus}>
-            <Text style={[styles.sharingStatusText, { color: mutedTextColor }]}>
-              {sharingCount} {sharingCount === 1 ? 'person' : 'people'} sharing location
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
-          onPress={handleMarkOnMyWay}
-        >
-          <Ionicons 
-            name="car" 
-            size={20} 
-            color={isOnMyWay ? "white" : textColor} 
-          />
-          <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive, !isOnMyWay && { color: textColor }]}>
-            {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </LinearGradient>
   );
 }

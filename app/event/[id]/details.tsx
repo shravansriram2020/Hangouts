@@ -457,6 +457,7 @@ export default function DetailsScreen() {
         eventId={event.id}
         isHost={event.isHost}
         onConflictUpdate={fetchConflictCount}
+        onEventUpdated={refreshEvent}
       />
       <NotesModal
         visible={showNotes}

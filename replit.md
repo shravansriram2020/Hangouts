@@ -28,6 +28,13 @@ Preferred communication style: Simple, everyday language.
 ### Messages & Conflicts Integration
 - **Add to Conflicts**: Clicking "Add to Conflicts" on a message now opens the full ConflictsModal instead of auto-creating a conflict
 - Messages screen imports and renders ConflictsModal with proper event refresh callbacks
+- **Time Suggestion Detection Removed**: Messages no longer auto-detect time change suggestions, only location suggestions are flagged
+- **Instant Conflict Resolution Updates**: When a conflict is resolved, event details update instantly via onEventUpdated callback
+
+### Location Search
+- **OpenStreetMap Nominatim API**: Location search uses only OpenStreetMap for faster results (no TomTom dependency)
+- **Scrollable Results**: Location suggestions display 3 at a time with vertical scrolling
+- Results sorted by distance to user's current location
 
 ### Map Features
 - **Native Maps with Lazy Loading**: Uses `react-native-maps` for iOS/Android with lazy require() inside render function to prevent Expo Go crashes
@@ -38,6 +45,9 @@ Preferred communication style: Simple, everyday language.
 - Route polylines displayed for attendees marked "On My Way"
 - Distance and ETA shown in marker callouts via TomTom Routing API
 - Real-time location tracking with `expo-location` watchPositionAsync
+- **Share Location at Top**: Share my location toggle moved to top of map page
+- **Event Day Only "On My Way"**: Mark as On My Way button only appears on the day of the event
+- **Removed Event Info Card**: Event name and location name removed from map overlay
 
 ### Photo Upload
 - Fixed parameter name from 'image' to 'photoUrl' matching backend API
