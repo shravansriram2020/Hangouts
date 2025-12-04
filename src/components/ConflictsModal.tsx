@@ -318,6 +318,11 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
       return;
     }
 
+    if (selectedType === 'other' && !reason.trim()) {
+      Alert.alert('Required', 'Please enter a reason for this conflict');
+      return;
+    }
+
     setLoading(true);
     try {
       // Combine date and time into ISO format for database storage
