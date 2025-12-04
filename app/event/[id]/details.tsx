@@ -760,9 +760,9 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   stickyNote: {
-    width: 130,
-    height: 130,
-    borderRadius: 4,
+    width: 150,
+    height: 140,
+    borderRadius: 12,
     padding: 12,
     marginRight: 16,
     marginVertical: 8,

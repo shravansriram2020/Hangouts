@@ -18,6 +18,7 @@ import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+import ConflictsModal from '../../../src/components/ConflictsModal';
 
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -53,13 +54,16 @@ interface Message {
 }
 
 export default function MessagesScreen() {
-  const { event } = useEvent();
+  const { event, refreshEvent } = useEvent();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [showConflictsModal, setShowConflictsModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  
+  const isHost = event?.isHost === true;
 
   const gradientColors = useMemo(() => {
     return event?.gradient_color1 && event?.gradient_color2 
@@ -111,24 +115,11 @@ export default function MessagesScreen() {
     }
   };
 
-  const handleAddToConflicts = async (message: Message) => {
-    if (!event?.id) return;
-    
-    try {
-      const conflictType = message.has_time_suggestion ? 'time' : 'location';
-      await api.post('/conflicts', {
-        eventId: event.id,
-        type: conflictType,
-        description: `Suggestion from ${message.user_name}: "${message.content}"`,
-        suggestedValue: message.content,
-      });
-      
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Added to Conflicts', 'The suggestion has been added as a conflict for voting.');
-    } catch (error: any) {
-      console.error('Failed to add conflict:', error);
-      Alert.alert('Error', error.message || 'Failed to add to conflicts');
+  const handleAddToConflicts = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    setShowConflictsModal(true);
   };
 
   const formatTime = (dateStr: string) => {
@@ -173,7 +164,7 @@ export default function MessagesScreen() {
             {(item.has_time_suggestion || item.has_location_suggestion) && (
               <TouchableOpacity 
                 style={styles.addToConflictsButton}
-                onPress={() => handleAddToConflicts(item)}
+                onPress={handleAddToConflicts}
               >
                 <Ionicons name="add-circle-outline" size={14} color={Colors.white} />
                 <Text style={styles.addToConflictsText}>Add to Conflicts</Text>
@@ -266,6 +257,14 @@ export default function MessagesScreen() {
         </Text>
       </View>
       </KeyboardAvoidingView>
+      
+      <ConflictsModal
+        visible={showConflictsModal}
+        onClose={() => setShowConflictsModal(false)}
+        eventId={event?.id || ''}
+        isHost={isHost}
+        onEventUpdated={refreshEvent}
+      />
     </LinearGradient>
   );
 }

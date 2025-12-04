@@ -15,11 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import MapView, { Marker, Polyline, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+
 
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -67,7 +67,7 @@ const ROUTE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#E
 export default function MapScreen() {
   const { event } = useEvent();
   const { user } = useAuth();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   
   const [locationSharing, setLocationSharing] = useState(false);
@@ -347,11 +347,28 @@ export default function MapScreen() {
   };
 
   const renderNativeMap = () => {
+    let RNMaps: any;
+    try {
+      RNMaps = require('react-native-maps');
+    } catch (e) {
+      return renderFallbackMap();
+    }
+    
+    const MapViewComponent = RNMaps.default;
+    const MarkerComponent = RNMaps.Marker;
+    const PolylineComponent = RNMaps.Polyline;
+    const CalloutComponent = RNMaps.Callout;
+    const providerDefault = RNMaps.PROVIDER_DEFAULT;
+    
+    if (!MapViewComponent) {
+      return renderFallbackMap();
+    }
+    
     return (
-      <MapView
+      <MapViewComponent
         ref={mapRef}
         style={styles.map}
-        provider={Platform.OS === 'android' ? PROVIDER_DEFAULT : undefined}
+        provider={Platform.OS === 'android' ? providerDefault : undefined}
         initialRegion={initialRegion}
         showsUserLocation={false}
         showsMyLocationButton={false}
@@ -359,7 +376,7 @@ export default function MapScreen() {
         rotateEnabled={false}
         pitchEnabled={false}
       >
-        <Marker
+        <MarkerComponent
           coordinate={{ latitude: eventLat, longitude: eventLng }}
           anchor={{ x: 0.5, y: 0.5 }}
         >
@@ -368,10 +385,10 @@ export default function MapScreen() {
               <Ionicons name="location" size={20} color="white" />
             </View>
           </View>
-        </Marker>
+        </MarkerComponent>
 
         {currentLocation && locationSharing && (
-          <Marker
+          <MarkerComponent
             coordinate={{ latitude: currentLocation.lat, longitude: currentLocation.lng }}
             anchor={{ x: 0.5, y: 0.5 }}
           >
@@ -385,11 +402,11 @@ export default function MapScreen() {
               )}
               <View style={styles.userMarkerPulse} />
             </View>
-          </Marker>
+          </MarkerComponent>
         )}
 
         {locationSharingAttendees.map((attendee, index) => (
-          <Marker
+          <MarkerComponent
             key={attendee.user_id}
             coordinate={{ latitude: attendee.lat, longitude: attendee.lng }}
             anchor={{ x: 0.5, y: 0.5 }}
@@ -408,7 +425,7 @@ export default function MapScreen() {
                 </View>
               )}
             </View>
-            <Callout tooltip>
+            <CalloutComponent tooltip>
               <View style={styles.calloutContainer}>
                 <Text style={styles.calloutName}>{attendee.user_name}</Text>
                 {attendee.distance && (
@@ -418,12 +435,12 @@ export default function MapScreen() {
                   <Text style={styles.calloutEta}>ETA: {formatETA(attendee.eta)}</Text>
                 )}
               </View>
-            </Callout>
-          </Marker>
+            </CalloutComponent>
+          </MarkerComponent>
         ))}
 
         {routes.map((route, index) => (
-          <Polyline
+          <PolylineComponent
             key={route.userId}
             coordinates={route.points}
             strokeColor={ROUTE_COLORS[index % ROUTE_COLORS.length]}
@@ -433,13 +450,13 @@ export default function MapScreen() {
         ))}
 
         {myRoute && (
-          <Polyline
+          <PolylineComponent
             coordinates={myRoute.points}
             strokeColor="#10B981"
             strokeWidth={5}
           />
         )}
-      </MapView>
+      </MapViewComponent>
     );
   };
 

@@ -172,28 +172,25 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
           </>
         ) : (
           <>
-            <View style={styles.usernameInputContainer}>
-              <Text style={styles.atSymbol}>@</Text>
-              <TextInput
-                style={styles.usernameInput}
-                value={username}
-                onChangeText={handleUsernameChange}
-                placeholder="Search by username..."
-                placeholderTextColor={Colors.grayMedium}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {searchingUsers && (
-                <ActivityIndicator size="small" color={Colors.primary} style={styles.searchLoader} />
-              )}
-            </View>
+            <TextInput
+              style={styles.usernameSearchInput}
+              value={username}
+              onChangeText={handleUsernameChange}
+              placeholder="Search by username..."
+              placeholderTextColor={Colors.grayMedium}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchingUsers && (
+              <ActivityIndicator size="small" color={Colors.primary} style={styles.searchLoader} />
+            )}
             
             {userResults.length > 0 && (
-              <View style={styles.userResultsList}>
+              <View style={styles.suggestionsList}>
                 {userResults.slice(0, 5).map((user) => (
                   <TouchableOpacity
                     key={user.id}
-                    style={styles.userResultItem}
+                    style={styles.userItem}
                     onPress={() => handleInviteUser(user)}
                     disabled={invitingUser === user.id}
                   >
@@ -206,16 +203,9 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
                         </Text>
                       </View>
                     )}
-                    <View style={styles.userInfo}>
-                      <Text style={styles.userDisplayName}>{user.firstName}</Text>
-                      <Text style={styles.userUsername}>@{user.username}</Text>
-                    </View>
-                    {invitingUser === user.id ? (
-                      <ActivityIndicator size="small" color={Colors.green} />
-                    ) : (
-                      <View style={styles.inviteIcon}>
-                        <Ionicons name="paper-plane" size={16} color={Colors.white} />
-                      </View>
+                    <Text style={styles.userName}>@{user.username}</Text>
+                    {invitingUser === user.id && (
+                      <ActivityIndicator size="small" color={Colors.green} style={{ marginLeft: 'auto' }} />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -366,14 +356,25 @@ const styles = StyleSheet.create({
   },
   searchLoader: {
     marginLeft: 8,
+    marginBottom: 8,
   },
-  userResultsList: {
+  usernameSearchInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 12,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
+    marginBottom: 12,
+  },
+  suggestionsList: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    marginBottom: 12,
     overflow: 'hidden',
   },
-  userResultItem: {
+  userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
@@ -382,44 +383,28 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   userAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   userAvatarText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
   },
-  userInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  userDisplayName: {
+  userName: {
     fontSize: 14,
-    fontFamily: Fonts.semiBold,
+    fontFamily: Fonts.medium,
     color: Colors.secondary,
-  },
-  userUsername: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    color: Colors.gray,
-  },
-  inviteIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.green,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginLeft: 12,
   },
   helperText: {
     fontSize: 12,

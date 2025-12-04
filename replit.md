@@ -25,8 +25,13 @@ Preferred communication style: Simple, everyday language.
 - **Event Card Date Colors**: Homepage event cards now show random date box background colors (orange, yellow, blue) using brand colors
 - **Conflicts Time Picker**: Native iOS spinner wheel picker for selecting suggested times (matches create event experience)
 
+### Messages & Conflicts Integration
+- **Add to Conflicts**: Clicking "Add to Conflicts" on a message now opens the full ConflictsModal instead of auto-creating a conflict
+- Messages screen imports and renders ConflictsModal with proper event refresh callbacks
+
 ### Map Features
-- **Native Maps with Conditional Rendering**: Uses `react-native-maps` for iOS/Android (Expo Go compatible) with static TomTom image fallback for web
+- **Native Maps with Lazy Loading**: Uses `react-native-maps` for iOS/Android with lazy require() inside render function to prevent Expo Go crashes
+- Static TomTom image fallback for web and when native maps unavailable
 - Current location marker uses user's profile photo with green pulsing border
 - Location sharing toggle state persists across app sessions using AsyncStorage
 - Attendee markers with profile photos and "On My Way" status indicators
