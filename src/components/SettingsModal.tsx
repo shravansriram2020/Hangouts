@@ -53,11 +53,11 @@ const CREDITS_DATA: CreditSection[] = [
     entries: [
       { role: 'Android Testing', name: 'Theodor Geertsen' },
       { role: 'Development Support', name: 'Tudor Marinescu' },
-      { role: 'Business/Marketing Support', name: 'Jackson Siedon' },
+      { role: 'Business/Marketing Support', name: 'Jackson Sieden' },
     ],
   },
   {
-    title: 'Brand Contributors',
+    title: 'Brand',
     entries: [
       { role: 'Motion Graphics/Branding', name: 'David Kerman' },
       { role: 'Opening SFX', name: 'Lily Ross' },
