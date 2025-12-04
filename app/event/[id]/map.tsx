@@ -64,12 +64,24 @@ interface RouteData {
 
 const ROUTE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
+// Check if native maps are available (only works in development builds)
+let nativeMapsAvailable = false;
+try {
+  // Try to access the module at startup
+  const RNMaps = require('react-native-maps');
+  nativeMapsAvailable = !!(RNMaps && RNMaps.default);
+} catch (e) {
+  nativeMapsAvailable = false;
+}
+
 export default function MapScreen() {
   const { event } = useEvent();
   const { user } = useAuth();
   const mapRef = useRef<any>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   
+  // Use fallback map if native maps failed to load
+  const [useFallbackMap, setUseFallbackMap] = useState(!nativeMapsAvailable);
   const [locationSharing, setLocationSharing] = useState(false);
   const [isOnMyWay, setIsOnMyWay] = useState(false);
   const [sharingCount, setSharingCount] = useState(0);
@@ -347,20 +359,46 @@ export default function MapScreen() {
   };
 
   const renderNativeMap = () => {
-    let RNMaps: any;
-    try {
-      RNMaps = require('react-native-maps');
-    } catch (e) {
+    // In Expo Go, react-native-maps is not available
+    // Check if we're in Expo Go by checking for the native module
+    if (Platform.OS === 'web') {
       return renderFallbackMap();
     }
     
-    const MapViewComponent = RNMaps.default;
-    const MarkerComponent = RNMaps.Marker;
-    const PolylineComponent = RNMaps.Polyline;
-    const CalloutComponent = RNMaps.Callout;
-    const providerDefault = RNMaps.PROVIDER_DEFAULT;
+    let RNMaps: any;
+    try {
+      // Use dynamic require to avoid bundler errors
+      RNMaps = require('react-native-maps');
+      
+      // Check if the module actually loaded (native binary check)
+      if (!RNMaps || !RNMaps.default) {
+        console.log('react-native-maps module not available, using fallback');
+        return renderFallbackMap();
+      }
+    } catch (e) {
+      console.log('react-native-maps not available, using fallback map');
+      return renderFallbackMap();
+    }
     
-    if (!MapViewComponent) {
+    // Wrap component access in try-catch to handle native module missing
+    let MapViewComponent: any;
+    let MarkerComponent: any;
+    let PolylineComponent: any;
+    let CalloutComponent: any;
+    let providerDefault: any;
+    
+    try {
+      MapViewComponent = RNMaps.default;
+      MarkerComponent = RNMaps.Marker;
+      PolylineComponent = RNMaps.Polyline;
+      CalloutComponent = RNMaps.Callout;
+      providerDefault = RNMaps.PROVIDER_DEFAULT;
+      
+      if (!MapViewComponent || !MarkerComponent) {
+        return renderFallbackMap();
+      }
+    } catch (e) {
+      console.log('Failed to access react-native-maps components, using fallback');
       return renderFallbackMap();
     }
     
@@ -461,10 +499,19 @@ export default function MapScreen() {
   };
 
   const renderMap = () => {
-    if (Platform.OS === 'web') {
+    // Always use fallback on web or if native maps failed to initialize
+    if (Platform.OS === 'web' || useFallbackMap) {
       return renderFallbackMap();
     }
-    return renderNativeMap();
+    
+    // Wrap native map rendering in try-catch to catch runtime errors
+    try {
+      return renderNativeMap();
+    } catch (error) {
+      console.log('Native map rendering failed, using fallback:', error);
+      setUseFallbackMap(true);
+      return renderFallbackMap();
+    }
   };
 
   return (

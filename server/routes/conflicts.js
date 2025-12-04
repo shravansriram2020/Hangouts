@@ -110,22 +110,26 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     // Update event based on conflict type
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Update event date/time
+      // Update event date and time - parse the ISO string and extract date and time
+      const suggestedDateTime = new Date(conflict.suggested_time);
+      const eventDate = suggestedDateTime.toISOString().split('T')[0]; // YYYY-MM-DD
+      const eventTime = suggestedDateTime.toTimeString().slice(0, 5); // HH:MM
+      
       await pool.query(
-        'UPDATE events SET date_time = $1, updated_at = NOW() WHERE id = $2',
-        [conflict.suggested_time, conflict.event_id]
+        'UPDATE events SET event_date = $1, event_time = $2, updated_at = NOW() WHERE id = $3',
+        [eventDate, eventTime, conflict.event_id]
       );
     } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
-      // Update event location - only update coordinates if they exist
+      // Update event location - use location_name and location_address columns
       if (conflict.suggested_lat != null && conflict.suggested_lng != null) {
         await pool.query(
-          'UPDATE events SET location = $1, location_lat = $2, location_lng = $3, updated_at = NOW() WHERE id = $4',
+          'UPDATE events SET location_address = $1, location_lat = $2, location_lng = $3, updated_at = NOW() WHERE id = $4',
           [conflict.suggested_location, conflict.suggested_lat, conflict.suggested_lng, conflict.event_id]
         );
       } else {
-        // Only update location name if coordinates are missing
+        // Only update location address if coordinates are missing
         await pool.query(
-          'UPDATE events SET location = $1, updated_at = NOW() WHERE id = $2',
+          'UPDATE events SET location_address = $1, updated_at = NOW() WHERE id = $2',
           [conflict.suggested_location, conflict.event_id]
         );
       }

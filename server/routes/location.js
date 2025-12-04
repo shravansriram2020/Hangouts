@@ -6,65 +6,160 @@ const router = express.Router();
 
 const TOMTOM_API_KEY = process.env.TOMTOM_API_KEY;
 
-router.get('/search', authenticateToken, async (req, res) => {
-  const { query, lat, lng, radius, category } = req.query;
+// Helper function to calculate distance between two coordinates (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in miles
+}
 
+// OpenStreetMap Nominatim search (free, no API key required)
+async function searchNominatim(query, lat, lng) {
   try {
-    // Build TomTom search URL - allow global search without radius restriction
-    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=20&typeahead=true`;
+    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=15&addressdetails=1`;
     
-    // If user location provided, use it for biasing results but don't restrict with radius
-    // This allows searching anywhere while still sorting by distance
+    // Add viewbox bias towards user location if available (but don't restrict)
+    if (lat && lng) {
+      const viewboxSize = 0.5; // ~35 miles
+      url += `&viewbox=${lng - viewboxSize},${lat + viewboxSize},${lng + viewboxSize},${lat - viewboxSize}`;
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'HangoutsApp/1.0 (contact@example.com)' // Nominatim requires User-Agent
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Nominatim API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.map(result => {
+      const resultLat = parseFloat(result.lat);
+      const resultLng = parseFloat(result.lon);
+      const distanceMiles = (lat && lng) ? calculateDistance(parseFloat(lat), parseFloat(lng), resultLat, resultLng) : null;
+      
+      // Extract a clean name from the result
+      const name = result.name || 
+                   result.address?.amenity ||
+                   result.address?.building ||
+                   result.address?.tourism ||
+                   result.address?.leisure ||
+                   result.address?.shop ||
+                   result.address?.road ||
+                   result.display_name.split(',')[0];
+      
+      return {
+        id: `osm-${result.place_id}`,
+        name: name,
+        address: result.display_name,
+        lat: resultLat,
+        lng: resultLng,
+        distanceMiles: distanceMiles ? distanceMiles.toFixed(1) : null,
+        distance: distanceMiles ? distanceMiles * 1609.34 : null, // Convert to meters for sorting
+        category: result.type,
+        source: 'nominatim'
+      };
+    });
+  } catch (error) {
+    console.error('Nominatim search error:', error);
+    return [];
+  }
+}
+
+// TomTom search as fallback/secondary source
+async function searchTomTom(query, lat, lng) {
+  if (!TOMTOM_API_KEY) return [];
+  
+  try {
+    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=15&typeahead=true`;
+    
     if (lat && lng) {
       url += `&lat=${lat}&lon=${lng}`;
-      // Only add radius if explicitly requested and reasonable
-      if (radius && parseFloat(radius) > 0) {
-        const radiusMeters = parseFloat(radius) * 1609; // Convert miles to meters
-        if (radiusMeters < 500000) { // Max 500km radius
-          url += `&radius=${radiusMeters}`;
-        }
-      }
     }
-
-    if (category) {
-      url += `&categorySet=${category}`;
-    }
-
+    
     const response = await fetch(url);
     const data = await response.json();
-
-    let results = data.results?.map(result => {
-      let distance = result.dist;
-      // Calculate distance if not provided by API
-      if (!distance && lat && lng && result.position) {
-        const R = 3959; // Earth's radius in miles
-        const dLat = (result.position.lat - parseFloat(lat)) * Math.PI / 180;
-        const dLon = (result.position.lon - parseFloat(lng)) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(parseFloat(lat) * Math.PI / 180) * Math.cos(result.position.lat * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        distance = R * c * 1609.34; // Convert miles to meters
-      }
+    
+    return (data.results || []).map(result => {
+      const resultLat = result.position?.lat;
+      const resultLng = result.position?.lon;
+      const distanceMiles = (lat && lng && resultLat && resultLng) 
+        ? calculateDistance(parseFloat(lat), parseFloat(lng), resultLat, resultLng) 
+        : null;
       
       return {
         id: result.id,
         name: result.poi?.name || result.address?.freeformAddress,
         address: result.address?.freeformAddress,
-        lat: result.position?.lat,
-        lng: result.position?.lon,
-        distance: distance,
-        distanceMiles: distance ? (distance / 1609.34).toFixed(1) : null,
-        category: result.poi?.categories?.[0]
+        lat: resultLat,
+        lng: resultLng,
+        distanceMiles: distanceMiles ? distanceMiles.toFixed(1) : null,
+        distance: distanceMiles ? distanceMiles * 1609.34 : null,
+        category: result.poi?.categories?.[0],
+        source: 'tomtom'
       };
-    }) || [];
+    });
+  } catch (error) {
+    console.error('TomTom search error:', error);
+    return [];
+  }
+}
 
+router.get('/search', authenticateToken, async (req, res) => {
+  const { query, lat, lng } = req.query;
+
+  if (!query || query.length < 2) {
+    return res.json([]);
+  }
+
+  try {
+    // Search both APIs in parallel for best results
+    const [nominatimResults, tomtomResults] = await Promise.all([
+      searchNominatim(query, lat, lng),
+      searchTomTom(query, lat, lng)
+    ]);
+    
+    // Merge results, preferring TomTom for POIs but keeping Nominatim for addresses
+    const seenNames = new Set();
+    let allResults = [];
+    
+    // Add TomTom results first (usually better for businesses/POIs)
+    for (const result of tomtomResults) {
+      if (result.name && result.lat && result.lng) {
+        const key = `${result.name.toLowerCase()}-${result.lat.toFixed(3)}-${result.lng.toFixed(3)}`;
+        if (!seenNames.has(key)) {
+          seenNames.add(key);
+          allResults.push(result);
+        }
+      }
+    }
+    
+    // Add Nominatim results (good for addresses and less common places)
+    for (const result of nominatimResults) {
+      if (result.name && result.lat && result.lng) {
+        const key = `${result.name.toLowerCase()}-${result.lat.toFixed(3)}-${result.lng.toFixed(3)}`;
+        if (!seenNames.has(key)) {
+          seenNames.add(key);
+          allResults.push(result);
+        }
+      }
+    }
+    
     // Sort by distance if user location is known
     if (lat && lng) {
-      results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+      allResults.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     }
-
-    res.json(results.slice(0, 15));
+    
+    // Return top 15 results
+    res.json(allResults.slice(0, 15));
   } catch (error) {
     console.error('Location search error:', error);
     res.status(500).json({ error: 'Failed to search locations' });
