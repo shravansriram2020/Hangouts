@@ -7,18 +7,24 @@ import SignInScreen from '../src/screens/SignInScreen';
 import SignUpScreen from '../src/screens/SignUpScreen';
 import TutorialScreen from '../src/screens/TutorialScreen';
 import HomeScreen from '../src/screens/HomeScreen';
+import SplashAnimation from '../src/components/SplashAnimation';
 
 export default function Index() {
   const router = useRouter();
   const { user, loading, updateUser } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   React.useEffect(() => {
     if (user && !user.tutorialCompleted) {
       setShowTutorial(true);
     }
   }, [user]);
+
+  if (showSplash) {
+    return <SplashAnimation onAnimationComplete={() => setShowSplash(false)} />;
+  }
 
   if (loading) {
     return <View style={styles.container} />;
