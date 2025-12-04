@@ -129,10 +129,12 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
           [conflict.suggested_location, conflict.event_id]
         );
       }
-    } else if (conflict.conflict_type === 'other' && conflict.reason) {
-      // Add the conflict reason as a note to the event
-      const currentNotes = conflict.notes || '';
-      const newNote = `[Resolved Conflict] ${conflict.reason}`;
+    } else if (conflict.conflict_type === 'other') {
+      // Add the conflict reason or suggested value as a note to the event
+      const eventResult = await pool.query('SELECT notes FROM events WHERE id = $1', [conflict.event_id]);
+      const currentNotes = eventResult.rows[0]?.notes || '';
+      const noteContent = conflict.reason || conflict.suggested_location || 'Conflict resolved';
+      const newNote = `[Resolved Conflict] ${noteContent}`;
       const updatedNotes = currentNotes ? `${currentNotes}\n\n${newNote}` : newNote;
       await pool.query(
         'UPDATE events SET notes = $1, updated_at = NOW() WHERE id = $2',

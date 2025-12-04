@@ -7,13 +7,23 @@ const router = express.Router();
 const TOMTOM_API_KEY = process.env.TOMTOM_API_KEY;
 
 router.get('/search', authenticateToken, async (req, res) => {
-  const { query, lat, lng, radius = 10, category } = req.query;
+  const { query, lat, lng, radius, category } = req.query;
 
   try {
-    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=15`;
+    // Build TomTom search URL - allow global search without radius restriction
+    let url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&limit=20&typeahead=true`;
     
+    // If user location provided, use it for biasing results but don't restrict with radius
+    // This allows searching anywhere while still sorting by distance
     if (lat && lng) {
-      url += `&lat=${lat}&lon=${lng}&radius=${radius * 1609}`; // Convert miles to meters
+      url += `&lat=${lat}&lon=${lng}`;
+      // Only add radius if explicitly requested and reasonable
+      if (radius && parseFloat(radius) > 0) {
+        const radiusMeters = parseFloat(radius) * 1609; // Convert miles to meters
+        if (radiusMeters < 500000) { // Max 500km radius
+          url += `&radius=${radiusMeters}`;
+        }
+      }
     }
 
     if (category) {
@@ -25,6 +35,7 @@ router.get('/search', authenticateToken, async (req, res) => {
 
     let results = data.results?.map(result => {
       let distance = result.dist;
+      // Calculate distance if not provided by API
       if (!distance && lat && lng && result.position) {
         const R = 3959; // Earth's radius in miles
         const dLat = (result.position.lat - parseFloat(lat)) * Math.PI / 180;
@@ -48,11 +59,12 @@ router.get('/search', authenticateToken, async (req, res) => {
       };
     }) || [];
 
+    // Sort by distance if user location is known
     if (lat && lng) {
       results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     }
 
-    res.json(results.slice(0, 10));
+    res.json(results.slice(0, 15));
   } catch (error) {
     console.error('Location search error:', error);
     res.status(500).json({ error: 'Failed to search locations' });

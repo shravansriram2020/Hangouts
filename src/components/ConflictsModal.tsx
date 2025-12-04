@@ -36,6 +36,7 @@ interface Props {
   isHost?: boolean;
   onConflictUpdate?: () => void;
   onEventUpdated?: () => void;
+  initialType?: 'time' | 'location' | 'other';
 }
 
 const CONFLICT_TYPES = [
@@ -44,7 +45,7 @@ const CONFLICT_TYPES = [
   { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate, onEventUpdated }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate, onEventUpdated, initialType }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [showCreateConflict, setShowCreateConflict] = useState(false);
@@ -160,8 +161,24 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
     if (visible) {
       fetchConflicts();
       getCurrentLocation();
+      // If initialType is provided, auto-open create form with that type selected
+      if (initialType) {
+        setShowCreateConflict(true);
+        setSelectedType(initialType);
+      }
+    } else {
+      // Reset state when modal closes
+      setShowCreateConflict(false);
+      setSelectedType('');
+      setReason('');
+      setSuggestedDate(null);
+      setSuggestedTime(null);
+      setSuggestedLocation('');
+      setSuggestedLocationName('');
+      setLocationQuery('');
+      setLocationSuggestions([]);
     }
-  }, [visible]);
+  }, [visible, initialType]);
 
   const getCurrentLocation = async () => {
     try {
@@ -193,13 +210,13 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
 
     setSearchingLocation(true);
     try {
+      // Don't pass radius to allow global search - results will be sorted by distance if location available
       const params = new URLSearchParams({
         query,
         ...(currentLocation && {
           lat: currentLocation.lat.toString(),
           lng: currentLocation.lng.toString(),
         }),
-        radius: '50000',
       });
 
       const results = await api.get(`/location/search?${params}`);
@@ -359,7 +376,6 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   };
 
   return (
-    <>
     <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
       <ScrollView style={styles.content}>
             {showCreateConflict ? (
@@ -625,108 +641,107 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
               </>
             )}
           </ScrollView>
+
+          {Platform.OS === 'ios' && showDatePicker && (
+            <Modal transparent animationType="none" visible={showDatePicker}>
+              <View style={styles.pickerModalRoot}>
+                <Animated.View style={[styles.pickerModalOverlay, { opacity: datePickerOverlayOpacity }]}>
+                  <TouchableOpacity style={{ flex: 1 }} onPress={closeDatePicker} activeOpacity={1} />
+                </Animated.View>
+                <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: datePickerSlideAnim }] }]}>
+                  <View style={styles.pickerModalHeader}>
+                    <TouchableOpacity onPress={closeDatePicker}>
+                      <Text style={styles.pickerModalCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.pickerModalTitle}>Select Date</Text>
+                    <TouchableOpacity onPress={closeDatePicker}>
+                      <Text style={styles.pickerModalDone}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.pickerContainer}>
+                    <DateTimePicker
+                      value={suggestedDate || new Date()}
+                      mode="date"
+                      display="spinner"
+                      onChange={(event, selectedDate) => {
+                        if (selectedDate) {
+                          setSuggestedDate(selectedDate);
+                        }
+                      }}
+                      minimumDate={new Date()}
+                      style={styles.iosDatePicker}
+                      textColor={Colors.secondary}
+                    />
+                  </View>
+                </Animated.View>
+              </View>
+            </Modal>
+          )}
+
+          {Platform.OS === 'ios' && showTimePicker && (
+            <Modal transparent animationType="none" visible={showTimePicker}>
+              <View style={styles.pickerModalRoot}>
+                <Animated.View style={[styles.pickerModalOverlay, { opacity: timePickerOverlayOpacity }]}>
+                  <TouchableOpacity style={{ flex: 1 }} onPress={closeTimePicker} activeOpacity={1} />
+                </Animated.View>
+                <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: timePickerSlideAnim }] }]}>
+                  <View style={styles.pickerModalHeader}>
+                    <TouchableOpacity onPress={closeTimePicker}>
+                      <Text style={styles.pickerModalCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.pickerModalTitle}>Select Time</Text>
+                    <TouchableOpacity onPress={closeTimePicker}>
+                      <Text style={styles.pickerModalDone}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.pickerContainer}>
+                    <DateTimePicker
+                      value={suggestedTime || new Date()}
+                      mode="time"
+                      display="spinner"
+                      onChange={(event, selectedTime) => {
+                        if (selectedTime) {
+                          setSuggestedTime(selectedTime);
+                        }
+                      }}
+                      style={styles.iosDatePicker}
+                      textColor={Colors.secondary}
+                    />
+                  </View>
+                </Animated.View>
+              </View>
+            </Modal>
+          )}
+
+          {Platform.OS === 'android' && showDatePicker && (
+            <DateTimePicker
+              value={suggestedDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setSuggestedDate(selectedDate);
+                }
+              }}
+              minimumDate={new Date()}
+            />
+          )}
+
+          {Platform.OS === 'android' && showTimePicker && (
+            <DateTimePicker
+              value={suggestedTime || new Date()}
+              mode="time"
+              display="default"
+              onChange={(event, selectedTime) => {
+                setShowTimePicker(false);
+                if (selectedTime) {
+                  setSuggestedTime(selectedTime);
+                }
+              }}
+            />
+          )}
     </GlassModal>
-
-    {Platform.OS === 'ios' && showDatePicker && (
-      <Modal transparent animationType="none" visible={showDatePicker}>
-        <View style={styles.pickerModalRoot}>
-          <Animated.View style={[styles.pickerModalOverlay, { opacity: datePickerOverlayOpacity }]}>
-            <TouchableOpacity style={{ flex: 1 }} onPress={closeDatePicker} activeOpacity={1} />
-          </Animated.View>
-          <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: datePickerSlideAnim }] }]}>
-            <View style={styles.pickerModalHeader}>
-              <TouchableOpacity onPress={closeDatePicker}>
-                <Text style={styles.pickerModalCancel}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerModalTitle}>Select Date</Text>
-              <TouchableOpacity onPress={closeDatePicker}>
-                <Text style={styles.pickerModalDone}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.pickerContainer}>
-              <DateTimePicker
-                value={suggestedDate || new Date()}
-                mode="date"
-                display="spinner"
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) {
-                    setSuggestedDate(selectedDate);
-                  }
-                }}
-                minimumDate={new Date()}
-                style={styles.iosDatePicker}
-                textColor={Colors.secondary}
-              />
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
-    )}
-
-    {Platform.OS === 'ios' && showTimePicker && (
-      <Modal transparent animationType="none" visible={showTimePicker}>
-        <View style={styles.pickerModalRoot}>
-          <Animated.View style={[styles.pickerModalOverlay, { opacity: timePickerOverlayOpacity }]}>
-            <TouchableOpacity style={{ flex: 1 }} onPress={closeTimePicker} activeOpacity={1} />
-          </Animated.View>
-          <Animated.View style={[styles.pickerModalContent, { transform: [{ translateY: timePickerSlideAnim }] }]}>
-            <View style={styles.pickerModalHeader}>
-              <TouchableOpacity onPress={closeTimePicker}>
-                <Text style={styles.pickerModalCancel}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerModalTitle}>Select Time</Text>
-              <TouchableOpacity onPress={closeTimePicker}>
-                <Text style={styles.pickerModalDone}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.pickerContainer}>
-              <DateTimePicker
-                value={suggestedTime || new Date()}
-                mode="time"
-                display="spinner"
-                onChange={(event, selectedTime) => {
-                  if (selectedTime) {
-                    setSuggestedTime(selectedTime);
-                  }
-                }}
-                style={styles.iosDatePicker}
-                textColor={Colors.secondary}
-              />
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
-    )}
-
-    {Platform.OS === 'android' && showDatePicker && (
-      <DateTimePicker
-        value={suggestedDate || new Date()}
-        mode="date"
-        display="default"
-        onChange={(event, selectedDate) => {
-          setShowDatePicker(false);
-          if (selectedDate) {
-            setSuggestedDate(selectedDate);
-          }
-        }}
-        minimumDate={new Date()}
-      />
-    )}
-
-    {Platform.OS === 'android' && showTimePicker && (
-      <DateTimePicker
-        value={suggestedTime || new Date()}
-        mode="time"
-        display="default"
-        onChange={(event, selectedTime) => {
-          setShowTimePicker(false);
-          if (selectedTime) {
-            setSuggestedTime(selectedTime);
-          }
-        }}
-      />
-    )}
-    </>
   );
 }
 

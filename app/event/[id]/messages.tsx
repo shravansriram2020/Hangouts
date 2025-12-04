@@ -61,6 +61,7 @@ export default function MessagesScreen() {
   const [sending, setSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showConflictsModal, setShowConflictsModal] = useState(false);
+  const [conflictType, setConflictType] = useState<'time' | 'location' | undefined>(undefined);
   const flatListRef = useRef<FlatList>(null);
   
   const isHost = event?.isHost === true;
@@ -115,9 +116,17 @@ export default function MessagesScreen() {
     }
   };
 
-  const handleAddToConflicts = () => {
+  const handleAddToConflicts = (message: Message) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // Set conflict type based on message suggestion type
+    if (message.has_time_suggestion) {
+      setConflictType('time');
+    } else if (message.has_location_suggestion) {
+      setConflictType('location');
+    } else {
+      setConflictType(undefined);
     }
     setShowConflictsModal(true);
   };
@@ -164,7 +173,7 @@ export default function MessagesScreen() {
             {(item.has_time_suggestion || item.has_location_suggestion) && (
               <TouchableOpacity 
                 style={styles.addToConflictsButton}
-                onPress={handleAddToConflicts}
+                onPress={() => handleAddToConflicts(item)}
               >
                 <Ionicons name="add-circle-outline" size={14} color={Colors.white} />
                 <Text style={styles.addToConflictsText}>Add to Conflicts</Text>
@@ -260,10 +269,14 @@ export default function MessagesScreen() {
       
       <ConflictsModal
         visible={showConflictsModal}
-        onClose={() => setShowConflictsModal(false)}
+        onClose={() => {
+          setShowConflictsModal(false);
+          setConflictType(undefined);
+        }}
         eventId={event?.id || ''}
         isHost={isHost}
         onEventUpdated={refreshEvent}
+        initialType={conflictType}
       />
     </LinearGradient>
   );
