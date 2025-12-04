@@ -123,7 +123,12 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showCredits, setShowCredits] = useState(false);
+  const [currentView, setCurrentView] = useState<'settings' | 'credits'>('settings');
+
+  const handleClose = () => {
+    setCurrentView('settings');
+    onClose();
+  };
 
   useEffect(() => {
     if (user) {
@@ -210,9 +215,41 @@ export default function SettingsModal({ visible, onClose }: Props) {
     updateUser({ tutorialCompleted: false });
   };
 
+  if (currentView === 'credits') {
+    return (
+      <GlassModal visible={visible} onClose={handleClose} title="Credits" fullHeight>
+        <TouchableOpacity 
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8 }}
+          onPress={() => setCurrentView('settings')}
+        >
+          <Ionicons name="chevron-back" size={20} color={Colors.secondary} />
+          <Text style={{ fontFamily: Fonts.medium, color: Colors.secondary, marginLeft: 4 }}>Back to Settings</Text>
+        </TouchableOpacity>
+        <View style={{ paddingBottom: 20 }}>
+          {CREDITS_DATA.map((section, sectionIndex) => (
+            <View key={sectionIndex} style={creditsStyles.section}>
+              <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
+              {section.entries.map((entry, entryIndex) => (
+                <View key={entryIndex} style={creditsStyles.entry}>
+                  {entry.role ? (
+                    <>
+                      <Text style={creditsStyles.role}>{entry.role}</Text>
+                      <Text style={creditsStyles.name}>{entry.name}</Text>
+                    </>
+                  ) : entry.name ? (
+                    <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      </GlassModal>
+    );
+  }
+
   return (
-    <>
-    <GlassModal visible={visible} onClose={onClose} title="Settings" fullHeight>
+    <GlassModal visible={visible} onClose={handleClose} title="Settings" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.profileSection}>
               <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
@@ -340,14 +377,14 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.sectionTitle}>Other</Text>
 
-            <TouchableOpacity style={styles.creditsButton} onPress={() => setShowCredits(true)}>
+            <TouchableOpacity style={styles.creditsButton} onPress={() => setCurrentView('credits')}>
               <Ionicons name="people-outline" size={16} color={Colors.grayDark} />
               <Text style={styles.creditsButtonText}>Credits</Text>
               <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -364,29 +401,6 @@ export default function SettingsModal({ visible, onClose }: Props) {
             <Text style={styles.version}>Version 1.0</Text>
           </ScrollView>
     </GlassModal>
-    
-    <GlassModal visible={showCredits} onClose={() => setShowCredits(false)} title="Credits" fullHeight>
-      <View style={{ paddingVertical: 10 }}>
-        {CREDITS_DATA.map((section, sectionIndex) => (
-          <View key={sectionIndex} style={creditsStyles.section}>
-            <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
-            {section.entries.map((entry, entryIndex) => (
-              <View key={entryIndex} style={creditsStyles.entry}>
-                {entry.role ? (
-                  <>
-                    <Text style={creditsStyles.role}>{entry.role}</Text>
-                    <Text style={creditsStyles.name}>{entry.name}</Text>
-                  </>
-                ) : entry.name ? (
-                  <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
-    </GlassModal>
-    </>
   );
 }
 
