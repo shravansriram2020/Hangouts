@@ -83,7 +83,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         ref={videoRef}
         source={require('../../assets/splash/splash-video.mov')}
         style={styles.video}
-        resizeMode={ResizeMode.COVER}
+        resizeMode={ResizeMode.CONTAIN}
         shouldPlay={false}
         isLooping={false}
         onLoad={handleVideoLoad}
@@ -100,13 +100,12 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E3A5F',
+    backgroundColor: 'rgb(180, 222, 242)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   video: {
     width: width,
     height: height,
-    position: 'absolute',
   },
 });
