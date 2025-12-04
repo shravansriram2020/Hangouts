@@ -10,11 +10,9 @@ import {
   Linking,
   Alert,
   Image,
-  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { BlurView } from 'expo-blur';
 import { Colors, Fonts } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -84,92 +82,7 @@ const CREDITS_DATA: CreditSection[] = [
   },
 ];
 
-function CreditsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={creditsStyles.overlay}>
-        <BlurView intensity={80} tint="light" style={creditsStyles.container}>
-          <View style={creditsStyles.header}>
-            <Text style={creditsStyles.title}>Credits</Text>
-            <TouchableOpacity onPress={onClose} style={creditsStyles.closeButton}>
-              <Ionicons name="close" size={24} color={Colors.secondary} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView 
-            style={creditsStyles.content} 
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={creditsStyles.contentContainer}
-          >
-            {CREDITS_DATA.map((section, sectionIndex) => (
-              <View key={sectionIndex} style={creditsStyles.section}>
-                <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
-                {section.entries.map((entry, entryIndex) => (
-                  <View key={entryIndex} style={creditsStyles.entry}>
-                    {entry.role ? (
-                      <>
-                        <Text style={creditsStyles.role}>{entry.role}</Text>
-                        <Text style={creditsStyles.name}>{entry.name}</Text>
-                      </>
-                    ) : (
-                      <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            ))}
-          </ScrollView>
-        </BlurView>
-      </View>
-    </Modal>
-  );
-}
-
 const creditsStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  container: {
-    width: '100%',
-    maxHeight: '80%',
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: Fonts.semiBold,
-    color: Colors.secondary,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
   section: {
     marginBottom: 24,
   },
@@ -452,7 +365,27 @@ export default function SettingsModal({ visible, onClose }: Props) {
           </ScrollView>
     </GlassModal>
     
-    <CreditsModal visible={showCredits} onClose={() => setShowCredits(false)} />
+    <GlassModal visible={showCredits} onClose={() => setShowCredits(false)} title="Credits" fullHeight>
+      <View style={{ paddingVertical: 10 }}>
+        {CREDITS_DATA.map((section, sectionIndex) => (
+          <View key={sectionIndex} style={creditsStyles.section}>
+            <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
+            {section.entries.map((entry, entryIndex) => (
+              <View key={entryIndex} style={creditsStyles.entry}>
+                {entry.role ? (
+                  <>
+                    <Text style={creditsStyles.role}>{entry.role}</Text>
+                    <Text style={creditsStyles.name}>{entry.name}</Text>
+                  </>
+                ) : entry.name ? (
+                  <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    </GlassModal>
     </>
   );
 }
