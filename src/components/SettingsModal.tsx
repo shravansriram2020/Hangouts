@@ -87,20 +87,20 @@ const creditsStyles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontFamily: Fonts.semiBold,
-    color: Colors.grayMedium,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
     marginBottom: 12,
   },
   entry: {
     marginBottom: 10,
   },
   role: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-    color: Colors.grayDark,
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.grayMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 2,
   },
   name: {
@@ -109,7 +109,10 @@ const creditsStyles = StyleSheet.create({
     color: Colors.secondary,
   },
   nameOnly: {
-    marginBottom: 4,
+    marginBottom: 3,
+  },
+  nameOnlyCompact: {
+    marginBottom: 1,
   },
 });
 
@@ -226,23 +229,26 @@ export default function SettingsModal({ visible, onClose }: Props) {
           <Text style={{ fontFamily: Fonts.medium, color: Colors.secondary, marginLeft: 4 }}>Back to Settings</Text>
         </TouchableOpacity>
         <View style={{ paddingBottom: 20 }}>
-          {CREDITS_DATA.map((section, sectionIndex) => (
-            <View key={sectionIndex} style={creditsStyles.section}>
-              <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
-              {section.entries.map((entry, entryIndex) => (
-                <View key={entryIndex} style={creditsStyles.entry}>
-                  {entry.role ? (
-                    <>
-                      <Text style={creditsStyles.role}>{entry.role}</Text>
-                      <Text style={creditsStyles.name}>{entry.name}</Text>
-                    </>
-                  ) : entry.name ? (
-                    <Text style={[creditsStyles.name, creditsStyles.nameOnly]}>{entry.name}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          ))}
+          {CREDITS_DATA.map((section, sectionIndex) => {
+            const isCompactSection = section.title === 'Advertisement Contributors' || section.title === 'Special Thanks';
+            return (
+              <View key={sectionIndex} style={creditsStyles.section}>
+                <Text style={creditsStyles.sectionTitle}>{section.title}</Text>
+                {section.entries.map((entry, entryIndex) => (
+                  <View key={entryIndex} style={isCompactSection ? { marginBottom: 4 } : creditsStyles.entry}>
+                    {entry.role ? (
+                      <>
+                        <Text style={creditsStyles.role}>{entry.role}</Text>
+                        <Text style={creditsStyles.name}>{entry.name}</Text>
+                      </>
+                    ) : entry.name ? (
+                      <Text style={[creditsStyles.name, isCompactSection ? creditsStyles.nameOnlyCompact : creditsStyles.nameOnly]}>{entry.name}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            );
+          })}
         </View>
       </GlassModal>
     );
