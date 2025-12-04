@@ -63,6 +63,16 @@ const CREDITS_DATA: CreditSection[] = [
     ],
   },
   {
+    title: 'Advertisement Contributors',
+    entries: [
+      { role: '', name: 'Aiden Rohrbach' },
+      { role: '', name: 'Dante Maritato' },
+      { role: '', name: 'Dylan Milne' },
+      { role: '', name: 'Sophia Romany' },
+      { role: '', name: 'Mason Hayes' },
+    ],
+  },
+  {
     title: 'Special Thanks',
     entries: [
       { role: '', name: 'Hangouts Team Friends, Family and Pets' },
