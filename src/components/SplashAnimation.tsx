@@ -54,17 +54,21 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   const startPlayback = async () => {
     setIsPlaying(true);
     
-    try {
-      if (soundRef.current) {
-        await soundRef.current.playAsync();
-      }
-    } catch (error) {
-      console.log('Error playing sound:', error);
-    }
-
+    // Start video immediately
     if (videoRef.current) {
       await videoRef.current.playAsync();
     }
+    
+    // Delay sound by 1 second
+    setTimeout(async () => {
+      try {
+        if (soundRef.current) {
+          await soundRef.current.playAsync();
+        }
+      } catch (error) {
+        console.log('Error playing sound:', error);
+      }
+    }, 1000);
   };
 
   const handleVideoEnd = () => {
@@ -105,7 +109,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   video: {
-    width: width,
-    height: height,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
 });
