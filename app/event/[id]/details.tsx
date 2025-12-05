@@ -130,7 +130,7 @@ export default function DetailsScreen() {
     return (
       <View style={styles.centerContainer}>
         <LoadingDots size={14} />
-        <Text style={styles.loadingText}>Loading event...</Text>
+        <Text style={styles.loadingText}>Loading Hangout...</Text>
       </View>
     );
   }

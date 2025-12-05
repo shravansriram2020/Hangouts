@@ -146,7 +146,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 />
                 <TouchableOpacity style={styles.dismissAllButton} onPress={handleDismissAll}>
                   <Ionicons name="trash-outline" size={14} color={Colors.gray} />
-                  <Text style={styles.dismissAllText}>Dismiss All</Text>
+                  <Text style={styles.dismissAllText}>Clear All</Text>
                 </TouchableOpacity>
               </>
             )}

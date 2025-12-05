@@ -92,7 +92,7 @@ const creditsStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontFamily: Fonts.regular,
+    fontFamily: Fonts.bold,
     color: Colors.secondary,
     marginBottom: 12,
     textAlign: 'center',

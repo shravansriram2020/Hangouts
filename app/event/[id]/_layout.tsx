@@ -120,7 +120,7 @@ function EventLayoutContent() {
       <LinearGradient colors={[gradientStart, gradientEnd]} style={styles.container}>
         <View style={styles.loadingContainer}>
           <LoadingDots size={14} />
-          <Text style={styles.loadingText}>Loading event...</Text>
+          <Text style={styles.loadingText}>Loading Hangout...</Text>
         </View>
       </LinearGradient>
     );
