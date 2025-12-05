@@ -135,7 +135,7 @@ export default function ArchivedPhotosModal({ visible, onClose, eventId, eventTi
   );
 
   return (
-    <GlassModal visible={visible} onClose={onClose} title={`${eventTitle} Photos`} fullHeight>
+    <GlassModal visible={visible} onClose={onClose} title={`${eventTitle} Photos`} fullHeight noScroll>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity

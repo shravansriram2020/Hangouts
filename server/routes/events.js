@@ -8,7 +8,8 @@ router.post('/', authenticateToken, async (req, res) => {
   const { 
     title, description, eventImage, eventDate, eventTime, 
     locationName, locationAddress, locationLat, locationLng,
-    gradientColor1, gradientColor2, notes, invitedUsers 
+    gradientColor1, gradientColor2, notes, invitedUsers,
+    timezoneOffset 
   } = req.body;
 
   try {
@@ -16,12 +17,12 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO events (
         host_id, title, description, event_image, event_date, event_time,
         location_name, location_address, location_lat, location_lng,
-        gradient_color1, gradient_color2, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        gradient_color1, gradient_color2, notes, timezone_offset
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [req.user.id, title, description, eventImage, eventDate, eventTime,
        locationName, locationAddress, locationLat, locationLng,
-       gradientColor1, gradientColor2, notes]
+       gradientColor1, gradientColor2, notes, timezoneOffset || 0]
     );
 
     const event = result.rows[0];
@@ -67,6 +68,9 @@ router.post('/', authenticateToken, async (req, res) => {
 
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    // Get active events (not archived and event datetime adjusted for timezone is in the future)
+    // timezone_offset is in minutes (positive = behind UTC, negative = ahead of UTC)
+    // e.g., PST is UTC-8, so getTimezoneOffset() returns +480
     const result = await pool.query(
       `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
@@ -76,7 +80,7 @@ router.get('/', authenticateToken, async (req, res) => {
        JOIN users u ON e.host_id = u.id
        LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
        WHERE e.is_archived = false
-       AND (e.event_date + e.event_time) > NOW()
+       AND ((e.event_date + e.event_time) - (COALESCE(e.timezone_offset, 0) * INTERVAL '1 minute')) > NOW()
        AND (e.host_id = $1 OR ea.user_id = $1)
        ORDER BY e.event_date, e.event_time`,
       [req.user.id]
@@ -91,12 +95,14 @@ router.get('/', authenticateToken, async (req, res) => {
 
 router.get('/archived', authenticateToken, async (req, res) => {
   try {
+    // Delete events older than 30 days (adjusted for timezone)
     await pool.query(
       `DELETE FROM events 
-       WHERE (is_archived = true OR (event_date + event_time) <= NOW())
+       WHERE (is_archived = true OR ((event_date + event_time) - (COALESCE(timezone_offset, 0) * INTERVAL '1 minute')) <= NOW())
        AND event_date < NOW() - INTERVAL '30 days'`
     );
 
+    // Get archived events (past events adjusted for timezone)
     const result = await pool.query(
       `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
@@ -104,7 +110,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
        FROM events e
        JOIN users u ON e.host_id = u.id
        LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
-       WHERE (e.is_archived = true OR (e.event_date + e.event_time) <= NOW())
+       WHERE (e.is_archived = true OR ((e.event_date + e.event_time) - (COALESCE(e.timezone_offset, 0) * INTERVAL '1 minute')) <= NOW())
        AND (e.host_id = $1 OR ea.user_id = $1)
        ORDER BY e.event_date DESC, e.event_time DESC`,
       [req.user.id]

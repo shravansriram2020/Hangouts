@@ -25,9 +25,10 @@ interface Props {
   title: string;
   children: React.ReactNode;
   fullHeight?: boolean;
+  noScroll?: boolean;
 }
 
-export default function GlassModal({ visible, onClose, title, children, fullHeight = false }: Props) {
+export default function GlassModal({ visible, onClose, title, children, fullHeight = false, noScroll = false }: Props) {
   const modalHeight = fullHeight ? height * 0.85 : height * 0.7;
   
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -78,14 +79,20 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
           <Ionicons name="close" size={24} color={Colors.secondary} />
         </TouchableOpacity>
       </View>
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
+      {noScroll ? (
+        <View style={styles.scrollContent}>
+          {children}
+        </View>
+      ) : (
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      )}
     </View>
   );
 

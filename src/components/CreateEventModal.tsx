@@ -339,12 +339,15 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
     try {
       const dateStr = eventDate.toISOString().split('T')[0];
       const timeStr = `${eventTime.getHours().toString().padStart(2, '0')}:${eventTime.getMinutes().toString().padStart(2, '0')}`;
+      // Get timezone offset in minutes (e.g., -480 for PST/UTC-8)
+      const timezoneOffset = new Date().getTimezoneOffset();
 
       await api.post('/events', {
         title,
         eventImage,
         eventDate: dateStr,
         eventTime: timeStr,
+        timezoneOffset,
         locationName,
         locationAddress,
         locationLat,
