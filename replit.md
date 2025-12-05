@@ -36,6 +36,12 @@ Preferred communication style: Simple, everyday language.
 - **Scrollable Results**: Location suggestions display 3 at a time with vertical scrolling
 - Results sorted by distance to user's current location
 
+### Smart Location Suggestions
+- **LocationSuggestModal**: New glassmorphism modal with mile radius slider (1-25 miles), AI-based location suggestions, and "Suggest Again"/"Use This Location" buttons
+- **Intelligent Category Mapping**: Backend maps event titles to relevant TomTom categories (e.g., "Movie Night" → cinema, "Dinner" → restaurant, "Coffee" → café)
+- **Location Permission Guard**: Button grays out when location services disabled, shows helpful alert when tapped
+- **Haptic Feedback**: Slider changes and button presses trigger haptic feedback on iOS
+
 ### Map Features
 - **Native Maps with Lazy Loading**: Uses `react-native-maps` for iOS/Android with lazy require() inside render function to prevent Expo Go crashes
 - Static TomTom image fallback for web and when native maps unavailable
