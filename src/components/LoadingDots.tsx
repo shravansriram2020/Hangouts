@@ -19,7 +19,7 @@ export default function LoadingDots({ size = 60, showText = false }: LoadingDots
   const bar3 = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0.5)).current;
 
-  const barWidth = size * 0.35;
+  const barWidth = size * 0.5;
   const barMaxHeight = size * 1.5;
 
   useEffect(() => {
@@ -134,11 +134,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bar: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
   },
   loadingText: {
     marginTop: 16,
