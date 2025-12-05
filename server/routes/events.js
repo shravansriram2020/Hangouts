@@ -76,6 +76,7 @@ router.get('/', authenticateToken, async (req, res) => {
        JOIN users u ON e.host_id = u.id
        JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
        WHERE e.is_archived = false
+       AND (e.event_date + e.event_time) > NOW()
        ORDER BY e.event_date, e.event_time`,
       [req.user.id]
     );
@@ -91,7 +92,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
   try {
     await pool.query(
       `DELETE FROM events 
-       WHERE is_archived = true 
+       WHERE (is_archived = true OR (event_date + event_time) <= NOW())
        AND event_date < NOW() - INTERVAL '30 days'`
     );
 
@@ -102,7 +103,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
        FROM events e
        JOIN users u ON e.host_id = u.id
        JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
-       WHERE e.is_archived = true
+       WHERE e.is_archived = true OR (e.event_date + e.event_time) <= NOW()
        ORDER BY e.event_date DESC, e.event_time DESC`,
       [req.user.id]
     );

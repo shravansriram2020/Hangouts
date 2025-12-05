@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Image,
   Platform,
+  AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +49,21 @@ export default function HomeScreen({ navigation }: any) {
 
   useEffect(() => {
     fetchEvents();
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        fetchEvents();
+      }
+    });
+
+    const refreshInterval = setInterval(() => {
+      fetchEvents();
+    }, 5000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const onRefresh = useCallback(async () => {
