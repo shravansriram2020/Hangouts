@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -191,7 +192,7 @@ export default function LocationSuggestModal({
           { transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
+        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
           <View style={styles.handle} />
 
           <Text style={styles.title}>Suggest a Location</Text>
@@ -290,7 +291,7 @@ export default function LocationSuggestModal({
               onPress={handleSuggestAgain}
               disabled={!locationEnabled || loading}
             >
-              <Ionicons name="refresh" size={20} color={Colors.white} />
+              <Ionicons name="refresh" size={20} color={Colors.secondary} />
               <Text style={styles.suggestAgainText}>Suggest Again</Text>
             </TouchableOpacity>
 
@@ -334,6 +335,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blurContainer: {
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 40,
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: Colors.grayLight,
+    backgroundColor: Colors.grayMedium,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -349,14 +351,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontFamily: Fonts.semiBold,
-    color: Colors.white,
+    color: Colors.secondary,
     textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     fontFamily: Fonts.regular,
-    color: Colors.grayLight,
+    color: Colors.gray,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -372,7 +374,7 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontSize: 16,
     fontFamily: Fonts.medium,
-    color: Colors.white,
+    color: Colors.secondary,
   },
   sliderValue: {
     fontSize: 16,
@@ -422,16 +424,16 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     fontFamily: Fonts.regular,
-    color: Colors.grayLight,
+    color: Colors.gray,
     marginTop: 12,
   },
   suggestionCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   suggestionIconContainer: {
     width: 56,
@@ -448,13 +450,13 @@ const styles = StyleSheet.create({
   suggestionName: {
     fontSize: 17,
     fontFamily: Fonts.semiBold,
-    color: Colors.white,
+    color: Colors.secondary,
     marginBottom: 4,
   },
   suggestionAddress: {
     fontSize: 13,
     fontFamily: Fonts.regular,
-    color: Colors.grayLight,
+    color: Colors.gray,
     marginBottom: 6,
   },
   suggestionDistance: {
@@ -465,7 +467,7 @@ const styles = StyleSheet.create({
   },
   categoryTag: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -473,7 +475,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     fontFamily: Fonts.medium,
-    color: Colors.white,
+    color: Colors.gray,
   },
   noResultState: {
     alignItems: 'center',
@@ -502,7 +504,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
@@ -510,7 +512,7 @@ const styles = StyleSheet.create({
   suggestAgainText: {
     fontSize: 15,
     fontFamily: Fonts.semiBold,
-    color: Colors.white,
+    color: Colors.secondary,
   },
   useLocationButton: {
     flex: 1,
@@ -537,6 +539,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 16,
     fontFamily: Fonts.medium,
-    color: Colors.grayLight,
+    color: Colors.gray,
   },
 });

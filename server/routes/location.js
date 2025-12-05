@@ -240,32 +240,33 @@ const CATEGORY_MAPPINGS = {
   cowork: '7388',
 };
 
-// Fun/entertainment categories for fallback
-const FUN_CATEGORIES = '7342,9902,9377,9379,7339,9362,7315,9376';
+// Broad mixed categories for general hangouts - includes cafes, restaurants, entertainment, parks, bars
+const MIXED_HANGOUT_CATEGORIES = '9376006,7315,9376,9362,7342,9902,9377,9361,7373,9379,7318,7317,9357';
 
 function getCategoriesFromTitle(title) {
   if (!title || title.trim() === '') {
-    return { categories: FUN_CATEGORIES, searchTerm: 'entertainment' };
+    // No title - use broad mixed categories
+    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null };
   }
   
   const lowerTitle = title.toLowerCase();
   const foundCategories = new Set();
-  let primarySearchTerm = title;
+  let primarySearchTerm = null;
   
   // Check each keyword in the title
   for (const [keyword, categoryCode] of Object.entries(CATEGORY_MAPPINGS)) {
     if (lowerTitle.includes(keyword)) {
       foundCategories.add(categoryCode);
       // Use the first matching keyword as primary search term
-      if (foundCategories.size === 1) {
+      if (!primarySearchTerm) {
         primarySearchTerm = keyword;
       }
     }
   }
   
-  // If no specific categories found, use fun categories
+  // If no specific categories found, use mixed hangout categories for variety
   if (foundCategories.size === 0) {
-    return { categories: FUN_CATEGORIES, searchTerm: title };
+    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null };
   }
   
   return { 
@@ -283,46 +284,87 @@ router.get('/suggest', authenticateToken, async (req, res) => {
 
   try {
     const { categories, searchTerm } = getCategoriesFromTitle(title);
+    const radiusMeters = Math.round(parseFloat(radius) * 1609.34); // Convert miles to meters accurately
     
-    // Use POI search with categories
-    let url = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(searchTerm)}.json?key=${TOMTOM_API_KEY}&limit=15&categorySet=${categories}`;
-    url += `&lat=${lat}&lon=${lng}&radius=${radius * 1609}`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    let results = data.results?.map(result => ({
-      id: result.id,
-      name: result.poi?.name || result.address?.freeformAddress,
-      address: result.address?.freeformAddress,
-      lat: result.position?.lat,
-      lng: result.position?.lon,
-      distance: result.dist,
-      category: result.poi?.categories?.[0]
-    })).filter(r => r.name && r.lat && r.lng) || [];
+    let allResults = [];
     
-    // Sort by distance
-    results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
-
-    // If no results with specific categories, try broader search
-    if (results.length === 0) {
-      const fallbackUrl = `https://api.tomtom.com/search/2/poiSearch/entertainment.json?key=${TOMTOM_API_KEY}&limit=15&categorySet=${FUN_CATEGORIES}&lat=${lat}&lon=${lng}&radius=${radius * 1609}`;
+    // Strategy 1: Category-based nearby search (most accurate for finding nearby POIs)
+    const nearbyUrl = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${radiusMeters}&limit=50&categorySet=${categories}`;
+    
+    try {
+      const nearbyResponse = await fetch(nearbyUrl);
+      const nearbyData = await nearbyResponse.json();
       
-      const fallbackResponse = await fetch(fallbackUrl);
-      const fallbackData = await fallbackResponse.json();
+      if (nearbyData.results) {
+        allResults.push(...nearbyData.results);
+      }
+    } catch (e) {
+      console.error('Nearby search error:', e);
+    }
+    
+    // Strategy 2: If we have a search term, also do POI search to broaden results
+    if (searchTerm) {
+      const poiUrl = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(searchTerm)}.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${radiusMeters}&limit=30&categorySet=${categories}`;
       
-      results = fallbackData.results?.map(result => ({
-        id: result.id,
-        name: result.poi?.name || result.address?.freeformAddress,
+      try {
+        const poiResponse = await fetch(poiUrl);
+        const poiData = await poiResponse.json();
+        
+        if (poiData.results) {
+          allResults.push(...poiData.results);
+        }
+      } catch (e) {
+        console.error('POI search error:', e);
+      }
+    }
+    
+    // Strategy 3: If still few results, do a broader mixed category search
+    if (allResults.length < 10) {
+      const broadUrl = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${radiusMeters}&limit=50&categorySet=${MIXED_HANGOUT_CATEGORIES}`;
+      
+      try {
+        const broadResponse = await fetch(broadUrl);
+        const broadData = await broadResponse.json();
+        
+        if (broadData.results) {
+          allResults.push(...broadData.results);
+        }
+      } catch (e) {
+        console.error('Broad search error:', e);
+      }
+    }
+    
+    // Deduplicate by ID and name, then map to our format
+    const seenIds = new Set();
+    const seenNames = new Set();
+    let results = [];
+    
+    for (const result of allResults) {
+      const id = result.id;
+      const name = result.poi?.name || result.address?.freeformAddress;
+      
+      if (!id || !name || !result.position?.lat || !result.position?.lon) continue;
+      if (seenIds.has(id) || seenNames.has(name.toLowerCase())) continue;
+      
+      seenIds.add(id);
+      seenNames.add(name.toLowerCase());
+      
+      results.push({
+        id: id,
+        name: name,
         address: result.address?.freeformAddress,
         lat: result.position?.lat,
         lng: result.position?.lon,
         distance: result.dist,
         category: result.poi?.categories?.[0]
-      })).filter(r => r.name && r.lat && r.lng) || [];
-      
-      results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+      });
     }
+    
+    // Sort by distance
+    results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    
+    // Filter to only include results within the specified radius
+    results = results.filter(r => !r.distance || r.distance <= radiusMeters);
 
     res.json(results);
   } catch (error) {
