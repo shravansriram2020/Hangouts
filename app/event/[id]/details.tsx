@@ -77,7 +77,7 @@ export default function DetailsScreen() {
 
   const handleRSVPChange = (status: string | null, removed?: boolean) => {
     if (removed) {
-      router.replace('/');
+      router.dismissAll();
     } else {
       setUserStatus(status);
       refreshEvent();
@@ -472,7 +472,7 @@ export default function DetailsScreen() {
         eventId={event.id}
         isHost={isHost}
         attendees={event.attendees || []}
-        onEventDeleted={() => router.replace('/')}
+        onEventDeleted={() => router.dismissAll()}
         onAttendeeRemoved={refreshEvent}
         onGradientChange={(color1, color2) => updateGradient(color1, color2)}
         onTitleChange={() => refreshEvent()}
