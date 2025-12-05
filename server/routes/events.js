@@ -255,19 +255,40 @@ router.post('/:id/archive', authenticateToken, async (req, res) => {
 
 router.delete('/:id/permanent', authenticateToken, async (req, res) => {
   try {
+    // Check if user is associated with this event (as host or attendee) and event is archived/past
     const eventCheck = await pool.query(
-      'SELECT id FROM events WHERE id = $1 AND is_archived = true',
-      [req.params.id]
+      `SELECT e.id, e.host_id FROM events e
+       LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $2
+       WHERE e.id = $1 
+       AND (e.host_id = $2 OR ea.user_id = $2)
+       AND (e.is_archived = true OR ((e.event_date + e.event_time) - (COALESCE(e.timezone_offset, 0) * INTERVAL '1 minute')) <= NOW())`,
+      [req.params.id, req.user.id]
     );
 
     if (eventCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Archived event not found' });
+      return res.status(404).json({ error: 'Archived event not found or you are not associated with it' });
     }
 
-    await pool.query(
-      'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
-      [req.params.id, req.user.id]
-    );
+    const isHost = eventCheck.rows[0].host_id === req.user.id;
+
+    if (isHost) {
+      // For hosts, mark the event as hidden for them (set is_archived to true if not already)
+      // and remove them from attendees list
+      await pool.query(
+        'UPDATE events SET is_archived = true WHERE id = $1',
+        [req.params.id]
+      );
+      await pool.query(
+        'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+        [req.params.id, req.user.id]
+      );
+    } else {
+      // For attendees, just remove them from the event
+      await pool.query(
+        'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+        [req.params.id, req.user.id]
+      );
+    }
     
     res.json({ message: 'Event removed from your archived list' });
   } catch (error) {
