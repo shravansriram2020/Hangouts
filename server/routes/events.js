@@ -32,6 +32,15 @@ router.post('/', authenticateToken, async (req, res) => {
       [event.id, req.user.id]
     );
 
+    // If notes were provided during event creation, add them as a sticky note
+    if (notes && notes.trim()) {
+      await pool.query(
+        `INSERT INTO event_notes (event_id, user_id, content)
+         VALUES ($1, $2, $3)`,
+        [event.id, req.user.id, notes.trim()]
+      );
+    }
+
     if (invitedUsers && invitedUsers.length > 0) {
       for (const userId of invitedUsers) {
         await pool.query(

@@ -421,12 +421,14 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                   </TouchableOpacity>
                 ))}
 
-                <Text style={styles.formLabel}>Reason (Optional)</Text>
+                <Text style={styles.formLabel}>
+                  Reason{selectedType !== 'other' ? ' (Optional)' : ''}
+                </Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={reason}
                   onChangeText={setReason}
-                  placeholder="Explain the conflict..."
+                  placeholder={selectedType === 'other' ? "Describe your conflict..." : "Explain the conflict..."}
                   placeholderTextColor={Colors.grayMedium}
                   multiline
                   numberOfLines={3}
