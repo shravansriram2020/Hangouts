@@ -20,6 +20,7 @@ import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import GlassModal from './GlassModal';
+import LocationSuggestModal from './LocationSuggestModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -70,6 +71,8 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   const [suggestingLocation, setSuggestingLocation] = useState(false);
   const [suggestedLat, setSuggestedLat] = useState<number | null>(null);
   const [suggestedLng, setSuggestedLng] = useState<number | null>(null);
+  const [showLocationSuggest, setShowLocationSuggest] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(false);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
@@ -201,15 +204,41 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
+        setLocationEnabled(true);
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation({
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         });
+      } else {
+        setLocationEnabled(false);
       }
     } catch (error) {
       console.error('Failed to get location:', error);
+      setLocationEnabled(false);
     }
+  };
+
+  const handleOpenLocationSuggest = () => {
+    if (!locationEnabled) {
+      Alert.alert(
+        'Location Required',
+        'Please enable location services in your device settings to get smart location suggestions.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    setShowLocationSuggest(true);
+  };
+
+  const handleSelectSuggestedLocation = (location: { id: string; name: string; address: string; lat: number; lng: number }) => {
+    setSuggestedLocationName(location.name);
+    setSuggestedLocation(location.address);
+    setSuggestedLat(location.lat);
+    setSuggestedLng(location.lng);
+    setLocationQuery('');
+    setLocationSuggestions([]);
+    setShowLocationSuggest(false);
   };
 
   const searchLocations = useCallback(async (query: string) => {
@@ -267,30 +296,6 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
     setSuggestedLng(location.lng);
     setLocationQuery('');
     setLocationSuggestions([]);
-  };
-
-  const handleSuggestLocation = async () => {
-    if (!currentLocation) {
-      Alert.alert('Location Required', 'Please enable location services');
-      return;
-    }
-
-    setSuggestingLocation(true);
-    try {
-      const params = new URLSearchParams({
-        title: 'hangout',
-        lat: currentLocation.lat.toString(),
-        lng: currentLocation.lng.toString(),
-        radius: '50000',
-      });
-
-      const results = await api.get(`/location/suggest?${params}`);
-      setLocationSuggestions(results);
-    } catch (error) {
-      console.error('Location suggestion failed:', error);
-    } finally {
-      setSuggestingLocation(false);
-    }
   };
 
   const fetchConflicts = async () => {
@@ -398,6 +403,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
   };
 
   return (
+    <>
     <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
       <ScrollView style={styles.content}>
             {showCreateConflict ? (
@@ -530,19 +536,24 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
                     )}
 
                     <TouchableOpacity 
-                      style={styles.suggestButton}
-                      onPress={handleSuggestLocation}
-                      disabled={suggestingLocation}
+                      style={[
+                        styles.suggestButton,
+                        !locationEnabled && styles.suggestButtonDisabled,
+                      ]}
+                      onPress={handleOpenLocationSuggest}
+                      disabled={!locationEnabled}
                     >
-                      {suggestingLocation ? (
-                        <ActivityIndicator size="small" color={Colors.white} />
-                      ) : (
-                        <>
-                          <Ionicons name="sparkles" size={18} color={Colors.white} />
-                          <Text style={styles.suggestButtonText}>Have Hangouts Suggest a Location</Text>
-                        </>
-                      )}
+                      <Ionicons name="sparkles" size={18} color={locationEnabled ? Colors.white : Colors.grayMedium} />
+                      <Text style={[
+                        styles.suggestButtonText,
+                        !locationEnabled && styles.suggestButtonTextDisabled,
+                      ]}>Have Hangouts Suggest a Location</Text>
                     </TouchableOpacity>
+                    {!locationEnabled && (
+                      <Text style={styles.locationDisabledHint}>
+                        Enable location services to get smart suggestions
+                      </Text>
+                    )}
                   </>
                 )}
 
@@ -802,6 +813,16 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
             />
           )}
     </GlassModal>
+
+      <LocationSuggestModal
+        visible={showLocationSuggest}
+        onClose={() => setShowLocationSuggest(false)}
+        onSelectLocation={handleSelectSuggestedLocation}
+        eventTitle="hangout"
+        currentLocation={currentLocation}
+        locationEnabled={locationEnabled}
+      />
+    </>
   );
 }
 
@@ -964,6 +985,19 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
     marginLeft: 8,
+  },
+  suggestButtonDisabled: {
+    backgroundColor: Colors.grayLight,
+  },
+  suggestButtonTextDisabled: {
+    color: Colors.grayMedium,
+  },
+  locationDisabledHint: {
+    fontSize: 12,
+    color: Colors.grayMedium,
+    fontFamily: 'Prompt-Regular',
+    textAlign: 'center',
+    marginTop: 8,
   },
   formButtons: {
     flexDirection: 'row',

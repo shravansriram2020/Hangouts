@@ -19,8 +19,8 @@ export default function LoadingDots({ size = 60, showText = false }: LoadingDots
   const bar3 = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0.5)).current;
 
-  const barWidth = size * 0.18;
-  const barMaxHeight = size * 1.2;
+  const barWidth = size * 0.35;
+  const barMaxHeight = size * 1.5;
 
   useEffect(() => {
     const createStretch = (animatedValue: Animated.Value, delay: number, minScale: number, maxScale: number) => {
