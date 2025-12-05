@@ -42,7 +42,16 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   };
 
   const handleVideoLoad = () => {
+    console.log('Video loaded successfully');
     setVideoLoaded(true);
+  };
+
+  const handleVideoError = (error: any) => {
+    console.log('Video error:', error);
+    // If video fails, skip to app after a delay
+    setTimeout(() => {
+      onAnimationComplete();
+    }, 1000);
   };
 
   useEffect(() => {
@@ -93,6 +102,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         shouldPlay={false}
         isLooping={false}
         onLoad={handleVideoLoad}
+        onError={handleVideoError}
         onPlaybackStatusUpdate={(status) => {
           if (status.isLoaded && status.didJustFinish) {
             handleVideoEnd();
@@ -106,7 +116,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E3A5F',
+    backgroundColor: 'rgb(180, 222, 242)',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
