@@ -11,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 import MoneyModal from './MoneyModal';
 import ArchivedPhotosModal from './ArchivedPhotosModal';
 
@@ -21,7 +20,6 @@ interface ArchivedEventsProps {
 }
 
 export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProps) {
-  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showMoneyModal, setShowMoneyModal] = useState(false);
@@ -69,19 +67,19 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     Alert.alert(
-      'Delete Archived Event',
-      `Are you sure you want to permanently delete "${eventTitle}"? This will remove all money requests and photos associated with this event.`,
+      'Remove from Archive',
+      `Remove "${eventTitle}" from your archived list?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/events/${eventId}/permanent`);
               onRefresh();
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete event');
+              Alert.alert('Error', 'Failed to remove event');
             }
           },
         },
@@ -111,7 +109,6 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
         <View style={styles.content}>
           {events.map((event) => {
             const { month, day } = formatDate(event.event_date);
-            const isHost = user?.id && event.host_id === user.id;
             
             return (
               <View
@@ -140,14 +137,12 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
                   >
                     <Ionicons name="images-outline" size={20} color={Colors.grayMedium} />
                   </TouchableOpacity>
-                  {isHost && (
-                    <TouchableOpacity 
-                      style={styles.actionButton}
-                      onPress={() => handleDeletePress(event.id, event.title)}
-                    >
-                      <Ionicons name="trash-outline" size={20} color={Colors.red} />
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => handleDeletePress(event.id, event.title)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={Colors.red} />
+                  </TouchableOpacity>
                 </View>
               </View>
             );

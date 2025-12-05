@@ -247,7 +247,7 @@ router.post('/:id/archive', authenticateToken, async (req, res) => {
 router.delete('/:id/permanent', authenticateToken, async (req, res) => {
   try {
     const eventCheck = await pool.query(
-      'SELECT id, host_id FROM events WHERE id = $1 AND is_archived = true',
+      'SELECT id FROM events WHERE id = $1 AND is_archived = true',
       [req.params.id]
     );
 
@@ -255,16 +255,15 @@ router.delete('/:id/permanent', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Archived event not found' });
     }
 
-    if (eventCheck.rows[0].host_id !== req.user.id) {
-      return res.status(403).json({ error: 'Only the host can permanently delete this event' });
-    }
-
-    await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    await pool.query(
+      'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+      [req.params.id, req.user.id]
+    );
     
-    res.json({ message: 'Event permanently deleted' });
+    res.json({ message: 'Event removed from your archived list' });
   } catch (error) {
-    console.error('Permanent delete event error:', error);
-    res.status(500).json({ error: 'Failed to permanently delete event' });
+    console.error('Remove archived event error:', error);
+    res.status(500).json({ error: 'Failed to remove event from archived list' });
   }
 });
 
