@@ -23,6 +23,7 @@ import RidesModal from '../components/RidesModal';
 import MoneyModal from '../components/MoneyModal';
 import ConflictsModal from '../components/ConflictsModal';
 import NotesModal from '../components/NotesModal';
+import LoadingDots from '../components/LoadingDots';
 
 export default function EventDetailScreen({ route, navigation }: any) {
   const { eventId } = route.params;
@@ -131,7 +132,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         colors={[Colors.backgroundGradientStart, Colors.backgroundGradientEnd]}
         style={styles.loadingContainer}
       >
-        <Text style={styles.loadingText}>Loading...</Text>
+        <LoadingDots size={70} showText={true} />
       </LinearGradient>
     );
   }
@@ -288,11 +289,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
   },
   scrollView: {
     flex: 1,
