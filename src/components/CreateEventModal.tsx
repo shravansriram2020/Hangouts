@@ -25,6 +25,7 @@ import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 import NativeGradientPicker, { GRADIENT_PRESETS } from './NativeGradientPicker';
+import LocationSuggestModal from './LocationSuggestModal';
 
 interface Props {
   visible: boolean;
@@ -73,6 +74,8 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   const [suggestingLocation, setSuggestingLocation] = useState(false);
   const [searchingLocation, setSearchingLocation] = useState(false);
   const [showGradientPicker, setShowGradientPicker] = useState(false);
+  const [showLocationSuggest, setShowLocationSuggest] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(false);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const locationCache = useRef<Map<string, LocationSuggestion[]>>(new Map());
@@ -168,14 +171,18 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
+        setLocationEnabled(true);
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation({
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         });
+      } else {
+        setLocationEnabled(false);
       }
     } catch (error) {
       console.error('Failed to get location:', error);
+      setLocationEnabled(false);
     }
   };
 
@@ -243,28 +250,25 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
     }, 300);
   };
 
-  const handleSuggestLocation = async () => {
-    if (!currentLocation) {
-      Alert.alert('Location Required', 'Please enable location services');
+  const handleOpenLocationSuggest = () => {
+    if (!locationEnabled) {
+      Alert.alert(
+        'Location Required',
+        'Please enable location services in your device settings to get smart location suggestions.',
+        [{ text: 'OK' }]
+      );
       return;
     }
+    setShowLocationSuggest(true);
+  };
 
-    setSuggestingLocation(true);
-    try {
-      const params = new URLSearchParams({
-        title: title || 'fun',
-        lat: currentLocation.lat.toString(),
-        lng: currentLocation.lng.toString(),
-        radius: radius.toString(),
-      });
-
-      const results = await api.get(`/location/suggest?${params}`);
-      setLocationSuggestions(results);
-    } catch (error) {
-      console.error('Location suggestion failed:', error);
-    } finally {
-      setSuggestingLocation(false);
-    }
+  const handleSelectSuggestedLocation = (location: LocationSuggestion) => {
+    setLocationName(location.name);
+    setLocationAddress(location.address);
+    setLocationLat(location.lat);
+    setLocationLng(location.lng);
+    setLocationQuery('');
+    setLocationSuggestions([]);
   };
 
   const selectLocation = (location: LocationSuggestion) => {
@@ -601,24 +605,31 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               </ScrollView>
             )}
 
-            <Text style={styles.helperText}>
-              Hangouts suggests a location based on your hangout title and your location.
-            </Text>
-
             <TouchableOpacity
-              style={styles.suggestButton}
-              onPress={handleSuggestLocation}
-              disabled={suggestingLocation}
+              style={[
+                styles.suggestButton,
+                !locationEnabled && styles.suggestButtonDisabled,
+              ]}
+              onPress={handleOpenLocationSuggest}
+              disabled={!locationEnabled}
             >
-              {suggestingLocation ? (
-                <ActivityIndicator size="small" color={Colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="sparkles" size={18} color={Colors.white} />
-                  <Text style={styles.suggestButtonText}>Have Hangouts Suggest a Location</Text>
-                </>
-              )}
+              <Ionicons 
+                name="sparkles" 
+                size={18} 
+                color={locationEnabled ? Colors.white : Colors.grayMedium} 
+              />
+              <Text style={[
+                styles.suggestButtonText,
+                !locationEnabled && styles.suggestButtonTextDisabled,
+              ]}>
+                Have Hangouts Suggest a Location
+              </Text>
             </TouchableOpacity>
+            {!locationEnabled && (
+              <Text style={styles.helperTextWarning}>
+                Enable location services to get smart suggestions
+              </Text>
+            )}
 
             <Text style={styles.sectionTitle}>Invite People</Text>
             <TextInput
@@ -748,6 +759,15 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               </TouchableOpacity>
             </View>
           </ScrollView>
+
+      <LocationSuggestModal
+        visible={showLocationSuggest}
+        onClose={() => setShowLocationSuggest(false)}
+        onSelectLocation={handleSelectSuggestedLocation}
+        eventTitle={title}
+        currentLocation={currentLocation}
+        locationEnabled={locationEnabled}
+      />
     </GlassModal>
   );
 }
@@ -956,6 +976,19 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
     marginLeft: 8,
+  },
+  suggestButtonDisabled: {
+    backgroundColor: Colors.grayLight,
+  },
+  suggestButtonTextDisabled: {
+    color: Colors.grayMedium,
+  },
+  helperTextWarning: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 8,
+    textAlign: 'center',
   },
   userItem: {
     flexDirection: 'row',

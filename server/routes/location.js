@@ -139,22 +139,159 @@ router.get('/search', authenticateToken, async (req, res) => {
   }
 });
 
+// TomTom Category mappings for smart suggestions
+// Reference: https://developer.tomtom.com/search-api/documentation/product-information/supported-category-codes
+const CATEGORY_MAPPINGS = {
+  // Movies/Cinema
+  movie: '7342',
+  cinema: '7342',
+  film: '7342',
+  theater: '7342',
+  theatre: '7342',
+  
+  // Restaurants/Food
+  dinner: '7315',
+  lunch: '7315',
+  food: '7315',
+  restaurant: '7315',
+  eat: '7315',
+  dining: '7315',
+  brunch: '7315',
+  breakfast: '7315',
+  
+  // Bars/Nightlife
+  bar: '9376',
+  drinks: '9376',
+  pub: '9376',
+  nightclub: '9379',
+  club: '9379',
+  nightlife: '9379',
+  dancing: '9379',
+  
+  // Coffee/Cafe
+  coffee: '9376006',
+  cafe: '9376006',
+  
+  // Parks/Outdoors
+  park: '9362',
+  hike: '9362',
+  hiking: '9362',
+  picnic: '9362',
+  outdoor: '9362',
+  nature: '9362',
+  walk: '9362',
+  
+  // Sports/Fitness
+  gym: '7320',
+  workout: '7320',
+  fitness: '7320',
+  sport: '7374',
+  game: '7374',
+  bowling: '7339',
+  golf: '7335',
+  tennis: '7347',
+  basketball: '7374',
+  soccer: '7374',
+  football: '7374',
+  
+  // Entertainment
+  arcade: '9902',
+  amusement: '9902',
+  theme: '9902',
+  fun: '9902',
+  entertainment: '9377',
+  concert: '7318',
+  music: '7318',
+  show: '7318',
+  
+  // Shopping
+  shop: '9361',
+  shopping: '9361',
+  mall: '7373',
+  store: '9361',
+  
+  // Beach/Water
+  beach: '9357',
+  pool: '7338',
+  swim: '7338',
+  water: '9357',
+  
+  // Museums/Culture
+  museum: '7317',
+  art: '7317',
+  gallery: '7317',
+  exhibit: '7317',
+  
+  // Spa/Relaxation
+  spa: '9356',
+  relax: '9356',
+  massage: '9356',
+  
+  // Games/Activities
+  escape: '9902',
+  laser: '9902',
+  karaoke: '9379',
+  trivia: '9376',
+  board: '9902',
+  
+  // Study/Work
+  library: '9913',
+  study: '9913',
+  cowork: '7388',
+};
+
+// Fun/entertainment categories for fallback
+const FUN_CATEGORIES = '7342,9902,9377,9379,7339,9362,7315,9376';
+
+function getCategoriesFromTitle(title) {
+  if (!title || title.trim() === '') {
+    return { categories: FUN_CATEGORIES, searchTerm: 'entertainment' };
+  }
+  
+  const lowerTitle = title.toLowerCase();
+  const foundCategories = new Set();
+  let primarySearchTerm = title;
+  
+  // Check each keyword in the title
+  for (const [keyword, categoryCode] of Object.entries(CATEGORY_MAPPINGS)) {
+    if (lowerTitle.includes(keyword)) {
+      foundCategories.add(categoryCode);
+      // Use the first matching keyword as primary search term
+      if (foundCategories.size === 1) {
+        primarySearchTerm = keyword;
+      }
+    }
+  }
+  
+  // If no specific categories found, use fun categories
+  if (foundCategories.size === 0) {
+    return { categories: FUN_CATEGORIES, searchTerm: title };
+  }
+  
+  return { 
+    categories: Array.from(foundCategories).join(','),
+    searchTerm: primarySearchTerm
+  };
+}
+
 router.get('/suggest', authenticateToken, async (req, res) => {
   const { title, lat, lng, radius = 5 } = req.query;
 
+  if (!lat || !lng) {
+    return res.status(400).json({ error: 'Location coordinates required' });
+  }
+
   try {
-    const categories = '7315,7374,7376,9361,9362,9376,9377,9378,9379,9380,9381,9382,9902';
+    const { categories, searchTerm } = getCategoriesFromTitle(title);
     
-    let url = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(title || 'fun')}.json?key=${TOMTOM_API_KEY}&limit=10&categorySet=${categories}`;
-    
-    if (lat && lng) {
-      url += `&lat=${lat}&lon=${lng}&radius=${radius * 1609}`;
-    }
+    // Use POI search with categories
+    let url = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(searchTerm)}.json?key=${TOMTOM_API_KEY}&limit=15&categorySet=${categories}`;
+    url += `&lat=${lat}&lon=${lng}&radius=${radius * 1609}`;
 
     const response = await fetch(url);
     const data = await response.json();
 
-    const results = data.results?.map(result => ({
+    let results = data.results?.map(result => ({
       id: result.id,
       name: result.poi?.name || result.address?.freeformAddress,
       address: result.address?.freeformAddress,
@@ -162,7 +299,30 @@ router.get('/suggest', authenticateToken, async (req, res) => {
       lng: result.position?.lon,
       distance: result.dist,
       category: result.poi?.categories?.[0]
-    })) || [];
+    })).filter(r => r.name && r.lat && r.lng) || [];
+    
+    // Sort by distance
+    results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+
+    // If no results with specific categories, try broader search
+    if (results.length === 0) {
+      const fallbackUrl = `https://api.tomtom.com/search/2/poiSearch/entertainment.json?key=${TOMTOM_API_KEY}&limit=15&categorySet=${FUN_CATEGORIES}&lat=${lat}&lon=${lng}&radius=${radius * 1609}`;
+      
+      const fallbackResponse = await fetch(fallbackUrl);
+      const fallbackData = await fallbackResponse.json();
+      
+      results = fallbackData.results?.map(result => ({
+        id: result.id,
+        name: result.poi?.name || result.address?.freeformAddress,
+        address: result.address?.freeformAddress,
+        lat: result.position?.lat,
+        lng: result.position?.lon,
+        distance: result.dist,
+        category: result.poi?.categories?.[0]
+      })).filter(r => r.name && r.lat && r.lng) || [];
+      
+      results.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    }
 
     res.json(results);
   } catch (error) {
