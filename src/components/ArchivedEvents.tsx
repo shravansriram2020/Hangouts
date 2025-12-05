@@ -20,28 +20,16 @@ interface ArchivedEventsProps {
 }
 
 export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProps) {
-  const [expanded, setExpanded] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showMoneyModal, setShowMoneyModal] = useState(false);
   const [showPhotosModal, setShowPhotosModal] = useState(false);
   const [selectedEventTitle, setSelectedEventTitle] = useState('');
-
-  if (events.length === 0) {
-    return null;
-  }
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
     const day = date.getDate();
     return { month, day };
-  };
-
-  const handleToggle = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setExpanded(!expanded);
   };
 
   const handleMoneyPress = (eventId: string, eventTitle: string) => {
@@ -87,68 +75,62 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
     );
   };
 
+  if (events.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <View style={styles.emptyIconContainer}>
+          <Ionicons name="archive-outline" size={48} color={Colors.grayMedium} />
+        </View>
+        <Text style={styles.emptyTitle}>No archived hangouts</Text>
+        <Text style={styles.emptyDescription}>
+          Past hangouts will appear here so you can still access photos and settle up expenses.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.header}
-        onPress={handleToggle}
-        activeOpacity={0.7}
-      >
-        <View style={styles.headerLeft}>
-          <Ionicons name="archive-outline" size={18} color={Colors.grayMedium} />
-          <Text style={styles.headerTitle}>Archived Hangouts ({events.length})</Text>
-        </View>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color={Colors.grayMedium}
-        />
-      </TouchableOpacity>
-
-      {expanded && (
-        <View style={styles.content}>
-          {events.map((event) => {
-            const { month, day } = formatDate(event.event_date);
+      {events.map((event) => {
+        const { month, day } = formatDate(event.event_date);
+        
+        return (
+          <View
+            key={event.id}
+            style={styles.eventItem}
+          >
+            <View style={styles.dateBox}>
+              <Text style={styles.dateMonth}>{month}</Text>
+              <Text style={styles.dateDay}>{day}</Text>
+            </View>
             
-            return (
-              <View
-                key={event.id}
-                style={styles.eventItem}
-              >
-                <View style={styles.dateBox}>
-                  <Text style={styles.dateMonth}>{month}</Text>
-                  <Text style={styles.dateDay}>{day}</Text>
-                </View>
-                
-                <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
-                </View>
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+            </View>
 
-                <View style={styles.actions}>
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => handleMoneyPress(event.id, event.title)}
-                  >
-                    <Ionicons name="cash-outline" size={20} color={Colors.grayMedium} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => handlePhotosPress(event.id, event.title)}
-                  >
-                    <Ionicons name="images-outline" size={20} color={Colors.grayMedium} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => handleDeletePress(event.id, event.title)}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={Colors.red} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
+            <View style={styles.actions}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleMoneyPress(event.id, event.title)}
+              >
+                <Ionicons name="cash-outline" size={20} color={Colors.grayMedium} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handlePhotosPress(event.id, event.title)}
+              >
+                <Ionicons name="images-outline" size={20} color={Colors.grayMedium} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleDeletePress(event.id, event.title)}
+              >
+                <Ionicons name="trash-outline" size={20} color={Colors.red} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+      })}
 
       {selectedEventId && (
         <>
@@ -180,28 +162,35 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 24,
+    marginTop: 0,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyState: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    padding: 14,
-    borderRadius: 12,
+    marginTop: 60,
+    paddingHorizontal: 24,
   },
-  headerLeft: {
-    flexDirection: 'row',
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 24,
   },
-  headerTitle: {
+  emptyTitle: {
+    fontSize: 22,
+    color: Colors.grayMedium,
+    fontFamily: 'Prompt-Bold',
+    marginBottom: 8,
+  },
+  emptyDescription: {
     fontSize: 14,
     color: Colors.grayMedium,
-    fontFamily: 'Prompt-Medium',
-    marginLeft: 8,
-  },
-  content: {
-    marginTop: 8,
+    fontFamily: 'Prompt-Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
   },
   eventItem: {
     flexDirection: 'row',

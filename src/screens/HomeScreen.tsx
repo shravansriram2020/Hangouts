@@ -31,6 +31,7 @@ export default function HomeScreen({ navigation }: any) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'current' | 'archived'>('current');
 
   const fetchEvents = async () => {
     try {
@@ -140,40 +141,72 @@ export default function HomeScreen({ navigation }: any) {
         }
         showsVerticalScrollIndicator={false}
       >
-        {events.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <Ionicons name="calendar-outline" size={48} color={Colors.secondary} />
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              setActiveTab('current');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.tabText,
+              activeTab === 'current' && styles.tabTextActive
+            ]}>Your Hangouts</Text>
+          </TouchableOpacity>
+          <Text style={styles.tabDot}>•</Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              setActiveTab('archived');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.tabText,
+              activeTab === 'archived' && styles.tabTextActive,
+              activeTab !== 'archived' && styles.tabTextInactive
+            ]}>Archived</Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === 'current' ? (
+          events.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="calendar-outline" size={48} color={Colors.secondary} />
+              </View>
+              <Text style={styles.emptyTitle}>No hangouts yet</Text>
+              <Text style={styles.emptyDescription}>
+                Create your first hangout to start coordinating plans with friends!
+              </Text>
+              <TouchableOpacity
+                style={styles.createFirstButton}
+                onPress={() => setShowCreateEvent(true)}
+              >
+                <Ionicons name="add" size={20} color={Colors.secondary} />
+                <Text style={styles.createFirstButtonText}>Create Your First Hangout</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.emptyTitle}>No hangouts yet</Text>
-            <Text style={styles.emptyDescription}>
-              Create your first hangout to start coordinating plans with friends!
-            </Text>
-            <TouchableOpacity
-              style={styles.createFirstButton}
-              onPress={() => setShowCreateEvent(true)}
-            >
-              <Ionicons name="add" size={20} color={Colors.secondary} />
-              <Text style={styles.createFirstButtonText}>Create Your First Hangout</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.sectionTitle}>Your Hangouts</Text>
-            {events.map((event) => (
+          ) : (
+            events.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}
                 onPress={() => navigation.navigate('EventDetail', { eventId: event.id })}
               />
-            ))}
-          </>
+            ))
+          )
+        ) : (
+          <ArchivedEvents
+            events={archivedEvents}
+            onRefresh={fetchEvents}
+          />
         )}
-
-        <ArchivedEvents
-          events={archivedEvents}
-          onRefresh={fetchEvents}
-        />
       </ScrollView>
 
       <SettingsModal
@@ -253,6 +286,29 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingBottom: 24,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  tabText: {
+    fontSize: 20,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Bold',
+  },
+  tabTextActive: {
+    opacity: 1,
+  },
+  tabTextInactive: {
+    opacity: 0.5,
+  },
+  tabDot: {
+    fontSize: 20,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Bold',
+    marginHorizontal: 10,
   },
   sectionTitle: {
     fontSize: 20,

@@ -165,9 +165,10 @@ export default function MapScreen() {
     try {
       const data = await api.get(`/location/attendees/${event.id}`);
       
+      // Calculate distance and ETA for ALL attendees sharing location (not just on_my_way)
       const locationsWithDistance = await Promise.all(
         data.map(async (attendee: AttendeeLocation) => {
-          if (attendee.lat && attendee.lng && attendee.is_on_my_way) {
+          if (attendee.lat && attendee.lng) {
             try {
               const routeRes = await fetch(
                 `https://api.tomtom.com/routing/1/calculateRoute/${attendee.lat},${attendee.lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}`
@@ -195,8 +196,9 @@ export default function MapScreen() {
       setSharingCount(locationsWithDistance.filter((a: AttendeeLocation) => a.lat && a.lng).length);
       setOnMyWayList(locationsWithDistance.filter((a: AttendeeLocation) => a.is_on_my_way && a.lat && a.lng));
       
+      // Fetch routes for ALL attendees sharing location (not just on_my_way)
       const newRoutes: RouteData[] = [];
-      for (const attendee of locationsWithDistance.filter((a: AttendeeLocation) => a.is_on_my_way && a.lat && a.lng)) {
+      for (const attendee of locationsWithDistance.filter((a: AttendeeLocation) => a.lat && a.lng)) {
         try {
           const routeRes = await fetch(
             `https://api.tomtom.com/routing/1/calculateRoute/${attendee.lat},${attendee.lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}&routeRepresentation=polyline`
@@ -466,11 +468,11 @@ export default function MapScreen() {
             </View>
             <CalloutComponent tooltip>
               <View style={styles.calloutContainer}>
-                <Text style={styles.calloutName}>{attendee.user_name}</Text>
+                <Text style={styles.calloutName}>{attendee.user_name?.split(' ')[0] || attendee.user_name}</Text>
                 {attendee.distance && (
                   <Text style={styles.calloutDistance}>{attendee.distance} mi away</Text>
                 )}
-                {attendee.eta && attendee.is_on_my_way && (
+                {attendee.eta && (
                   <Text style={styles.calloutEta}>ETA: {formatETA(attendee.eta)}</Text>
                 )}
               </View>
@@ -631,7 +633,7 @@ export default function MapScreen() {
                 {attendee.distance && (
                   <Text style={[styles.attendeeDistance, { color: mutedTextColor }]}>{attendee.distance} mi</Text>
                 )}
-                {attendee.eta && attendee.is_on_my_way && (
+                {attendee.eta && (
                   <Text style={[styles.attendeeEta, { color: mutedTextColor }]}>{formatETA(attendee.eta)}</Text>
                 )}
               </View>

@@ -37,6 +37,7 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
+  eventTitle?: string;
   isHost?: boolean;
   onConflictUpdate?: () => void;
   onEventUpdated?: () => void;
@@ -49,7 +50,7 @@ const CONFLICT_TYPES = [
   { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, isHost, onConflictUpdate, onEventUpdated, initialType }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, eventTitle, isHost, onConflictUpdate, onEventUpdated, initialType }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [showCreateConflict, setShowCreateConflict] = useState(false);
@@ -827,7 +828,7 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
         visible={showLocationSuggest}
         onClose={() => setShowLocationSuggest(false)}
         onSelectLocation={handleSelectSuggestedLocation}
-        eventTitle="hangout"
+        eventTitle={eventTitle || 'hangout'}
         currentLocation={currentLocation}
         locationEnabled={locationEnabled}
       />

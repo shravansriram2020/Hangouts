@@ -268,6 +268,7 @@ export default function MessagesScreen() {
           setConflictType(undefined);
         }}
         eventId={event?.id || ''}
+        eventTitle={event?.title || ''}
         isHost={isHost}
         onEventUpdated={refreshEvent}
         initialType={conflictType}

@@ -455,6 +455,7 @@ export default function DetailsScreen() {
         visible={showConflicts}
         onClose={() => setShowConflicts(false)}
         eventId={event.id}
+        eventTitle={event.title}
         isHost={event.isHost}
         onConflictUpdate={fetchConflictCount}
         onEventUpdated={refreshEvent}
