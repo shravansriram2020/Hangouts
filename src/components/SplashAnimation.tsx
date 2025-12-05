@@ -13,14 +13,13 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
   const hasEndedRef = useRef(false);
-  const soundPlayedRef = useRef(false);
+  const videoStartedRef = useRef(false);
 
   const videoSource = require('../../assets/splash/splash-video.mp4');
 
   const player = useVideoPlayer(videoSource, player => {
     player.loop = false;
     player.muted = true;
-    player.play();
   });
 
   const handleVideoEnd = useCallback(() => {
@@ -37,7 +36,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   }, [fadeAnim, onAnimationComplete]);
 
   useEffect(() => {
-    const loadAndPlaySound = async () => {
+    const loadSound = async () => {
       try {
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -54,41 +53,43 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
       }
     };
 
-    loadAndPlaySound();
-
-    const soundTimeout = setTimeout(async () => {
-      if (soundRef.current && !soundPlayedRef.current) {
-        soundPlayedRef.current = true;
-        try {
-          await soundRef.current.playAsync();
-        } catch (error) {
-          console.log('Error playing sound:', error);
-        }
-      }
-    }, 1000);
-
-    const fallbackTimeout = setTimeout(() => {
-      handleVideoEnd();
-    }, 4000);
+    loadSound();
 
     return () => {
-      clearTimeout(soundTimeout);
-      clearTimeout(fallbackTimeout);
       if (soundRef.current) {
         soundRef.current.unloadAsync();
       }
     };
-  }, [handleVideoEnd]);
+  }, []);
 
   useEffect(() => {
-    const subscription = player.addListener('playingChange', (playing) => {
-      if (!playing && player.currentTime > 0.5) {
+    const statusSubscription = player.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay' && !videoStartedRef.current) {
+        videoStartedRef.current = true;
+        player.play();
+        
+        setTimeout(async () => {
+          try {
+            if (soundRef.current) {
+              await soundRef.current.setPositionAsync(0);
+              await soundRef.current.playAsync();
+            }
+          } catch (error) {
+            console.log('Error playing sound:', error);
+          }
+        }, 1000);
+      }
+    });
+
+    const playingSubscription = player.addListener('playingChange', (playing) => {
+      if (!playing && videoStartedRef.current && player.currentTime > 2) {
         handleVideoEnd();
       }
     });
 
     return () => {
-      subscription.remove();
+      statusSubscription.remove();
+      playingSubscription.remove();
     };
   }, [player, handleVideoEnd]);
 
@@ -97,7 +98,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
       <VideoView
         player={player}
         style={styles.video}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
       />
     </Animated.View>
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   video: {
-    width: width,
-    height: height,
+    width: width * 0.5,
+    height: height * 0.5,
   },
 });
