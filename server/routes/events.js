@@ -89,10 +89,16 @@ router.get('/', authenticateToken, async (req, res) => {
 
 router.get('/archived', authenticateToken, async (req, res) => {
   try {
+    await pool.query(
+      `DELETE FROM events 
+       WHERE is_archived = true 
+       AND event_date < NOW() - INTERVAL '30 days'`
+    );
+
     const result = await pool.query(
       `SELECT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
-       (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id) as photo_count
+       (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id AND expires_at > NOW()) as photo_count
        FROM events e
        JOIN users u ON e.host_id = u.id
        JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
@@ -235,6 +241,30 @@ router.post('/:id/archive', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Archive event error:', error);
     res.status(500).json({ error: 'Failed to archive event' });
+  }
+});
+
+router.delete('/:id/permanent', authenticateToken, async (req, res) => {
+  try {
+    const eventCheck = await pool.query(
+      'SELECT id, host_id FROM events WHERE id = $1 AND is_archived = true',
+      [req.params.id]
+    );
+
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Archived event not found' });
+    }
+
+    if (eventCheck.rows[0].host_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the host can permanently delete this event' });
+    }
+
+    await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    
+    res.json({ message: 'Event permanently deleted' });
+  } catch (error) {
+    console.error('Permanent delete event error:', error);
+    res.status(500).json({ error: 'Failed to permanently delete event' });
   }
 });
 

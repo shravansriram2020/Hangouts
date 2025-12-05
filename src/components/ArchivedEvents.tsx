@@ -4,18 +4,33 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
+  Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
+import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import MoneyModal from './MoneyModal';
+import ArchivedPhotosModal from './ArchivedPhotosModal';
 
 interface ArchivedEventsProps {
   events: any[];
-  onEventPress: (eventId: string) => void;
+  onRefresh: () => void;
 }
 
-export default function ArchivedEvents({ events, onEventPress }: ArchivedEventsProps) {
+export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProps) {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [showMoneyModal, setShowMoneyModal] = useState(false);
+  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [selectedEventTitle, setSelectedEventTitle] = useState('');
+
+  if (events.length === 0) {
+    return null;
+  }
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -24,20 +39,71 @@ export default function ArchivedEvents({ events, onEventPress }: ArchivedEventsP
     return { month, day };
   };
 
+  const handleToggle = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setExpanded(!expanded);
+  };
+
+  const handleMoneyPress = (eventId: string, eventTitle: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedEventId(eventId);
+    setSelectedEventTitle(eventTitle);
+    setShowMoneyModal(true);
+  };
+
+  const handlePhotosPress = (eventId: string, eventTitle: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedEventId(eventId);
+    setSelectedEventTitle(eventTitle);
+    setShowPhotosModal(true);
+  };
+
+  const handleDeletePress = (eventId: string, eventTitle: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    Alert.alert(
+      'Delete Archived Event',
+      `Are you sure you want to permanently delete "${eventTitle}"? This will remove all money requests and photos associated with this event.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/events/${eventId}/permanent`);
+              onRefresh();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete event');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.header}
-        onPress={() => setExpanded(!expanded)}
+        onPress={handleToggle}
+        activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons name="calendar-outline" size={18} color={Colors.secondary} />
+          <Ionicons name="archive-outline" size={18} color={Colors.grayMedium} />
           <Text style={styles.headerTitle}>Archived Hangouts ({events.length})</Text>
         </View>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={20}
-          color={Colors.secondary}
+          color={Colors.grayMedium}
         />
       </TouchableOpacity>
 
@@ -47,10 +113,9 @@ export default function ArchivedEvents({ events, onEventPress }: ArchivedEventsP
             const { month, day } = formatDate(event.event_date);
             
             return (
-              <TouchableOpacity
+              <View
                 key={event.id}
                 style={styles.eventItem}
-                onPress={() => onEventPress(event.id)}
               >
                 <View style={styles.dateBox}>
                   <Text style={styles.dateMonth}>{month}</Text>
@@ -58,30 +123,60 @@ export default function ArchivedEvents({ events, onEventPress }: ArchivedEventsP
                 </View>
                 
                 <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  
-                  {event.photo_count > 0 && (
-                    <TouchableOpacity style={styles.photosSection}>
-                      <Ionicons name="camera-outline" size={14} color={Colors.gray} />
-                      <Text style={styles.photosText}>Photos ({event.photo_count})</Text>
-                      <Ionicons name="chevron-down" size={14} color={Colors.gray} />
-                    </TouchableOpacity>
-                  )}
+                  <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
                 </View>
 
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.actionButton}>
-                    <Ionicons name="download-outline" size={18} color={Colors.gray} />
-                    <Text style={styles.actionText}>All</Text>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => handleMoneyPress(event.id, event.title)}
+                  >
+                    <Ionicons name="cash-outline" size={20} color={Colors.grayMedium} />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.deleteButton}>
-                    <Ionicons name="trash-outline" size={18} color={Colors.red} />
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => handlePhotosPress(event.id, event.title)}
+                  >
+                    <Ionicons name="images-outline" size={20} color={Colors.grayMedium} />
                   </TouchableOpacity>
+                  {event.host_id === user?.id && (
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => handleDeletePress(event.id, event.title)}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={Colors.red} />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
+      )}
+
+      {selectedEventId && (
+        <>
+          <MoneyModal
+            visible={showMoneyModal}
+            onClose={() => {
+              setShowMoneyModal(false);
+              setSelectedEventId(null);
+            }}
+            eventId={selectedEventId}
+            attendees={[]}
+            attendeeCount={0}
+          />
+
+          <ArchivedPhotosModal
+            visible={showPhotosModal}
+            onClose={() => {
+              setShowPhotosModal(false);
+              setSelectedEventId(null);
+            }}
+            eventId={selectedEventId}
+            eventTitle={selectedEventTitle}
+          />
+        </>
       )}
     </View>
   );
@@ -95,8 +190,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    padding: 14,
     borderRadius: 12,
   },
   headerLeft: {
@@ -105,7 +200,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.grayMedium,
     fontFamily: 'Prompt-Medium',
     marginLeft: 8,
   },
@@ -114,29 +209,30 @@ const styles = StyleSheet.create({
   },
   eventItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: Colors.white,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
   },
   dateBox: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     backgroundColor: Colors.grayMedium,
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    opacity: 0.7,
   },
   dateMonth: {
-    fontSize: 9,
+    fontSize: 8,
     color: Colors.white,
     fontFamily: 'Prompt-Medium',
     letterSpacing: 0.5,
   },
   dateDay: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
     marginTop: -2,
@@ -149,38 +245,15 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     fontFamily: 'Prompt-Medium',
   },
-  photosSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: Colors.grayLight,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  photosText: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    marginHorizontal: 4,
-  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionButton: {
-    flexDirection: 'row',
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  actionText: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
     marginLeft: 4,
-  },
-  deleteButton: {
-    padding: 4,
   },
 });

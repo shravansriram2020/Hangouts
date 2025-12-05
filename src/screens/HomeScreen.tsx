@@ -154,12 +154,10 @@ export default function HomeScreen({ navigation }: any) {
           </>
         )}
 
-        {archivedEvents.length > 0 && (
-          <ArchivedEvents
-            events={archivedEvents}
-            onEventPress={(eventId) => navigation.navigate('EventDetail', { eventId })}
-          />
-        )}
+        <ArchivedEvents
+          events={archivedEvents}
+          onRefresh={fetchEvents}
+        />
       </ScrollView>
 
       <SettingsModal
