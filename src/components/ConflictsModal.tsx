@@ -318,6 +318,15 @@ export default function ConflictsModal({ visible, onClose, eventId, isHost, onCo
       return;
     }
 
+    if (selectedType === 'time' && suggestedDate && suggestedTime) {
+      const selectedDateTime = new Date(suggestedDate);
+      selectedDateTime.setHours(suggestedTime.getHours(), suggestedTime.getMinutes(), 0, 0);
+      if (selectedDateTime <= new Date()) {
+        Alert.alert('Invalid Time', 'Please suggest a date and time in the future');
+        return;
+      }
+    }
+
     if (selectedType === 'location' && !suggestedLocation) {
       Alert.alert('Required', 'Please enter a suggested location');
       return;

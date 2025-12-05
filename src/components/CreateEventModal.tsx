@@ -328,6 +328,13 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
       return;
     }
 
+    const selectedDateTime = new Date(eventDate);
+    selectedDateTime.setHours(eventTime.getHours(), eventTime.getMinutes(), 0, 0);
+    if (selectedDateTime <= new Date()) {
+      Alert.alert('Invalid Time', 'Please select a date and time in the future');
+      return;
+    }
+
     setLoading(true);
     try {
       const dateStr = eventDate.toISOString().split('T')[0];
