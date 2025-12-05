@@ -19,7 +19,7 @@ export default function LoadingDots({ size = 60, showText = false }: LoadingDots
   const dot3 = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0.5)).current;
 
-  const dotSize = size * 0.2;
+  const dotSize = size * 0.35;
 
   useEffect(() => {
     const createBounce = (animatedValue: Animated.Value, delay: number) => {
