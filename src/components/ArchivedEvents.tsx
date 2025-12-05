@@ -111,6 +111,7 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
         <View style={styles.content}>
           {events.map((event) => {
             const { month, day } = formatDate(event.event_date);
+            const isHost = user?.id && event.host_id === user.id;
             
             return (
               <View
@@ -139,7 +140,7 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
                   >
                     <Ionicons name="images-outline" size={20} color={Colors.grayMedium} />
                   </TouchableOpacity>
-                  {event.host_id === user?.id && (
+                  {isHost && (
                     <TouchableOpacity 
                       style={styles.actionButton}
                       onPress={() => handleDeletePress(event.id, event.title)}
