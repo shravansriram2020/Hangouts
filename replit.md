@@ -37,8 +37,12 @@ Preferred communication style: Simple, everyday language.
 - Results sorted by distance to user's current location
 
 ### Smart Location Suggestions
-- **LocationSuggestModal**: New glassmorphism modal with mile radius slider (1-25 miles), AI-based location suggestions, and "Suggest Again"/"Use This Location" buttons
-- **Intelligent Category Mapping**: Backend maps event titles to relevant TomTom categories (e.g., "Movie Night" → cinema, "Dinner" → restaurant, "Coffee" → café)
+- **LocationSuggestModal**: Glassmorphism modal with mile radius slider (1-25 miles), AI-based location suggestions, and "Suggest Again"/"Use This Location" buttons
+- **Light Glass Design**: Uses light-tinted BlurView with semi-transparent white background matching NotificationsModal styling
+- **Expanded Category Support**: Backend now suggests diverse venue types including cafes, restaurants, parks, shopping, entertainment, bars, museums, beaches, sports venues, and more (12 total categories)
+- **Multi-Layer Search Strategy**: Uses TomTom nearbySearch API with category-based search, POI search, and broad mixed-category fallback for maximum coverage
+- **Improved Accuracy**: Increased API limit to 50 results with proper deduplication and radius filtering
+- **Intelligent Category Mapping**: Backend maps event titles to relevant TomTom categories (e.g., "Movie Night" → cinema, "Dinner" → restaurant, "Coffee" → café, "Beach Day" → beach)
 - **Location Permission Guard**: Button grays out when location services disabled, shows helpful alert when tapped
 - **Haptic Feedback**: Slider changes and button presses trigger haptic feedback on iOS
 
