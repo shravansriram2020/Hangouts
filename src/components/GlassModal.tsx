@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Animated,
+  ScrollViewProps,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,12 +33,17 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(50)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (visible) {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
+      // Reset scroll position to top when modal opens
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+      }, 50);
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -73,6 +79,7 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
         </TouchableOpacity>
       </View>
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

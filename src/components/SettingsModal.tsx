@@ -88,15 +88,18 @@ const CREDITS_DATA: CreditSection[] = [
 const creditsStyles = StyleSheet.create({
   section: {
     marginBottom: 24,
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 16,
     fontFamily: Fonts.regular,
     color: Colors.secondary,
     marginBottom: 12,
+    textAlign: 'center',
   },
   entry: {
     marginBottom: 10,
+    alignItems: 'center',
   },
   role: {
     fontSize: 11,
@@ -105,11 +108,13 @@ const creditsStyles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
+    textAlign: 'center',
   },
   name: {
     fontSize: 15,
     fontFamily: Fonts.regular,
     color: Colors.secondary,
+    textAlign: 'center',
   },
   nameOnly: {
     marginBottom: 3,
@@ -266,7 +271,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
   if (currentView === 'credits') {
     return (
-      <GlassModal visible={visible} onClose={handleClose} title="Credits" fullHeight>
+      <GlassModal key="credits" visible={visible} onClose={handleClose} title="Credits" fullHeight>
         <TouchableOpacity 
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8 }}
           onPress={closeCredits}
@@ -319,7 +324,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   }
 
   return (
-    <GlassModal visible={visible} onClose={handleClose} title="Settings" fullHeight>
+    <GlassModal key="settings" visible={visible} onClose={handleClose} title="Settings" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.profileSection}>
               <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
