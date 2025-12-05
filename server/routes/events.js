@@ -68,15 +68,16 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
+      `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
        (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id) as photo_count,
        ea.status as user_status
        FROM events e
        JOIN users u ON e.host_id = u.id
-       JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
+       LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
        WHERE e.is_archived = false
        AND (e.event_date + e.event_time) > NOW()
+       AND (e.host_id = $1 OR ea.user_id = $1)
        ORDER BY e.event_date, e.event_time`,
       [req.user.id]
     );
@@ -97,13 +98,14 @@ router.get('/archived', authenticateToken, async (req, res) => {
     );
 
     const result = await pool.query(
-      `SELECT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
+      `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
        (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id AND expires_at > NOW()) as photo_count
        FROM events e
        JOIN users u ON e.host_id = u.id
-       JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
-       WHERE e.is_archived = true OR (e.event_date + e.event_time) <= NOW()
+       LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
+       WHERE (e.is_archived = true OR (e.event_date + e.event_time) <= NOW())
+       AND (e.host_id = $1 OR ea.user_id = $1)
        ORDER BY e.event_date DESC, e.event_time DESC`,
       [req.user.id]
     );
