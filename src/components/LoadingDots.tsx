@@ -14,26 +14,27 @@ interface LoadingDotsProps {
 }
 
 export default function LoadingDots({ size = 60, showText = false }: LoadingDotsProps) {
-  const dot1 = useRef(new Animated.Value(0)).current;
-  const dot2 = useRef(new Animated.Value(0)).current;
-  const dot3 = useRef(new Animated.Value(0)).current;
+  const bar1 = useRef(new Animated.Value(0.4)).current;
+  const bar2 = useRef(new Animated.Value(0.7)).current;
+  const bar3 = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0.5)).current;
 
-  const dotSize = size * 0.55;
+  const barWidth = size * 0.18;
+  const barMaxHeight = size * 1.2;
 
   useEffect(() => {
-    const createBounce = (animatedValue: Animated.Value, delay: number) => {
+    const createStretch = (animatedValue: Animated.Value, delay: number, minScale: number, maxScale: number) => {
       return Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
           Animated.timing(animatedValue, {
-            toValue: -size * 0.25,
-            duration: 300,
+            toValue: maxScale,
+            duration: 350,
             useNativeDriver: true,
           }),
           Animated.timing(animatedValue, {
-            toValue: 0,
-            duration: 300,
+            toValue: minScale,
+            duration: 350,
             useNativeDriver: true,
           }),
         ])
@@ -55,9 +56,9 @@ export default function LoadingDots({ size = 60, showText = false }: LoadingDots
       ])
     );
 
-    const anim1 = createBounce(dot1, 0);
-    const anim2 = createBounce(dot2, 150);
-    const anim3 = createBounce(dot3, 300);
+    const anim1 = createStretch(bar1, 0, 0.3, 1);
+    const anim2 = createStretch(bar2, 120, 0.4, 1);
+    const anim3 = createStretch(bar3, 240, 0.35, 1);
 
     anim1.start();
     anim2.start();
@@ -74,40 +75,40 @@ export default function LoadingDots({ size = 60, showText = false }: LoadingDots
 
   return (
     <View style={styles.container}>
-      <View style={styles.dotsContainer}>
+      <View style={[styles.barsContainer, { height: barMaxHeight }]}>
         <Animated.View
           style={[
-            styles.dot,
+            styles.bar,
             {
-              width: dotSize,
-              height: dotSize,
-              borderRadius: dotSize / 2,
+              width: barWidth,
+              height: barMaxHeight,
+              borderRadius: barWidth / 2,
               backgroundColor: BRAND_COLORS.red,
-              transform: [{ translateY: dot1 }],
+              transform: [{ scaleY: bar1 }],
             },
           ]}
         />
         <Animated.View
           style={[
-            styles.dot,
+            styles.bar,
             {
-              width: dotSize,
-              height: dotSize,
-              borderRadius: dotSize / 2,
+              width: barWidth,
+              height: barMaxHeight,
+              borderRadius: barWidth / 2,
               backgroundColor: BRAND_COLORS.yellow,
-              transform: [{ translateY: dot2 }],
+              transform: [{ scaleY: bar2 }],
             },
           ]}
         />
         <Animated.View
           style={[
-            styles.dot,
+            styles.bar,
             {
-              width: dotSize,
-              height: dotSize,
-              borderRadius: dotSize / 2,
+              width: barWidth,
+              height: barMaxHeight,
+              borderRadius: barWidth / 2,
               backgroundColor: BRAND_COLORS.cyan,
-              transform: [{ translateY: dot3 }],
+              transform: [{ scaleY: bar3 }],
             },
           ]}
         />
@@ -126,13 +127,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotsContainer: {
+  barsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
   },
-  dot: {
+  bar: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

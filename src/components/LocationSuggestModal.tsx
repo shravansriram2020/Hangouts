@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
@@ -192,9 +191,7 @@ export default function LocationSuggestModal({
           { transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-          <View style={styles.handle} />
-
+        <View style={styles.blurContainer}>
           <Text style={styles.title}>Suggest a Location</Text>
           <Text style={styles.subtitle}>
             {eventTitle 
@@ -311,7 +308,7 @@ export default function LocationSuggestModal({
           <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
-        </BlurView>
+        </View>
       </Animated.View>
     </Modal>
   );
@@ -335,9 +332,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blurContainer: {
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   handle: {

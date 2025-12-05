@@ -63,6 +63,8 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     setTimeout(async () => {
       try {
         if (soundRef.current) {
+          // Reset to beginning before playing to ensure it plays each time
+          await soundRef.current.setPositionAsync(0);
           await soundRef.current.playAsync();
         }
       } catch (error) {
