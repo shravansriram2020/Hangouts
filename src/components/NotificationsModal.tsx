@@ -51,6 +51,15 @@ export default function NotificationsModal({ visible, onClose }: Props) {
     }
   };
 
+  const handleDismissAll = async () => {
+    try {
+      await api.delete('/notifications/all');
+      setNotifications([]);
+    } catch (error) {
+      console.error('Failed to dismiss notifications:', error);
+    }
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'invite':
@@ -127,13 +136,19 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 <Text style={styles.emptyDescription}>You're all caught up!</Text>
               </View>
             ) : (
-              <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={(item) => item.id}
-                style={styles.list}
-                showsVerticalScrollIndicator={false}
-              />
+              <>
+                <FlatList
+                  data={notifications}
+                  renderItem={renderNotification}
+                  keyExtractor={(item) => item.id}
+                  style={styles.list}
+                  showsVerticalScrollIndicator={false}
+                />
+                <TouchableOpacity style={styles.dismissAllButton} onPress={handleDismissAll}>
+                  <Ionicons name="trash-outline" size={14} color={Colors.gray} />
+                  <Text style={styles.dismissAllText}>Dismiss All</Text>
+                </TouchableOpacity>
+              </>
             )}
           </BlurView>
         </TouchableOpacity>
@@ -253,5 +268,19 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
     marginTop: 2,
+  },
+  dismissAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
+    gap: 6,
+  },
+  dismissAllText: {
+    fontSize: 13,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Medium',
   },
 });

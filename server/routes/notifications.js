@@ -65,4 +65,18 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
   }
 });
 
+router.delete('/all', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM notifications WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    res.json({ message: 'All notifications dismissed' });
+  } catch (error) {
+    console.error('Delete all notifications error:', error);
+    res.status(500).json({ error: 'Failed to dismiss notifications' });
+  }
+});
+
 module.exports = router;

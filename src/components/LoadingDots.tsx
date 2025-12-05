@@ -53,7 +53,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: '#E67E5A',
+            backgroundColor: '#D54848',
             transform: [{ translateY: dot1 }] 
           }
         ]} 
@@ -65,7 +65,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: '#E6B85A',
+            backgroundColor: '#FFE14D',
             transform: [{ translateY: dot2 }] 
           }
         ]} 
@@ -77,7 +77,7 @@ export default function LoadingDots({ size = 12 }: LoadingDotsProps) {
             width: size, 
             height: size, 
             borderRadius: size / 2,
-            backgroundColor: '#5AACE6',
+            backgroundColor: '#24B1C5',
             transform: [{ translateY: dot3 }] 
           }
         ]} 

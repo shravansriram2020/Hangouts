@@ -4,7 +4,18 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 
-const DATE_BOX_COLORS = ['#E67E5A', '#E6B85A', '#5AACE6'];
+const DATE_BOX_COLORS = ['#D54848', '#FFE14D', '#24B1C5'];
+
+const getColorFromId = (id: string): string => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    const char = id.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  const index = Math.abs(hash) % DATE_BOX_COLORS.length;
+  return DATE_BOX_COLORS[index];
+};
 
 interface EventCardProps {
   event: any;
@@ -31,8 +42,7 @@ export default function EventCard({ event, onPress }: EventCardProps) {
   const isHost = event.isHost;
   
   const dateBoxColor = useMemo(() => {
-    const index = Math.floor(Math.random() * DATE_BOX_COLORS.length);
-    return DATE_BOX_COLORS[index];
+    return getColorFromId(event.id || 'default');
   }, [event.id]);
 
   return (
