@@ -153,7 +153,7 @@ export default function HomeScreen({ navigation }: any) {
           >
             <Text style={[
               styles.tabText,
-              activeTab === 'current' && styles.tabTextActive
+              activeTab !== 'current' && styles.tabTextInactive
             ]}>Your Hangouts</Text>
           </TouchableOpacity>
           <Text style={styles.tabDot}>•</Text>
@@ -168,7 +168,6 @@ export default function HomeScreen({ navigation }: any) {
           >
             <Text style={[
               styles.tabText,
-              activeTab === 'archived' && styles.tabTextActive,
               activeTab !== 'archived' && styles.tabTextInactive
             ]}>Archived</Text>
           </TouchableOpacity>

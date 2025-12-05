@@ -143,6 +143,7 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
             eventId={selectedEventId}
             attendees={[]}
             attendeeCount={0}
+            isArchived={true}
           />
 
           <ArchivedPhotosModal

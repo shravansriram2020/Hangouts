@@ -23,9 +23,10 @@ interface Props {
   attendees?: any[];
   onCreateClick?: () => void;
   attendeeCount?: number;
+  isArchived?: boolean;
 }
 
-export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0 }: Props) {
+export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0, isArchived = false }: Props) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
 
@@ -84,19 +85,21 @@ export default function MoneyModal({ visible, onClose, eventId, attendees, onCre
   return (
     <GlassModal visible={visible} onClose={onClose} title="Money" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {attendeeCount > 0 ? (
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={onCreateClick}
-          >
-            <Ionicons name="add" size={18} color={Colors.white} />
-            <Text style={styles.createButtonText}>Request Payment</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.disabledButton}>
-            <Ionicons name="add" size={18} color={Colors.grayMedium} />
-            <Text style={styles.disabledButtonText}>Request Payment (no attendees yet)</Text>
-          </View>
+        {!isArchived && (
+          attendeeCount > 0 ? (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={onCreateClick}
+            >
+              <Ionicons name="add" size={18} color={Colors.white} />
+              <Text style={styles.createButtonText}>Request Payment</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.disabledButton}>
+              <Ionicons name="add" size={18} color={Colors.grayMedium} />
+              <Text style={styles.disabledButtonText}>Request Payment (no attendees yet)</Text>
+            </View>
+          )
         )}
 
                 {requests.length === 0 ? (

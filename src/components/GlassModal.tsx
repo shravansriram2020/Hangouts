@@ -80,7 +80,7 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
         </TouchableOpacity>
       </View>
       {noScroll ? (
-        <View style={styles.scrollContent}>
+        <View style={[styles.scrollContent, styles.noScrollContent]}>
           {children}
         </View>
       ) : (
@@ -210,5 +210,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+  },
+  noScrollContent: {
+    flex: 1,
   },
 });

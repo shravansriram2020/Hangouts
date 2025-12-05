@@ -103,6 +103,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
     );
 
     // Get archived events (past events adjusted for timezone)
+    // Exclude events where the host has dismissed OR the attendee has been removed
     const result = await pool.query(
       `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
@@ -111,7 +112,10 @@ router.get('/archived', authenticateToken, async (req, res) => {
        JOIN users u ON e.host_id = u.id
        LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
        WHERE (e.is_archived = true OR ((e.event_date + e.event_time) - (COALESCE(e.timezone_offset, 0) * INTERVAL '1 minute')) <= NOW())
-       AND (e.host_id = $1 OR ea.user_id = $1)
+       AND (
+         (e.host_id = $1 AND (e.host_dismissed IS NULL OR e.host_dismissed = false))
+         OR ea.user_id = $1
+       )
        ORDER BY e.event_date DESC, e.event_time DESC`,
       [req.user.id]
     );
@@ -272,15 +276,10 @@ router.delete('/:id/permanent', authenticateToken, async (req, res) => {
     const isHost = eventCheck.rows[0].host_id === req.user.id;
 
     if (isHost) {
-      // For hosts, mark the event as hidden for them (set is_archived to true if not already)
-      // and remove them from attendees list
+      // For hosts, mark the event as dismissed so it won't show in their archived list
       await pool.query(
-        'UPDATE events SET is_archived = true WHERE id = $1',
+        'UPDATE events SET host_dismissed = true WHERE id = $1',
         [req.params.id]
-      );
-      await pool.query(
-        'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
-        [req.params.id, req.user.id]
       );
     } else {
       // For attendees, just remove them from the event
