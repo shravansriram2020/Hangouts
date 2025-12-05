@@ -87,9 +87,9 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Video
         ref={videoRef}
-        source={require('../../assets/splash/splash-video.mov')}
+        source={require('../../assets/splash/splash-animation.mov')}
         style={styles.video}
-        resizeMode={ResizeMode.CONTAIN}
+        resizeMode={ResizeMode.COVER}
         shouldPlay={false}
         isLooping={false}
         onLoad={handleVideoLoad}
@@ -106,13 +106,14 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgb(180, 222, 242)',
+    backgroundColor: '#1E3A5F',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   video: {
     position: 'absolute',
-    width: width * 1.15,
-    height: height * 1.15,
+    width: width * 2.5,
+    height: height * 2.5,
   },
 });
