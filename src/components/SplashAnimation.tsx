@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, Dimensions, Platform } from 'react-native';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
 
@@ -9,20 +10,42 @@ interface SplashAnimationProps {
 }
 
 export default function SplashAnimation({ onAnimationComplete }: SplashAnimationProps) {
-  const [videoLoaded, setVideoLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const videoRef = useRef<Video>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const hasStartedRef = useRef(false);
+
+  const videoSource = require('../../assets/splash/splash-video.mp4');
+
+  const player = useVideoPlayer(videoSource, player => {
+    player.loop = false;
+    player.muted = true;
+  });
 
   useEffect(() => {
     loadSound();
+    
+    const subscription = player.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay' && !hasStartedRef.current) {
+        hasStartedRef.current = true;
+        startPlayback();
+      }
+    });
+
+    const endSubscription = player.addListener('playingChange', (isPlaying) => {
+      if (!isPlaying && hasStartedRef.current && player.currentTime > 0) {
+        handleVideoEnd();
+      }
+    });
+
     return () => {
+      subscription.remove();
+      endSubscription.remove();
       if (soundRef.current) {
         soundRef.current.unloadAsync();
       }
     };
-  }, []);
+  }, [player]);
 
   const loadSound = async () => {
     try {
@@ -41,38 +64,14 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     }
   };
 
-  const handleVideoLoad = () => {
-    console.log('Video loaded successfully');
-    setVideoLoaded(true);
-  };
-
-  const handleVideoError = (error: any) => {
-    console.log('Video error:', error);
-    // If video fails, skip to app after a delay
-    setTimeout(() => {
-      onAnimationComplete();
-    }, 1000);
-  };
-
-  useEffect(() => {
-    if (videoLoaded && !isPlaying) {
-      startPlayback();
-    }
-  }, [videoLoaded]);
-
   const startPlayback = async () => {
     setIsPlaying(true);
     
-    // Start video immediately
-    if (videoRef.current) {
-      await videoRef.current.playAsync();
-    }
+    player.play();
     
-    // Delay sound by 1 second
     setTimeout(async () => {
       try {
         if (soundRef.current) {
-          // Reset to beginning before playing to ensure it plays each time
           await soundRef.current.setPositionAsync(0);
           await soundRef.current.playAsync();
         }
@@ -94,20 +93,11 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <Video
-        ref={videoRef}
-        source={require('../../assets/splash/splash-video.mp4')}
+      <VideoView
+        player={player}
         style={styles.video}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay={false}
-        isLooping={false}
-        onLoad={handleVideoLoad}
-        onError={handleVideoError}
-        onPlaybackStatusUpdate={(status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            handleVideoEnd();
-          }
-        }}
+        contentFit="cover"
+        nativeControls={false}
       />
     </Animated.View>
   );
@@ -122,8 +112,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   video: {
-    position: 'absolute',
-    width: width * 2.5,
-    height: height * 2.5,
+    width: width,
+    height: height,
   },
 });

@@ -17,9 +17,10 @@ import ArchivedPhotosModal from './ArchivedPhotosModal';
 interface ArchivedEventsProps {
   events: any[];
   onRefresh: () => void;
+  onEventDeleted?: (eventId: string) => void;
 }
 
-export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProps) {
+export default function ArchivedEvents({ events, onRefresh, onEventDeleted }: ArchivedEventsProps) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showMoneyModal, setShowMoneyModal] = useState(false);
   const [showPhotosModal, setShowPhotosModal] = useState(false);
@@ -64,10 +65,13 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
           style: 'destructive',
           onPress: async () => {
             try {
+              if (onEventDeleted) {
+                onEventDeleted(eventId);
+              }
               await api.delete(`/events/${eventId}/permanent`);
-              onRefresh();
             } catch (error) {
               Alert.alert('Error', 'Failed to remove event');
+              onRefresh();
             }
           },
         },

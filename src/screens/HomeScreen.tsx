@@ -156,21 +156,25 @@ export default function HomeScreen({ navigation }: any) {
               activeTab !== 'current' && styles.tabTextInactive
             ]}>Your Hangouts</Text>
           </TouchableOpacity>
-          <Text style={styles.tabDot}>•</Text>
-          <TouchableOpacity
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setActiveTab('archived');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[
-              styles.tabText,
-              activeTab !== 'archived' && styles.tabTextInactive
-            ]}>Archived</Text>
-          </TouchableOpacity>
+          {archivedEvents.length > 0 && (
+            <>
+              <Text style={styles.tabDot}>•</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveTab('archived');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.tabText,
+                  activeTab !== 'archived' && styles.tabTextInactive
+                ]}>Archived</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {activeTab === 'current' ? (
@@ -204,6 +208,13 @@ export default function HomeScreen({ navigation }: any) {
           <ArchivedEvents
             events={archivedEvents}
             onRefresh={fetchEvents}
+            onEventDeleted={(deletedEventId) => {
+              const remaining = archivedEvents.filter(e => e.id !== deletedEventId);
+              setArchivedEvents(remaining);
+              if (remaining.length === 0) {
+                setActiveTab('current');
+              }
+            }}
           />
         )}
       </ScrollView>
