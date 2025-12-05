@@ -96,7 +96,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Video
         ref={videoRef}
-        source={require('../../assets/splash/splash-video.mov')}
+        source={require('../../assets/splash/splash-video.mp4')}
         style={styles.video}
         resizeMode={ResizeMode.COVER}
         shouldPlay={false}

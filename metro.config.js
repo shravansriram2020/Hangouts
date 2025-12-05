@@ -2,7 +2,7 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-config.resolver.assetExts.push('mov', 'mp3');
+config.resolver.assetExts.push('mov', 'mp3', 'mp4');
 
 // Fix CORS for tunnel connectivity
 config.server = {
