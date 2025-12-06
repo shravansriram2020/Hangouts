@@ -6,10 +6,17 @@ import { Audio } from 'expo-av';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const VIDEO_DURATION_MS = 3400;
 const VIDEO_ASPECT_RATIO = 4512 / 2538;
-const SCALE = 0.75;
 
-const videoWidth = screenWidth * SCALE;
-const videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
+const maxWidth = screenWidth;
+const maxHeight = screenHeight;
+
+let videoWidth = maxWidth;
+let videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
+
+if (videoHeight > maxHeight) {
+  videoHeight = maxHeight;
+  videoWidth = videoHeight * VIDEO_ASPECT_RATIO;
+}
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
