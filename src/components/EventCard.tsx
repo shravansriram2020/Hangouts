@@ -23,11 +23,36 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, onPress }: EventCardProps) {
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-    return { month: monthStr, day };
+  const formatDate = (dateStr: string | Date | undefined) => {
+    if (!dateStr) {
+      return { month: 'TBD', day: '--' };
+    }
+    
+    try {
+      // Handle different date formats from PostgreSQL
+      let dateString = typeof dateStr === 'string' ? dateStr : dateStr.toString();
+      
+      // Extract just the date part (handles both "2025-12-05" and "2025-12-05T00:00:00.000Z")
+      const dateMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (dateMatch) {
+        const [, year, month, day] = dateMatch;
+        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        return { month: monthStr, day: parseInt(day) };
+      }
+      
+      // Fallback: try parsing as Date object
+      const fallbackDate = new Date(dateStr);
+      if (!isNaN(fallbackDate.getTime())) {
+        const monthStr = fallbackDate.toLocaleString('default', { month: 'short' }).toUpperCase();
+        return { month: monthStr, day: fallbackDate.getDate() };
+      }
+      
+      return { month: 'TBD', day: '--' };
+    } catch (error) {
+      console.error('Date parsing error:', error, dateStr);
+      return { month: 'TBD', day: '--' };
+    }
   };
 
   const formatTime = (timeStr: string) => {
