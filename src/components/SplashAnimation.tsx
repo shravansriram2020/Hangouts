@@ -5,18 +5,7 @@ import { Audio } from 'expo-av';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const VIDEO_DURATION_MS = 3400;
-const VIDEO_ASPECT_RATIO = 4512 / 2538;
-
-const maxWidth = screenWidth;
-const maxHeight = screenHeight;
-
-let videoWidth = maxWidth;
-let videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
-
-if (videoHeight > maxHeight) {
-  videoHeight = maxHeight;
-  videoWidth = videoHeight * VIDEO_ASPECT_RATIO;
-}
+const ZOOM_SCALE = 1.15;
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
@@ -115,7 +104,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
       <VideoView
         player={player}
         style={styles.video}
-        contentFit="contain"
+        contentFit="cover"
         nativeControls={false}
       />
     </Animated.View>
@@ -130,10 +119,11 @@ const styles = StyleSheet.create({
     backgroundColor: BACKGROUND_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   video: {
-    width: videoWidth,
-    height: videoHeight,
+    width: screenWidth * ZOOM_SCALE,
+    height: screenHeight * ZOOM_SCALE,
     backgroundColor: BACKGROUND_COLOR,
   },
 });
