@@ -54,6 +54,7 @@ const CREDITS_DATA: CreditSection[] = [
       { role: 'Android Testing', name: 'Theodor Geertsen' },
       { role: 'Development Support', name: 'Tudor Marinescu' },
       { role: 'Business/Marketing Support', name: 'Jackson Sieden' },
+      { role: 'Testing, Security, Backend', name: 'Reda Darwiche' },
     ],
   },
   {
