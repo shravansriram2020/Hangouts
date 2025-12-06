@@ -73,6 +73,13 @@ export default function HomeScreen({ navigation }: any) {
     setRefreshing(false);
   }, []);
 
+  // Auto-switch back to current tab when no archived events
+  useEffect(() => {
+    if (archivedEvents.length === 0 && activeTab === 'archived') {
+      setActiveTab('current');
+    }
+  }, [archivedEvents.length, activeTab]);
+
   const handleEventCreated = () => {
     setShowCreateEvent(false);
     fetchEvents();
@@ -153,24 +160,28 @@ export default function HomeScreen({ navigation }: any) {
           >
             <Text style={[
               styles.tabText,
-              activeTab !== 'current' && styles.tabTextInactive
+              activeTab !== 'current' && archivedEvents.length > 0 && styles.tabTextInactive
             ]}>Your Hangouts</Text>
           </TouchableOpacity>
-          <Text style={styles.tabDot}>•</Text>
-          <TouchableOpacity
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setActiveTab('archived');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[
-              styles.tabText,
-              activeTab !== 'archived' && styles.tabTextInactive
-            ]}>Archived</Text>
-          </TouchableOpacity>
+          {archivedEvents.length > 0 && (
+            <>
+              <Text style={styles.tabDot}>•</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveTab('archived');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.tabText,
+                  activeTab !== 'archived' && styles.tabTextInactive
+                ]}>Archived</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {activeTab === 'current' ? (
