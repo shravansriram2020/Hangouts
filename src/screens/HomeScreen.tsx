@@ -99,7 +99,7 @@ export default function HomeScreen({ navigation }: any) {
     >
       <View style={styles.header}>
         <Image
-          source={require('../../assets/images/Untitled design (6)_1762746470600_1764548145064.png')}
+          source={require('../../assets/images/hangouts-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />

@@ -434,11 +434,11 @@ export default function MapScreen() {
             anchor={{ x: 0.5, y: 0.5 }}
           >
             <View style={styles.userMarkerContainer}>
-              {user?.profile_image ? (
-                <Image source={{ uri: user.profile_image }} style={styles.userMarkerImage} />
+              {user?.profilePhoto ? (
+                <Image source={{ uri: user.profilePhoto }} style={styles.userMarkerImage} />
               ) : (
                 <View style={styles.userMarkerPlaceholder}>
-                  <Text style={styles.userMarkerInitial}>{user?.first_name?.charAt(0) || '?'}</Text>
+                  <Text style={styles.userMarkerInitial}>{user?.firstName?.charAt(0) || '?'}</Text>
                 </View>
               )}
               <View style={styles.userMarkerPulse} />

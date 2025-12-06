@@ -118,13 +118,22 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         <TouchableOpacity activeOpacity={1} style={styles.containerWrapper}>
           <BlurView intensity={80} tint="light" style={styles.container}>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>Notifications</Text>
-              <Text style={styles.headerSubtitle}>
-                {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
-              </Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Ionicons name="close" size={20} color={Colors.secondary} />
-              </TouchableOpacity>
+              <View style={styles.headerLeft}>
+                <Text style={styles.headerTitle}>Notifications</Text>
+                <Text style={styles.headerSubtitle}>
+                  {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
+                </Text>
+              </View>
+              <View style={styles.headerRight}>
+                {notifications.length > 0 && (
+                  <TouchableOpacity style={styles.clearAllButton} onPress={handleDismissAll}>
+                    <Ionicons name="trash-outline" size={16} color={Colors.gray} />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                  <Ionicons name="close" size={20} color={Colors.secondary} />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {notifications.length === 0 ? (
@@ -136,19 +145,14 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 <Text style={styles.emptyDescription}>You're all caught up!</Text>
               </View>
             ) : (
-              <>
-                <FlatList
-                  data={notifications}
-                  renderItem={renderNotification}
-                  keyExtractor={(item) => item.id}
-                  style={styles.list}
-                  showsVerticalScrollIndicator={false}
-                />
-                <TouchableOpacity style={styles.dismissAllButton} onPress={handleDismissAll}>
-                  <Ionicons name="trash-outline" size={14} color={Colors.gray} />
-                  <Text style={styles.dismissAllText}>Clear All</Text>
-                </TouchableOpacity>
-              </>
+              <FlatList
+                data={notifications}
+                renderItem={renderNotification}
+                keyExtractor={(item) => item.id}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={true}
+              />
             )}
           </BlurView>
         </TouchableOpacity>
@@ -179,10 +183,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     padding: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   headerTitle: {
     fontSize: 18,
@@ -196,12 +211,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeButton: {
-    position: 'absolute',
-    right: 16,
-    top: 16,
+  },
+  clearAllButton: {
+    padding: 4,
   },
   list: {
     paddingHorizontal: 16,
+    maxHeight: 250,
+  },
+  listContent: {
     paddingBottom: 16,
   },
   notification: {
