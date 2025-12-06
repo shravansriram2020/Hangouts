@@ -61,10 +61,13 @@ export default function ArchivedPhotosModal({ visible, onClose, eventId, eventTi
 
   const fetchPhotos = async () => {
     try {
+      console.log('[ArchivedPhotos] Fetching photos for event:', eventId);
       const data = await api.get(`/photos/event/${eventId}`);
-      setPhotos(data);
+      console.log('[ArchivedPhotos] Received photos:', data?.length || 0);
+      setPhotos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch photos:', error);
+      setPhotos([]);
     }
   };
 

@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
+    console.log('[Photos] Fetching photos for event:', req.params.eventId);
     const result = await pool.query(
       `SELECT ep.*, ep.uploader_id as user_id, u.first_name, u.profile_photo
        FROM event_photos ep
@@ -14,6 +15,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
        ORDER BY ep.created_at DESC`,
       [req.params.eventId]
     );
+    console.log('[Photos] Found', result.rows.length, 'photos');
 
     res.json(result.rows);
   } catch (error) {
