@@ -3,8 +3,13 @@ import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Audio } from 'expo-av';
 
-const { width, height } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const VIDEO_DURATION_MS = 3400;
+const VIDEO_ASPECT_RATIO = 4512 / 2538;
+const SCALE = 0.75;
+
+const videoWidth = screenWidth * SCALE;
+const videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
@@ -100,34 +105,28 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.videoWrapper}>
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="cover"
-          nativeControls={false}
-        />
-      </View>
+      <VideoView
+        player={player}
+        style={styles.video}
+        contentFit="contain"
+        nativeControls={false}
+      />
     </Animated.View>
   );
 }
 
+const BACKGROUND_COLOR = 'rgb(180, 222, 242)';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgb(180, 222, 242)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  videoWrapper: {
-    width: width * 0.75,
-    height: height * 0.75,
+    backgroundColor: BACKGROUND_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
   },
   video: {
-    width: '100%',
-    height: '100%',
+    width: videoWidth,
+    height: videoHeight,
+    backgroundColor: BACKGROUND_COLOR,
   },
 });
