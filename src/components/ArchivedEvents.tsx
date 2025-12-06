@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import MoneyModal from './MoneyModal';
+import CreateMoneyModal from './CreateMoneyModal';
 import ArchivedPhotosModal from './ArchivedPhotosModal';
 
 interface ArchivedEventsProps {
@@ -22,8 +23,10 @@ interface ArchivedEventsProps {
 export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProps) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showMoneyModal, setShowMoneyModal] = useState(false);
+  const [showCreateMoneyModal, setShowCreateMoneyModal] = useState(false);
   const [showPhotosModal, setShowPhotosModal] = useState(false);
   const [selectedEventTitle, setSelectedEventTitle] = useState('');
+  const [eventAttendees, setEventAttendees] = useState<any[]>([]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -32,13 +35,24 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
     return { month, day };
   };
 
-  const handleMoneyPress = (eventId: string, eventTitle: string) => {
+  const handleMoneyPress = async (eventId: string, eventTitle: string) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedEventId(eventId);
     setSelectedEventTitle(eventTitle);
+    setEventAttendees([]);
     setShowMoneyModal(true);
+    
+    try {
+      const eventData = await api.get(`/events/${eventId}`);
+      if (eventData && !eventData.error) {
+        const attendees = Array.isArray(eventData.attendees) ? eventData.attendees : [];
+        setEventAttendees(attendees);
+      }
+    } catch (error) {
+      console.error('Failed to fetch attendees:', error);
+    }
   };
 
   const handlePhotosPress = (eventId: string, eventTitle: string) => {
@@ -141,9 +155,27 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
               setSelectedEventId(null);
             }}
             eventId={selectedEventId}
-            attendees={[]}
-            attendeeCount={0}
+            attendees={eventAttendees}
+            attendeeCount={eventAttendees.length}
             isArchived={true}
+            onCreateClick={() => {
+              setShowMoneyModal(false);
+              setShowCreateMoneyModal(true);
+            }}
+          />
+
+          <CreateMoneyModal
+            visible={showCreateMoneyModal}
+            onClose={() => {
+              setShowCreateMoneyModal(false);
+              setShowMoneyModal(true);
+            }}
+            eventId={selectedEventId}
+            attendees={eventAttendees}
+            onCreated={() => {
+              setShowCreateMoneyModal(false);
+              setShowMoneyModal(true);
+            }}
           />
 
           <ArchivedPhotosModal

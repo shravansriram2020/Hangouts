@@ -10,7 +10,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
       `SELECT ep.*, ep.uploader_id as user_id, u.first_name, u.profile_photo
        FROM event_photos ep
        JOIN users u ON ep.uploader_id = u.id
-       WHERE ep.event_id = $1 AND ep.expires_at > NOW()
+       WHERE ep.event_id = $1
        ORDER BY ep.created_at DESC`,
       [req.params.eventId]
     );

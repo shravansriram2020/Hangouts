@@ -85,8 +85,8 @@ export default function MoneyModal({ visible, onClose, eventId, attendees, onCre
   return (
     <GlassModal visible={visible} onClose={onClose} title="Money" fullHeight>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {!isArchived && (
-          attendeeCount > 0 ? (
+        {onCreateClick && (
+          attendeeCount > 0 || isArchived ? (
             <TouchableOpacity
               style={styles.createButton}
               onPress={onCreateClick}
