@@ -208,7 +208,13 @@ Document databases (MongoDB) were considered but relational model chosen for com
 - TypeScript for type safety
 - ESLint with Expo configuration
 - dotenv for environment variable management
-- Environment variables: DATABASE_URL, JWT_SECRET, TOMTOM_API_KEY, EXPO_PUBLIC_API_URL, EXPO_PUBLIC_TERMS_URL, EXPO_PUBLIC_PRIVACY_URL
+- Environment variables: DATABASE_URL, JWT_SECRET, EXPO_PUBLIC_API_URL, EXPO_PUBLIC_TERMS_URL, EXPO_PUBLIC_PRIVACY_URL
+- Secrets (server-side only): TOMTOM_API_KEY - stored securely, never exposed to frontend
+
+**Security Notes:**
+- TomTom API key is stored as a secret and only accessed server-side
+- All location/routing features proxy through backend endpoints (/location/route, /location/static-map, /location/suggest, /location/search)
+- No API keys are exposed in client-side JavaScript bundles
 
 **Pros of Current Stack:**
 - Expo provides unified development experience across platforms
