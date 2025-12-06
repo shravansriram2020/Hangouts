@@ -69,7 +69,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         setIsReady(true);
         player.play();
         
-        setTimeout(async () => {
+        (async () => {
           try {
             if (soundRef.current) {
               await soundRef.current.setPositionAsync(0);
@@ -78,7 +78,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
           } catch (error) {
             console.log('Sound play error:', error);
           }
-        }, 1000);
+        })();
 
         setTimeout(() => {
           completeAnimation();
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   videoWrapper: {
-    width: width * 1.5,
-    height: height * 1.5,
+    width: width * 0.75,
+    height: height * 0.75,
     justifyContent: 'center',
     alignItems: 'center',
   },
