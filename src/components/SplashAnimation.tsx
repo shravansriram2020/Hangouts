@@ -104,7 +104,7 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         <VideoView
           player={player}
           style={styles.video}
-          contentFit="cover"
+          contentFit="contain"
           nativeControls={false}
         />
       </View>
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   videoWrapper: {
-    width: width * 0.75,
-    height: height * 0.75,
+    width: width * 0.68,
+    height: height * 0.68,
     justifyContent: 'center',
     alignItems: 'center',
   },
