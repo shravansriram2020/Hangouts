@@ -478,4 +478,24 @@ router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/static-map', authenticateToken, async (req, res) => {
+  const { lat, lng, zoom = 14, width = 512, height = 400 } = req.query;
+
+  if (!lat || !lng) {
+    return res.status(400).json({ error: 'Latitude and longitude required' });
+  }
+
+  if (!TOMTOM_API_KEY) {
+    return res.status(500).json({ error: 'Map service not configured' });
+  }
+
+  try {
+    const mapUrl = `https://api.tomtom.com/map/1/staticimage?key=${TOMTOM_API_KEY}&center=${lng},${lat}&zoom=${zoom}&width=${width}&height=${height}&format=png`;
+    res.json({ url: mapUrl });
+  } catch (error) {
+    console.error('Static map error:', error);
+    res.status(500).json({ error: 'Failed to generate static map' });
+  }
+});
+
 module.exports = router;

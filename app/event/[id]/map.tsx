@@ -42,7 +42,6 @@ const getGradientLuminance = (color1: string, color2: string) => {
   return (0.299 * avgR + 0.587 * avgG + 0.114 * avgB) / 255;
 };
 
-const TOMTOM_API_KEY = process.env.EXPO_PUBLIC_TOMTOM_API_KEY || 'zUUGC9Ij9Lzy8ONgq1wZhes4ajz4vn6z';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface AttendeeLocation {
@@ -200,18 +199,12 @@ export default function MapScreen() {
         data.map(async (attendee: AttendeeLocation) => {
           if (attendee.lat && attendee.lng) {
             try {
-              const routeRes = await fetch(
-                `https://api.tomtom.com/routing/1/calculateRoute/${attendee.lat},${attendee.lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}`
-              );
-              const routeData = await routeRes.json();
-              if (routeData.routes?.[0]?.summary) {
-                const summary = routeData.routes[0].summary;
-                const distanceKm = summary.lengthInMeters / 1000;
-                const distanceMiles = (distanceKm * 0.621371).toFixed(1);
+              const routeData = await api.get(`/location/route?fromLat=${attendee.lat}&fromLng=${attendee.lng}&toLat=${eventLat}&toLng=${eventLng}`);
+              if (routeData.distance && routeData.duration) {
                 return {
                   ...attendee,
-                  distance: distanceMiles,
-                  eta: Math.round(summary.travelTimeInSeconds / 60),
+                  distance: routeData.distance,
+                  eta: routeData.duration,
                 };
               }
             } catch (e) {
@@ -230,20 +223,13 @@ export default function MapScreen() {
       const newRoutes: RouteData[] = [];
       for (const attendee of locationsWithDistance.filter((a: AttendeeLocation) => a.lat && a.lng)) {
         try {
-          const routeRes = await fetch(
-            `https://api.tomtom.com/routing/1/calculateRoute/${attendee.lat},${attendee.lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}&routeRepresentation=polyline`
-          );
-          const routeData = await routeRes.json();
-          if (routeData.routes?.[0]?.legs?.[0]?.points) {
-            const points = routeData.routes[0].legs[0].points.map((p: any) => ({
-              latitude: p.latitude,
-              longitude: p.longitude,
-            }));
+          const routeData = await api.get(`/location/route?fromLat=${attendee.lat}&fromLng=${attendee.lng}&toLat=${eventLat}&toLng=${eventLng}`);
+          if (routeData.points && routeData.points.length > 0) {
             newRoutes.push({
               userId: attendee.user_id,
               distance: attendee.distance || '0',
               duration: attendee.eta || 0,
-              points,
+              points: routeData.points,
             });
           }
         } catch (e) {
@@ -258,16 +244,10 @@ export default function MapScreen() {
 
   const calculateMyDistanceAndEta = async (lat: number, lng: number) => {
     try {
-      const routeRes = await fetch(
-        `https://api.tomtom.com/routing/1/calculateRoute/${lat},${lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}`
-      );
-      const routeData = await routeRes.json();
-      if (routeData.routes?.[0]?.summary) {
-        const summary = routeData.routes[0].summary;
-        const distanceKm = summary.lengthInMeters / 1000;
-        const distanceMiles = (distanceKm * 0.621371).toFixed(1);
-        setMyDistance(distanceMiles);
-        setMyEta(Math.round(summary.travelTimeInSeconds / 60));
+      const routeData = await api.get(`/location/route?fromLat=${lat}&fromLng=${lng}&toLat=${eventLat}&toLng=${eventLng}`);
+      if (routeData.distance && routeData.duration) {
+        setMyDistance(routeData.distance);
+        setMyEta(routeData.duration);
       }
     } catch (e) {
       console.log('My route calc error:', e);
@@ -405,19 +385,41 @@ export default function MapScreen() {
   };
 
   const locationSharingAttendees = attendeeLocations.filter(a => a.lat && a.lng && a.user_id !== user?.id);
+  
+  const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchStaticMapUrl = async () => {
+      if (eventLat && eventLng) {
+        try {
+          const mapWidth = Math.min(Math.round(SCREEN_WIDTH * 2), 1024);
+          const mapHeight = 400;
+          const data = await api.get(`/location/static-map?lat=${eventLat}&lng=${eventLng}&zoom=14&width=${mapWidth}&height=${mapHeight}`);
+          if (data.url) {
+            setStaticMapUrl(data.url);
+          }
+        } catch (e) {
+          console.log('Failed to fetch static map URL:', e);
+        }
+      }
+    };
+    fetchStaticMapUrl();
+  }, [eventLat, eventLng]);
 
   const renderFallbackMap = () => {
-    const mapWidth = Math.min(Math.round(SCREEN_WIDTH * 2), 1024);
-    const mapHeight = 400;
-    const mapUrl = `https://api.tomtom.com/map/1/staticimage?key=${TOMTOM_API_KEY}&center=${eventLng},${eventLat}&zoom=14&width=${mapWidth}&height=${mapHeight}&format=png`;
-
     return (
       <View style={styles.fallbackContainer}>
-        <Image 
-          source={{ uri: mapUrl }} 
-          style={styles.fallbackImage}
-          resizeMode="cover"
-        />
+        {staticMapUrl ? (
+          <Image 
+            source={{ uri: staticMapUrl }} 
+            style={styles.fallbackImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.fallbackImage, { backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        )}
         <View style={styles.fallbackOverlay}>
           <View style={styles.eventMarkerContainer}>
             <View style={styles.eventMarker}>
