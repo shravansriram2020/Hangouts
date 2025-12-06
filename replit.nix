@@ -1,5 +1,3 @@
 { pkgs }: {
-  deps = [
-    pkgs.ffmpeg
-  ];
+  deps = [];
 }

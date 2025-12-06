@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, Platform } from 'react-native';
 import { Video, ResizeMode, Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
@@ -45,13 +45,6 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     setVideoLoaded(true);
   };
 
-  const handleVideoError = (error: any) => {
-    console.log('Video error:', error);
-    setTimeout(() => {
-      onAnimationComplete();
-    }, 1000);
-  };
-
   useEffect(() => {
     if (videoLoaded && !isPlaying) {
       startPlayback();
@@ -61,13 +54,16 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   const startPlayback = async () => {
     setIsPlaying(true);
     
+    // Start video immediately
     if (videoRef.current) {
       await videoRef.current.playAsync();
     }
     
+    // Delay sound by 1 second
     setTimeout(async () => {
       try {
         if (soundRef.current) {
+          // Reset to beginning before playing to ensure it plays each time
           await soundRef.current.setPositionAsync(0);
           await soundRef.current.playAsync();
         }
@@ -91,13 +87,12 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Video
         ref={videoRef}
-        source={require('../../assets/splash/splash-video-backup.mov')}
+        source={require('../../assets/splash/splash-video.mov')}
         style={styles.video}
-        resizeMode={ResizeMode.COVER}
+        resizeMode={ResizeMode.CONTAIN}
         shouldPlay={false}
         isLooping={false}
         onLoad={handleVideoLoad}
-        onError={handleVideoError}
         onPlaybackStatusUpdate={(status) => {
           if (status.isLoaded && status.didJustFinish) {
             handleVideoEnd();
@@ -114,11 +109,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(180, 222, 242)',
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
   },
   video: {
     position: 'absolute',
-    width: width * 0.5,
-    height: height * 0.5,
+    width: width * 1.15,
+    height: height * 1.15,
   },
 });

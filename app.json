@@ -4,18 +4,13 @@
     "slug": "hangouts",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon-light.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "hangouts",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sdj.hangouts",
-      "icon": {
-        "light": "./assets/images/icon-light.png",
-        "dark": "./assets/images/icon-dark.png",
-        "tinted": "./assets/images/icon-light.png"
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -23,8 +18,7 @@
     "android": {
       "package": "com.sdj.hangouts",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon-light.png",
-        "monochromeImage": "./assets/images/icon-light.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#D4EDFC"
       },
       "edgeToEdgeEnabled": true,
@@ -37,21 +31,17 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon-light.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon-light.png",
-          "imageWidth": 400,
-          "resizeMode": "cover",
-          "backgroundColor": "#D4EDFC",
-          "dark": {
-            "image": "./assets/images/icon-dark.png",
-            "backgroundColor": "#2C2C2C"
-          }
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#D4EDFC"
         }
       ],
       [
