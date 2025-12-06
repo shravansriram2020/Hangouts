@@ -72,7 +72,7 @@ export default function GlassModal({ visible, onClose, title, children, fullHeig
   }, [visible]);
 
   const renderContent = () => (
-    <View style={[styles.modalContent, { height: fullHeight ? modalHeight : undefined, maxHeight: modalHeight }]}>
+    <View style={[styles.modalContent, { height: (fullHeight && noScroll) ? modalHeight : undefined, maxHeight: modalHeight }]}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
