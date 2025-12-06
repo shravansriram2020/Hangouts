@@ -90,6 +90,8 @@ export default function MapScreen() {
   const [sharingCount, setSharingCount] = useState(0);
   const [attendeeLocations, setAttendeeLocations] = useState<AttendeeLocation[]>([]);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [myDistance, setMyDistance] = useState<string | null>(null);
+  const [myEta, setMyEta] = useState<number | null>(null);
   const [onMyWayList, setOnMyWayList] = useState<AttendeeLocation[]>([]);
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [myRoute, setMyRoute] = useState<RouteData | null>(null);
@@ -254,6 +256,24 @@ export default function MapScreen() {
     }
   }, [event?.id, eventLat, eventLng]);
 
+  const calculateMyDistanceAndEta = async (lat: number, lng: number) => {
+    try {
+      const routeRes = await fetch(
+        `https://api.tomtom.com/routing/1/calculateRoute/${lat},${lng}:${eventLat},${eventLng}/json?key=${TOMTOM_API_KEY}`
+      );
+      const routeData = await routeRes.json();
+      if (routeData.routes?.[0]?.summary) {
+        const summary = routeData.routes[0].summary;
+        const distanceKm = summary.lengthInMeters / 1000;
+        const distanceMiles = (distanceKm * 0.621371).toFixed(1);
+        setMyDistance(distanceMiles);
+        setMyEta(Math.round(summary.travelTimeInSeconds / 60));
+      }
+    } catch (e) {
+      console.log('My route calc error:', e);
+    }
+  };
+
   const startLocationUpdates = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -273,6 +293,7 @@ export default function MapScreen() {
       };
       setCurrentLocation(coords);
       await updateLocationOnServer(coords.lat, coords.lng);
+      await calculateMyDistanceAndEta(coords.lat, coords.lng);
 
       if (locationSubscription.current) {
         locationSubscription.current.remove();
@@ -291,6 +312,7 @@ export default function MapScreen() {
           };
           setCurrentLocation(newCoords);
           await updateLocationOnServer(newCoords.lat, newCoords.lng);
+          await calculateMyDistanceAndEta(newCoords.lat, newCoords.lng);
         }
       );
     } catch (error) {
@@ -492,7 +514,12 @@ export default function MapScreen() {
             <CalloutComponent tooltip>
               <View style={styles.calloutContainer}>
                 <Text style={styles.calloutName}>{user?.firstName || 'You'}</Text>
-                <Text style={styles.calloutDistance}>Your location</Text>
+                {myDistance && (
+                  <Text style={styles.calloutDistance}>{myDistance} mi away</Text>
+                )}
+                {myEta && (
+                  <Text style={styles.calloutEta}>ETA: {formatETA(myEta)}</Text>
+                )}
               </View>
             </CalloutComponent>
           </MarkerComponent>
