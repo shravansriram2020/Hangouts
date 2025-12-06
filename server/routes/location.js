@@ -409,15 +409,29 @@ router.put('/update', authenticateToken, async (req, res) => {
   const { eventId, lat, lng, isOnMyWay } = req.body;
 
   try {
-    await pool.query(
+    const userResult = await pool.query(
+      'SELECT COALESCE(location_enabled, true) as location_enabled FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    
+    if (userResult.rows[0]?.location_enabled === false) {
+      return res.status(403).json({ error: 'Location sharing is disabled in your settings' });
+    }
+
+    const updateResult = await pool.query(
       `UPDATE event_attendees 
-       SET current_lat = $1, current_lng = $2, is_on_my_way = COALESCE($3, is_on_my_way)
-       WHERE event_id = $4 AND user_id = $5`,
+       SET current_lat = $1, current_lng = $2, is_on_my_way = COALESCE($3, is_on_my_way), location_updated_at = NOW()
+       WHERE event_id = $4 AND user_id = $5 AND location_sharing = true`,
       [lat, lng, isOnMyWay, eventId, req.user.id]
     );
 
+    if (updateResult.rowCount === 0) {
+      return res.json({ message: 'Location sharing not enabled for this event' });
+    }
+
     await pool.query(
-      'UPDATE users SET current_lat = $1, current_lng = $2 WHERE id = $3',
+      `UPDATE users SET current_lat = $1, current_lng = $2 WHERE id = $3 
+       AND COALESCE(location_enabled, true) = true`,
       [lat, lng, req.user.id]
     );
 
@@ -432,6 +446,17 @@ router.put('/toggle-sharing', authenticateToken, async (req, res) => {
   const { eventId, sharing } = req.body;
 
   try {
+    if (sharing) {
+      const userResult = await pool.query(
+        'SELECT COALESCE(location_enabled, true) as location_enabled FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (userResult.rows[0]?.location_enabled === false) {
+        return res.status(403).json({ error: 'Enable location sharing in Settings first' });
+      }
+    }
+
     await pool.query(
       'UPDATE event_attendees SET location_sharing = $1 WHERE event_id = $2 AND user_id = $3',
       [sharing, eventId, req.user.id]
@@ -448,6 +473,17 @@ router.put('/on-my-way', authenticateToken, async (req, res) => {
   const { eventId, isOnMyWay } = req.body;
 
   try {
+    if (isOnMyWay) {
+      const userResult = await pool.query(
+        'SELECT COALESCE(location_enabled, true) as location_enabled FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (userResult.rows[0]?.location_enabled === false) {
+        return res.status(403).json({ error: 'Enable location sharing in Settings first' });
+      }
+    }
+
     await pool.query(
       'UPDATE event_attendees SET is_on_my_way = $1 WHERE event_id = $2 AND user_id = $3',
       [isOnMyWay, eventId, req.user.id]
@@ -467,7 +503,8 @@ router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
        ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way, ea.location_sharing
        FROM event_attendees ea
        JOIN users u ON ea.user_id = u.id
-       WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted'`,
+       WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted'
+       AND COALESCE(u.location_enabled, true) = true`,
       [req.params.eventId]
     );
 

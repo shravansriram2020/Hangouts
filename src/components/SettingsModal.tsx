@@ -131,7 +131,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || '');
-  const [locationEnabled, setLocationEnabled] = useState(user?.locationEnabled || false);
+  const [locationEnabled, setLocationEnabled] = useState(user?.locationEnabled !== false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -191,7 +191,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
       setFirstName(user.firstName);
       setLastName(user.lastName);
       setProfilePhoto(user.profilePhoto || '');
-      setLocationEnabled(user.locationEnabled || false);
+      setLocationEnabled(user.locationEnabled !== false);
     }
   }, [user]);
 

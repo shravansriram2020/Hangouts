@@ -33,19 +33,23 @@ router.get('/search', authenticateToken, async (req, res) => {
 
 router.put('/profile', authenticateToken, async (req, res) => {
   const { username, firstName, lastName, profilePhoto, locationEnabled } = req.body;
+  const client = await pool.connect();
 
   try {
+    await client.query('BEGIN');
+
     if (username) {
-      const existing = await pool.query(
+      const existing = await client.query(
         'SELECT id FROM users WHERE username = $1 AND id != $2',
         [username.toLowerCase(), req.user.id]
       );
       if (existing.rows.length > 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Username already taken' });
       }
     }
 
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE users SET 
         username = COALESCE($1, username),
         first_name = COALESCE($2, first_name),
@@ -58,7 +62,30 @@ router.put('/profile', authenticateToken, async (req, res) => {
       [username?.toLowerCase(), firstName, lastName, profilePhoto, locationEnabled, req.user.id]
     );
 
+    if (locationEnabled === false) {
+      await client.query(
+        `UPDATE event_attendees SET 
+          location_sharing = false,
+          is_on_my_way = false,
+          current_lat = NULL,
+          current_lng = NULL,
+          location_updated_at = NULL
+         WHERE user_id = $1`,
+        [req.user.id]
+      );
+      
+      await client.query(
+        'UPDATE users SET current_lat = NULL, current_lng = NULL WHERE id = $1',
+        [req.user.id]
+      );
+      
+      console.log(`[Location] Cleared all location data for user: ${req.user.id} (global disabled)`);
+    }
+
+    await client.query('COMMIT');
+
     const user = result.rows[0];
+
     res.json({
       id: user.id,
       email: user.email,
@@ -69,8 +96,11 @@ router.put('/profile', authenticateToken, async (req, res) => {
       locationEnabled: user.location_enabled
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  } finally {
+    client.release();
   }
 });
 
