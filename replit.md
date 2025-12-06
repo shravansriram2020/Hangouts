@@ -215,6 +215,13 @@ Document databases (MongoDB) were considered but relational model chosen for com
 - TomTom API key is stored as a secret and only accessed server-side
 - All location/routing features proxy through backend endpoints (/location/route, /location/static-map, /location/suggest, /location/search)
 - No API keys are exposed in client-side JavaScript bundles
+- Rate limiting implemented via express-rate-limit:
+  - Global: 500 requests per 15 minutes per IP
+  - Auth endpoints (/login, /signup): 20 requests per 15 minutes (brute force protection)
+  - Messages: 60 requests per minute
+  - Location: 100 requests per minute
+- JWT authentication uses SESSION_SECRET from secure secrets
+- Shared environment only contains non-sensitive public URLs
 
 **Pros of Current Stack:**
 - Expo provides unified development experience across platforms
