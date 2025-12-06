@@ -28,11 +28,33 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
   const [selectedEventTitle, setSelectedEventTitle] = useState('');
   const [eventAttendees, setEventAttendees] = useState<any[]>([]);
 
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-    return { month: monthStr, day };
+  const formatDate = (dateStr: string | Date | undefined) => {
+    if (!dateStr) {
+      return { month: 'TBD', day: '--' };
+    }
+    
+    try {
+      let dateString = typeof dateStr === 'string' ? dateStr : dateStr.toString();
+      
+      const dateMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (dateMatch) {
+        const [, year, month, day] = dateMatch;
+        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        return { month: monthStr, day: parseInt(day) };
+      }
+      
+      const fallbackDate = new Date(dateStr);
+      if (!isNaN(fallbackDate.getTime())) {
+        const monthStr = fallbackDate.toLocaleString('default', { month: 'short' }).toUpperCase();
+        return { month: monthStr, day: fallbackDate.getDate() };
+      }
+      
+      return { month: 'TBD', day: '--' };
+    } catch (error) {
+      console.error('Date parsing error:', error, dateStr);
+      return { month: 'TBD', day: '--' };
+    }
   };
 
   const handleMoneyPress = async (eventId: string, eventTitle: string) => {

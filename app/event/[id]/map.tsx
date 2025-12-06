@@ -10,6 +10,7 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -85,6 +86,7 @@ export default function MapScreen() {
   const [useFallbackMap, setUseFallbackMap] = useState(!nativeMapsAvailable);
   const [locationSharing, setLocationSharing] = useState(false);
   const [isOnMyWay, setIsOnMyWay] = useState(false);
+  const [globalLocationEnabled, setGlobalLocationEnabled] = useState(false);
   const [sharingCount, setSharingCount] = useState(0);
   const [attendeeLocations, setAttendeeLocations] = useState<AttendeeLocation[]>([]);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -117,6 +119,10 @@ export default function MapScreen() {
   }), [eventLat, eventLng]);
 
   useEffect(() => {
+    loadGlobalLocationSetting();
+  }, [user]);
+
+  useEffect(() => {
     if (event?.id) {
       loadLocationSharingState();
       fetchAttendeeLocations();
@@ -124,6 +130,12 @@ export default function MapScreen() {
       return () => clearInterval(interval);
     }
   }, [event?.id]);
+
+  const loadGlobalLocationSetting = async () => {
+    if (user?.locationEnabled !== undefined) {
+      setGlobalLocationEnabled(user.locationEnabled);
+    }
+  };
 
   useEffect(() => {
     if (locationSharing) {
@@ -293,6 +305,15 @@ export default function MapScreen() {
   };
 
   const toggleLocationSharing = async (value: boolean) => {
+    if (value && !globalLocationEnabled) {
+      Alert.alert(
+        'Location Sharing Disabled',
+        'Please enable location sharing in Settings first to share your location for this event.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
     setLocationSharing(value);
     saveLocationSharingState(value, isOnMyWay);
     try {
@@ -309,6 +330,15 @@ export default function MapScreen() {
   };
 
   const handleMarkOnMyWay = async () => {
+    if (!isOnMyWay && !globalLocationEnabled) {
+      Alert.alert(
+        'Location Sharing Disabled',
+        'Please enable location sharing in Settings first to share your location.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
     const newValue = !isOnMyWay;
     setIsOnMyWay(newValue);
     saveLocationSharingState(locationSharing, newValue);
