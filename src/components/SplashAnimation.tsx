@@ -1,68 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { Audio } from 'expo-av';
+import { Video, ResizeMode, Audio } from 'expo-av';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const VIDEO_DURATION_MS = 3400;
-const VIDEO_ASPECT_RATIO = 4512 / 2538;
-const SCALE = 0.75;
-
-const videoWidth = screenWidth * SCALE;
-const videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
+const { width, height } = Dimensions.get('window');
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
 }
 
-const BACKGROUND_COLOR = 'rgb(180, 222, 242)';
-
 export default function SplashAnimation({ onAnimationComplete }: SplashAnimationProps) {
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const videoRef = useRef<Video>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
-  const hasCompletedRef = useRef(false);
-  const [isReady, setIsReady] = useState(false);
-
-  const videoSource = require('../../assets/splash/splash-video.mp4');
-
-  const player = useVideoPlayer(videoSource, player => {
-    player.loop = false;
-    player.muted = true;
-  });
-
-  const completeAnimation = () => {
-    if (hasCompletedRef.current) return;
-    hasCompletedRef.current = true;
-    
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      onAnimationComplete();
-    });
-  };
 
   useEffect(() => {
-    const setupAudio = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-        });
-        
-        const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/splash/splash-sound.mp3'),
-          { volume: 0.3 }
-        );
-        soundRef.current = sound;
-      } catch (error) {
-        console.log('Audio setup error:', error);
-      }
-    };
-
-    setupAudio();
-
+    loadSound();
     return () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
@@ -70,51 +24,86 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     };
   }, []);
 
+  const loadSound = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+      });
+      
+      const { sound } = await Audio.Sound.createAsync(
+        require('../../assets/splash/splash-sound.mp3'),
+        { volume: 0.3 }
+      );
+      soundRef.current = sound;
+    } catch (error) {
+      console.log('Error loading sound:', error);
+    }
+  };
+
+  const handleVideoLoad = () => {
+    setVideoLoaded(true);
+  };
+
+  const handleVideoError = (error: any) => {
+    console.log('Video error:', error);
+    setTimeout(() => {
+      onAnimationComplete();
+    }, 1000);
+  };
+
   useEffect(() => {
-    const subscription = player.addListener('statusChange', (status) => {
-      if (status.status === 'readyToPlay' && !isReady) {
-        setIsReady(true);
-        player.play();
-        
-        (async () => {
-          try {
-            if (soundRef.current) {
-              await soundRef.current.setPositionAsync(0);
-              await soundRef.current.playAsync();
-            }
-          } catch (error) {
-            console.log('Sound play error:', error);
-          }
-        })();
+    if (videoLoaded && !isPlaying) {
+      startPlayback();
+    }
+  }, [videoLoaded]);
 
-        setTimeout(() => {
-          completeAnimation();
-        }, VIDEO_DURATION_MS);
+  const startPlayback = async () => {
+    setIsPlaying(true);
+    
+    if (videoRef.current) {
+      await videoRef.current.playAsync();
+    }
+    
+    setTimeout(async () => {
+      try {
+        if (soundRef.current) {
+          await soundRef.current.setPositionAsync(0);
+          await soundRef.current.playAsync();
+        }
+      } catch (error) {
+        console.log('Error playing sound:', error);
       }
+    }, 1000);
+  };
+
+  const handleVideoEnd = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      onAnimationComplete();
     });
-
-    const fallbackTimeout = setTimeout(() => {
-      if (!hasCompletedRef.current) {
-        completeAnimation();
-      }
-    }, 6000);
-
-    return () => {
-      subscription.remove();
-      clearTimeout(fallbackTimeout);
-    };
-  }, [player, isReady]);
+  };
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.videoContainer}>
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="contain"
-          nativeControls={false}
-        />
-      </View>
+      <Video
+        ref={videoRef}
+        source={require('../../assets/splash/splash-video-backup.mov')}
+        style={styles.video}
+        resizeMode={ResizeMode.COVER}
+        shouldPlay={false}
+        isLooping={false}
+        onLoad={handleVideoLoad}
+        onError={handleVideoError}
+        onPlaybackStatusUpdate={(status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            handleVideoEnd();
+          }
+        }}
+      />
     </Animated.View>
   );
 }
@@ -122,19 +111,14 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BACKGROUND_COLOR,
+    backgroundColor: 'rgb(180, 222, 242)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  videoContainer: {
-    width: videoWidth,
-    height: videoHeight,
-    backgroundColor: BACKGROUND_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
   },
   video: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    width: width * 2.5,
+    height: height * 2.5,
   },
 });
