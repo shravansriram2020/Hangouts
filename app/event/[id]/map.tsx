@@ -123,13 +123,24 @@ export default function MapScreen() {
   }, [user]);
 
   useEffect(() => {
+    if (!globalLocationEnabled && locationSharing) {
+      setLocationSharing(false);
+      setIsOnMyWay(false);
+      if (event?.id) {
+        saveLocationSharingState(false, false);
+      }
+      stopLocationUpdates();
+    }
+  }, [globalLocationEnabled]);
+
+  useEffect(() => {
     if (event?.id) {
       loadLocationSharingState();
       fetchAttendeeLocations();
       const interval = setInterval(fetchAttendeeLocations, 10000);
       return () => clearInterval(interval);
     }
-  }, [event?.id]);
+  }, [event?.id, globalLocationEnabled, user?.locationEnabled]);
 
   const loadGlobalLocationSetting = async () => {
     if (user?.locationEnabled !== undefined) {
@@ -152,8 +163,13 @@ export default function MapScreen() {
       const savedState = await AsyncStorage.getItem(`location_sharing_${event.id}`);
       if (savedState !== null) {
         const state = JSON.parse(savedState);
-        setLocationSharing(state.sharing);
-        setIsOnMyWay(state.isOnMyWay);
+        if (globalLocationEnabled) {
+          setLocationSharing(state.sharing);
+          setIsOnMyWay(state.isOnMyWay);
+        } else {
+          setLocationSharing(false);
+          setIsOnMyWay(false);
+        }
       }
     } catch (error) {
       console.error('Load state error:', error);
