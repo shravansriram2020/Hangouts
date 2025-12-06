@@ -95,6 +95,8 @@ router.get('/', authenticateToken, async (req, res) => {
 
 router.get('/archived', authenticateToken, async (req, res) => {
   try {
+    console.log('[Archived] Fetching archived events for user:', req.user.id);
+    
     // Delete events older than 30 days (adjusted for timezone)
     await pool.query(
       `DELETE FROM events 
@@ -120,6 +122,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
       [req.user.id]
     );
 
+    console.log('[Archived] Found', result.rows.length, 'archived events:', result.rows.map(e => e.title).join(', '));
     res.json(result.rows);
   } catch (error) {
     console.error('Get archived events error:', error);
