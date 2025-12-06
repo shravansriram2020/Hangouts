@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   videoWrapper: {
-    width: width,
-    height: height,
+    width: width * 0.75,
+    height: height * 0.75,
     justifyContent: 'center',
     alignItems: 'center',
   },
   video: {
-    width: width,
-    height: height,
+    width: '100%',
+    height: '100%',
   },
 });
