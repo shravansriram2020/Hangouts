@@ -96,12 +96,29 @@ export default function DetailsScreen() {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    try {
+      // Extract date components directly from ISO string to avoid timezone issues
+      const dateMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (dateMatch) {
+        const [, year, month, day] = dateMatch;
+        return `${parseInt(month)}/${parseInt(day)}/${year}`;
+      }
+      
+      // Fallback to Date parsing
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          month: 'numeric',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+      
+      return 'TBD';
+    } catch (error) {
+      console.error('Date parsing error:', error);
+      return 'TBD';
+    }
   };
 
   const formatTime = (timeStr: string) => {

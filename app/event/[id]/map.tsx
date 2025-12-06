@@ -501,7 +501,7 @@ export default function MapScreen() {
             coordinate={{ latitude: currentLocation.lat, longitude: currentLocation.lng }}
             anchor={{ x: 0.5, y: 0.5 }}
           >
-            <View style={styles.userMarkerContainer}>
+            <View style={[styles.userMarkerContainer, isOnMyWay && styles.attendeeMarkerOnMyWay]}>
               {user?.profilePhoto ? (
                 <Image source={{ uri: user.profilePhoto }} style={styles.userMarkerImage} />
               ) : (
@@ -509,7 +509,13 @@ export default function MapScreen() {
                   <Text style={styles.userMarkerInitial}>{user?.firstName?.charAt(0) || '?'}</Text>
                 </View>
               )}
-              <View style={styles.userMarkerPulse} />
+              {isOnMyWay ? (
+                <View style={styles.onMyWayBadge}>
+                  <Ionicons name="car" size={10} color="white" />
+                </View>
+              ) : (
+                <View style={styles.userMarkerPulse} />
+              )}
             </View>
             <CalloutComponent tooltip>
               <View style={styles.calloutContainer}>
