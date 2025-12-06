@@ -61,10 +61,16 @@ Preferred communication style: Simple, everyday language.
 
 ### Security & Performance
 
-- TomTom API keys and sensitive data are server-side secrets, not exposed to the frontend.
-- All location features are proxied through backend endpoints.
-- Rate limiting implemented for global, authentication, messages, and location endpoints to prevent abuse.
-- Server-side enforcement for location privacy, including transactional cleanup of location data when disabled.
+- **Helmet Security Headers**: CSP, HSTS (1 year), X-Frame-Options, Referrer-Policy, X-Content-Type-Options
+- **CORS Hardening**: Whitelist-based CORS with ALLOWED_ORIGINS env var support
+- **Auth Rate Limiting**: 5 attempts per hour with skipSuccessfulRequests (prevents brute-force)
+- **Input Sanitization**: Gradient colors validated to hex pattern before storage (prevents XSS)
+- **API Key Protection**: Server exits if EXPO_PUBLIC_TOMTOM_API_KEY is detected (prevents client exposure)
+- TomTom API keys and sensitive data are server-side secrets, not exposed to the frontend
+- All location features are proxied through backend endpoints
+- Rate limiting implemented for global, authentication, messages, and location endpoints
+- Server-side enforcement for location privacy, including transactional cleanup of location data when disabled
+- **Photo Cleanup Endpoint**: POST /api/photos/cleanup with CLEANUP_SECRET_KEY header for cron-based ephemeral photo deletion
 
 ## External Dependencies
 
