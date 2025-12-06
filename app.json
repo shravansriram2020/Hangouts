@@ -11,6 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sdj.hangouts",
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon-dark.png"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
