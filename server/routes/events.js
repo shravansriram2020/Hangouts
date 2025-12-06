@@ -5,6 +5,17 @@ const { containsProfanity, getProfanityError } = require('../utils/profanityFilt
 
 const router = express.Router();
 
+// Validate and sanitize hex color to prevent XSS
+const sanitizeHexColor = (color) => {
+  if (!color) return null;
+  // Only allow valid hex colors (3, 4, 6, or 8 character hex with optional #)
+  const hexPattern = /^#?([A-Fa-f0-9]{3,4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/;
+  const match = String(color).match(hexPattern);
+  if (!match) return null;
+  // Normalize to # prefix
+  return color.startsWith('#') ? color : `#${color}`;
+};
+
 router.post('/', authenticateToken, async (req, res) => {
   const { 
     title, description, eventImage, eventDate, eventTime, 
@@ -18,6 +29,10 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Sanitize gradient colors to prevent XSS
+    const safeGradientColor1 = sanitizeHexColor(gradientColor1);
+    const safeGradientColor2 = sanitizeHexColor(gradientColor2);
+
     const result = await pool.query(
       `INSERT INTO events (
         host_id, title, description, event_image, event_date, event_time,
@@ -27,7 +42,7 @@ router.post('/', authenticateToken, async (req, res) => {
       RETURNING *`,
       [req.user.id, title, description, eventImage, eventDate, eventTime,
        locationName, locationAddress, locationLat, locationLng,
-       gradientColor1, gradientColor2, notes, timezoneOffset || 0]
+       safeGradientColor1, safeGradientColor2, notes, timezoneOffset || 0]
     );
 
     const event = result.rows[0];
@@ -190,6 +205,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: getProfanityError('event title') });
   }
 
+  // Sanitize gradient colors to prevent XSS
+  const safeGradientColor1 = gradientColor1 ? sanitizeHexColor(gradientColor1) : undefined;
+  const safeGradientColor2 = gradientColor2 ? sanitizeHexColor(gradientColor2) : undefined;
+
   try {
     const eventCheck = await pool.query(
       'SELECT host_id FROM events WHERE id = $1',
@@ -214,7 +233,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         updated_at = NOW()
        WHERE id = $10
        RETURNING *`,
-      [title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2, req.params.id]
+      [title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, safeGradientColor1, safeGradientColor2, req.params.id]
     );
 
     res.json(result.rows[0]);

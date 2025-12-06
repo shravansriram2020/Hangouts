@@ -1,9 +1,17 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { pool, initDb } = require('./db');
+
+// Validate TomTom API key is not exposed client-side
+if (process.env.EXPO_PUBLIC_TOMTOM_API_KEY) {
+  console.error('SECURITY WARNING: TomTom API key is exposed as EXPO_PUBLIC_TOMTOM_API_KEY!');
+  console.error('This key is visible to all clients. Use TOMTOM_API_KEY instead.');
+  process.exit(1);
+}
 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
@@ -30,11 +38,12 @@ const globalLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 5, // 5 attempts per hour
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many authentication attempts, please try again later.' },
+  message: { error: 'Too many authentication attempts, please try again in an hour.' },
+  skipSuccessfulRequests: true, // Only count failed attempts
 });
 
 const messageLimiter = rateLimit({
@@ -53,10 +62,60 @@ const locationLimiter = rateLimit({
   message: { error: 'Too many location requests, please slow down.' },
 });
 
-app.use(cors());
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  crossOriginEmbedderPolicy: false, // Allow embedding for mobile app
+}));
+
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:8081', 'http://localhost:5000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check against allowed origins list or Expo development domains
+    const isAllowed = allowedOrigins.includes(origin) || 
+      /\.exp\.direct$/.test(origin) ||
+      /\.expo\.dev$/.test(origin) ||
+      /localhost:\d+$/.test(origin);
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+  }
+}));
 
 app.use(globalLimiter);
 
