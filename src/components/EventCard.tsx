@@ -24,10 +24,10 @@ interface EventCardProps {
 
 export default function EventCard({ event, onPress }: EventCardProps) {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-    const day = date.getDate();
-    return { month, day };
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+    return { month: monthStr, day };
   };
 
   const formatTime = (timeStr: string) => {

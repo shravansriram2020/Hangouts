@@ -337,7 +337,10 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
 
     setLoading(true);
     try {
-      const dateStr = eventDate.toISOString().split('T')[0];
+      const year = eventDate.getFullYear();
+      const month = (eventDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = eventDate.getDate().toString().padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const timeStr = `${eventTime.getHours().toString().padStart(2, '0')}:${eventTime.getMinutes().toString().padStart(2, '0')}`;
       // Get timezone offset in minutes (e.g., -480 for PST/UTC-8)
       const timezoneOffset = new Date().getTimezoneOffset();

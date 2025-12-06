@@ -29,10 +29,10 @@ export default function ArchivedEvents({ events, onRefresh }: ArchivedEventsProp
   const [eventAttendees, setEventAttendees] = useState<any[]>([]);
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-    const day = date.getDate();
-    return { month, day };
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const monthStr = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+    return { month: monthStr, day };
   };
 
   const handleMoneyPress = async (eventId: string, eventTitle: string) => {

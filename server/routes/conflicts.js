@@ -110,10 +110,15 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     // Update event based on conflict type
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Update event date and time - parse the ISO string and extract date and time
+      // Update event date and time - extract local date/time components
       const suggestedDateTime = new Date(conflict.suggested_time);
-      const eventDate = suggestedDateTime.toISOString().split('T')[0]; // YYYY-MM-DD
-      const eventTime = suggestedDateTime.toTimeString().slice(0, 5); // HH:MM
+      const year = suggestedDateTime.getFullYear();
+      const month = (suggestedDateTime.getMonth() + 1).toString().padStart(2, '0');
+      const day = suggestedDateTime.getDate().toString().padStart(2, '0');
+      const eventDate = `${year}-${month}-${day}`;
+      const hours = suggestedDateTime.getHours().toString().padStart(2, '0');
+      const minutes = suggestedDateTime.getMinutes().toString().padStart(2, '0');
+      const eventTime = `${hours}:${minutes}`;
       
       await pool.query(
         'UPDATE events SET event_date = $1, event_time = $2, updated_at = NOW() WHERE id = $3',
