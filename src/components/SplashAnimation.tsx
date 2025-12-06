@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
+const VIDEO_DURATION_MS = 3400;
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
@@ -12,8 +13,8 @@ interface SplashAnimationProps {
 export default function SplashAnimation({ onAnimationComplete }: SplashAnimationProps) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
-  const hasEndedRef = useRef(false);
-  const videoStartedRef = useRef(false);
+  const hasCompletedRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   const videoSource = require('../../assets/splash/splash-video.mp4');
 
@@ -22,21 +23,21 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     player.muted = true;
   });
 
-  const handleVideoEnd = useCallback(() => {
-    if (hasEndedRef.current) return;
-    hasEndedRef.current = true;
+  const completeAnimation = () => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
     
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 500,
+      duration: 400,
       useNativeDriver: true,
     }).start(() => {
       onAnimationComplete();
     });
-  }, [fadeAnim, onAnimationComplete]);
+  };
 
   useEffect(() => {
-    const loadSound = async () => {
+    const setupAudio = async () => {
       try {
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -49,11 +50,11 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         );
         soundRef.current = sound;
       } catch (error) {
-        console.log('Error loading sound:', error);
+        console.log('Audio setup error:', error);
       }
     };
 
-    loadSound();
+    setupAudio();
 
     return () => {
       if (soundRef.current) {
@@ -63,9 +64,9 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   }, []);
 
   useEffect(() => {
-    const statusSubscription = player.addListener('statusChange', (status) => {
-      if (status.status === 'readyToPlay' && !videoStartedRef.current) {
-        videoStartedRef.current = true;
+    const subscription = player.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay' && !isReady) {
+        setIsReady(true);
         player.play();
         
         setTimeout(async () => {
@@ -75,32 +76,38 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
               await soundRef.current.playAsync();
             }
           } catch (error) {
-            console.log('Error playing sound:', error);
+            console.log('Sound play error:', error);
           }
         }, 1000);
+
+        setTimeout(() => {
+          completeAnimation();
+        }, VIDEO_DURATION_MS);
       }
     });
 
-    const playingSubscription = player.addListener('playingChange', (playing) => {
-      if (!playing && videoStartedRef.current && player.currentTime > 2) {
-        handleVideoEnd();
+    const fallbackTimeout = setTimeout(() => {
+      if (!hasCompletedRef.current) {
+        completeAnimation();
       }
-    });
+    }, 6000);
 
     return () => {
-      statusSubscription.remove();
-      playingSubscription.remove();
+      subscription.remove();
+      clearTimeout(fallbackTimeout);
     };
-  }, [player, handleVideoEnd]);
+  }, [player, isReady]);
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <VideoView
-        player={player}
-        style={styles.video}
-        contentFit="contain"
-        nativeControls={false}
-      />
+      <View style={styles.videoWrapper}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          contentFit="cover"
+          nativeControls={false}
+        />
+      </View>
     </Animated.View>
   );
 }
@@ -113,8 +120,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  videoWrapper: {
+    width: width * 1.5,
+    height: height * 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   video: {
-    width: width * 0.5,
-    height: height * 0.5,
+    width: '100%',
+    height: '100%',
   },
 });
