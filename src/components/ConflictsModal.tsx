@@ -178,6 +178,19 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     return `${date} ${time}`;
   };
 
+  const formatConflictSuggestedTime = (isoString: string) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    return `${month}/${day}/${year} at ${displayHour}:${minutes} ${ampm}`;
+  };
+
   useEffect(() => {
     if (visible) {
       fetchConflicts();
@@ -625,7 +638,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                           <View style={styles.suggestionRow}>
                             <Ionicons name="time-outline" size={14} color={Colors.gray} />
                             <Text style={styles.suggestionText}>
-                              Suggested: {conflict.suggested_time}
+                              Suggested: {formatConflictSuggestedTime(conflict.suggested_time)}
                             </Text>
                           </View>
                         )}

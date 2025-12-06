@@ -279,10 +279,15 @@ router.delete('/:id/permanent', authenticateToken, async (req, res) => {
     const isHost = eventCheck.rows[0].host_id === req.user.id;
 
     if (isHost) {
-      // For hosts, mark the event as dismissed so it won't show in their archived list
+      // For hosts, mark the event as dismissed and remove from attendees so it won't show in their archived list
       await pool.query(
         'UPDATE events SET host_dismissed = true WHERE id = $1',
         [req.params.id]
+      );
+      // Also remove host from event_attendees if they added themselves
+      await pool.query(
+        'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+        [req.params.id, req.user.id]
       );
     } else {
       // For attendees, just remove them from the event

@@ -55,6 +55,15 @@ export default function EventDetailScreen({ route, navigation }: any) {
     }
   };
 
+  const refreshEvent = async () => {
+    try {
+      const data = await api.get(`/events/${eventId}`);
+      setEvent(data);
+    } catch (error) {
+      console.error('Failed to refresh event:', error);
+    }
+  };
+
   const handleDelete = async () => {
     Alert.alert(
       'Delete Event',
@@ -268,7 +277,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         onClose={() => setShowConflicts(false)}
         eventId={eventId}
         isHost={event.isHost}
-        onEventUpdated={fetchEvent}
+        onEventUpdated={refreshEvent}
       />
 
       <NotesModal
@@ -276,7 +285,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         onClose={() => setShowNotes(false)}
         eventId={eventId}
         notes={event.notes}
-        onNoteAdded={fetchEvent}
+        onNoteAdded={refreshEvent}
       />
     </LinearGradient>
   );
