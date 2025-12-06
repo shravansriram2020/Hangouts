@@ -164,10 +164,20 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     let resolutionMessage = '';
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      const suggestedDateTime = new Date(conflict.suggested_time);
-      const formattedDate = suggestedDateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const formattedTime = suggestedDateTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      resolutionMessage = `Time changed to ${formattedDate} at ${formattedTime}`;
+      // Parse the ISO string to extract local time components without timezone conversion
+      const isoString = conflict.suggested_time.toString();
+      const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (dateMatch) {
+        const [, year, month, day, hour, minute] = dateMatch;
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthName = monthNames[parseInt(month) - 1];
+        const hourNum = parseInt(hour);
+        const ampm = hourNum >= 12 ? 'PM' : 'AM';
+        const hour12 = hourNum % 12 || 12;
+        resolutionMessage = `Time changed to ${monthName} ${parseInt(day)} at ${hour12}:${minute} ${ampm}`;
+      } else {
+        resolutionMessage = `Time updated for ${eventResult.rows[0].title}`;
+      }
     } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
       resolutionMessage = `Location changed to ${conflict.suggested_location}`;
     } else if (conflict.conflict_type === 'other') {

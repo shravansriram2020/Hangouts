@@ -311,7 +311,8 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 12,
+    paddingBottom: 20,
+    marginBottom: 8,
     gap: 12,
   },
   addPhotoButtonGlass: {
