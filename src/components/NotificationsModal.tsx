@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   containerWrapper: {
     borderRadius: 20,
     overflow: 'hidden',
-    maxHeight: 360,
+    maxHeight: '70%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 16,
-    maxHeight: 250,
+    flexGrow: 1,
   },
   listContent: {
     paddingBottom: 16,

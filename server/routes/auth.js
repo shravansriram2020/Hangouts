@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../db');
 const { generateToken, authenticateToken } = require('../middleware/auth');
+const { containsProfanity, getProfanityError } = require('../utils/profanityFilter');
 
 const router = express.Router();
 
@@ -14,6 +15,14 @@ router.post('/signup', async (req, res) => {
 
   if (!agreedToTerms || !agreedToPrivacy) {
     return res.status(400).json({ error: 'You must agree to the Terms of Service and Privacy Policy' });
+  }
+
+  if (containsProfanity(username)) {
+    return res.status(400).json({ error: getProfanityError('username') });
+  }
+
+  if (containsProfanity(firstName) || containsProfanity(lastName)) {
+    return res.status(400).json({ error: getProfanityError('name') });
   }
 
   try {

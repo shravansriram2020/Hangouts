@@ -604,6 +604,26 @@ export default function MapScreen() {
 
   const isEventDay = useMemo(() => {
     if (!event?.event_date) return false;
+    
+    // Extract date components directly from ISO string to avoid timezone issues
+    const dateStr = typeof event.event_date === 'string' ? event.event_date : event.event_date.toString();
+    const dateMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    
+    if (dateMatch) {
+      const [, year, month, day] = dateMatch;
+      const eventYear = parseInt(year);
+      const eventMonth = parseInt(month);
+      const eventDay = parseInt(day);
+      
+      const today = new Date();
+      const todayYear = today.getFullYear();
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      
+      return eventYear === todayYear && eventMonth === todayMonth && eventDay === todayDay;
+    }
+    
+    // Fallback to Date parsing
     const eventDate = new Date(event.event_date);
     const today = new Date();
     return eventDate.toDateString() === today.toDateString();

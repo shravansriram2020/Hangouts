@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { containsProfanity, getProfanityError } = require('../utils/profanityFilter');
 
 const router = express.Router();
 
@@ -11,6 +12,10 @@ router.post('/', authenticateToken, async (req, res) => {
     gradientColor1, gradientColor2, notes, invitedUsers,
     timezoneOffset 
   } = req.body;
+
+  if (containsProfanity(title)) {
+    return res.status(400).json({ error: getProfanityError('event title') });
+  }
 
   try {
     const result = await pool.query(
@@ -180,6 +185,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
 router.put('/:id', authenticateToken, async (req, res) => {
   const { title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2 } = req.body;
+
+  if (title && containsProfanity(title)) {
+    return res.status(400).json({ error: getProfanityError('event title') });
+  }
 
   try {
     const eventCheck = await pool.query(
