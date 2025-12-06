@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   video: {
     position: 'absolute',
-    width: width * 2.5,
-    height: height * 2.5,
+    width: width * 1.5,
+    height: height * 1.5,
   },
 });
