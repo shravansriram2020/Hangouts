@@ -5,7 +5,7 @@ import { Audio } from 'expo-av';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const VIDEO_DURATION_MS = 3400;
-const ZOOM_SCALE = 1.08;
+const ZOOM_SCALE = 0.75;
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
