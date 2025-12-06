@@ -5,11 +5,17 @@ import { Audio } from 'expo-av';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const VIDEO_DURATION_MS = 3400;
-const ZOOM_SCALE = 0.75;
+const VIDEO_ASPECT_RATIO = 4512 / 2538;
+const SCALE = 0.75;
+
+const videoWidth = screenWidth * SCALE;
+const videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
 
 interface SplashAnimationProps {
   onAnimationComplete: () => void;
 }
+
+const BACKGROUND_COLOR = 'rgb(180, 222, 242)';
 
 export default function SplashAnimation({ onAnimationComplete }: SplashAnimationProps) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -101,17 +107,17 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <VideoView
-        player={player}
-        style={styles.video}
-        contentFit="cover"
-        nativeControls={false}
-      />
+      <View style={styles.videoContainer}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          contentFit="contain"
+          nativeControls={false}
+        />
+      </View>
     </Animated.View>
   );
 }
-
-const BACKGROUND_COLOR = 'rgb(180, 222, 242)';
 
 const styles = StyleSheet.create({
   container: {
@@ -119,11 +125,16 @@ const styles = StyleSheet.create({
     backgroundColor: BACKGROUND_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+  },
+  videoContainer: {
+    width: videoWidth,
+    height: videoHeight,
+    backgroundColor: BACKGROUND_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   video: {
-    width: screenWidth * ZOOM_SCALE,
-    height: screenHeight * ZOOM_SCALE,
-    backgroundColor: BACKGROUND_COLOR,
+    width: '100%',
+    height: '100%',
   },
 });
