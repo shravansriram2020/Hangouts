@@ -489,6 +489,12 @@ export default function MapScreen() {
               )}
               <View style={styles.userMarkerPulse} />
             </View>
+            <CalloutComponent tooltip>
+              <View style={styles.calloutContainer}>
+                <Text style={styles.calloutName}>{user?.firstName || 'You'}</Text>
+                <Text style={styles.calloutDistance}>Your location</Text>
+              </View>
+            </CalloutComponent>
           </MarkerComponent>
         )}
 
