@@ -251,6 +251,14 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   };
 
   const handleOpenLocationSuggest = () => {
+    if (!title.trim()) {
+      Alert.alert(
+        'Title Required',
+        'Please enter a hangout title first so we can suggest relevant locations.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     if (!locationEnabled) {
       Alert.alert(
         'Location Required',
@@ -621,24 +629,29 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             <TouchableOpacity
               style={[
                 styles.suggestButton,
-                !locationEnabled && styles.suggestButtonDisabled,
+                (!locationEnabled || !title.trim()) && styles.suggestButtonDisabled,
               ]}
               onPress={handleOpenLocationSuggest}
-              disabled={!locationEnabled}
+              disabled={!locationEnabled || !title.trim()}
             >
               <Ionicons 
                 name="sparkles" 
                 size={18} 
-                color={locationEnabled ? Colors.white : Colors.grayMedium} 
+                color={(locationEnabled && title.trim()) ? Colors.white : Colors.grayMedium} 
               />
               <Text style={[
                 styles.suggestButtonText,
-                !locationEnabled && styles.suggestButtonTextDisabled,
+                (!locationEnabled || !title.trim()) && styles.suggestButtonTextDisabled,
               ]}>
                 Have Hangouts Suggest a Location
               </Text>
             </TouchableOpacity>
-            {!locationEnabled && (
+            {!title.trim() && (
+              <Text style={styles.helperTextWarning}>
+                Enter a hangout title first to get smart suggestions
+              </Text>
+            )}
+            {title.trim() && !locationEnabled && (
               <Text style={styles.helperTextWarning}>
                 Enable location services to get smart suggestions
               </Text>
