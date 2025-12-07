@@ -3,16 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   FlatList,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import GlassModal from './GlassModal';
 
 interface Props {
   visible: boolean;
@@ -88,6 +85,8 @@ export default function NotificationsModal({ visible, onClose }: Props) {
     return `${days}d ago`;
   };
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   const renderNotification = ({ item }: { item: Notification }) => (
     <View style={[styles.notification, !item.is_read && styles.unread]}>
       <View style={styles.iconContainer}>
@@ -103,118 +102,81 @@ export default function NotificationsModal({ visible, onClose }: Props) {
     </View>
   );
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
   return (
-    <Modal
+    <GlassModal
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Notifications"
+      noScroll={true}
+      fullHeight={false}
     >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        <View style={styles.modalContent}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>Notifications</Text>
-              <Text style={styles.headerSubtitle}>
-                {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
-              </Text>
-            </View>
-            <View style={styles.headerRight}>
-              {notifications.length > 0 && (
-                <TouchableOpacity style={styles.clearAllButton} onPress={handleDismissAll}>
-                  <Ionicons name="trash-outline" size={16} color={Colors.gray} />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color={Colors.secondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {notifications.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="notifications-off" size={32} color={Colors.white} />
-              </View>
-              <Text style={styles.emptyTitle}>No notifications</Text>
-              <Text style={styles.emptyDescription}>You're all caught up!</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={notifications}
-              renderItem={renderNotification}
-              keyExtractor={(item) => item.id}
-              style={styles.list}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={true}
-            />
+      <View style={styles.container}>
+        <View style={styles.subHeader}>
+          <Text style={styles.subHeaderText}>
+            {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
+          </Text>
+          {notifications.length > 0 && (
+            <TouchableOpacity style={styles.clearAllButton} onPress={handleDismissAll}>
+              <Ionicons name="trash-outline" size={16} color={Colors.gray} />
+              <Text style={styles.clearAllText}>Clear all</Text>
+            </TouchableOpacity>
           )}
         </View>
+
+        {notifications.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="notifications-off" size={28} color={Colors.white} />
+            </View>
+            <Text style={styles.emptyTitle}>No notifications</Text>
+            <Text style={styles.emptyDescription}>You're all caught up!</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            renderItem={renderNotification}
+            keyExtractor={(item) => item.id}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+            bounces={true}
+          />
+        )}
       </View>
-    </Modal>
+    </GlassModal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    marginHorizontal: -20,
+    marginBottom: -20,
   },
-  backdrop: {
-    flex: 1,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    minHeight: SCREEN_HEIGHT * 0.5,
-    maxHeight: SCREEN_HEIGHT * 0.75,
-    paddingBottom: 34,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#D1D5DB',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  header: {
+  subHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  headerTitle: {
-    fontSize: 20,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
-  },
-  headerSubtitle: {
+  subHeaderText: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    marginTop: 2,
+    fontFamily: Fonts.regular,
   },
   clearAllButton: {
-    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  clearAllText: {
+    fontSize: 13,
+    color: Colors.gray,
+    fontFamily: Fonts.medium,
   },
   list: {
     flex: 1,
@@ -225,20 +187,20 @@ const styles = StyleSheet.create({
   },
   notification: {
     flexDirection: 'row',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   unread: {
-    backgroundColor: 'rgba(30, 58, 95, 0.05)',
+    backgroundColor: 'rgba(30, 58, 95, 0.06)',
     marginHorizontal: -20,
     paddingHorizontal: 20,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -249,43 +211,43 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: Fonts.semiBold,
   },
   notificationMessage: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: Fonts.regular,
     marginTop: 2,
   },
   notificationTime: {
     fontSize: 11,
-    color: '#9CA3AF',
-    fontFamily: 'Prompt-Regular',
+    color: Colors.grayMedium,
+    fontFamily: Fonts.regular,
     marginTop: 4,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
     paddingHorizontal: 20,
   },
   emptyIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: Fonts.semiBold,
   },
   emptyDescription: {
     fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: Fonts.regular,
     marginTop: 4,
   },
 });
