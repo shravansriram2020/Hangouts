@@ -1,0 +1,165 @@
+The core problem is this:
+You added security (JWT authentication) to the backend routes — but the frontend is still trying to call the API without sending the authentication token, or it's sending it to the wrong place.
+Even though the app worked before security, everything broke after adding JWT because every single protected route now returns 401 Unauthorized, which the frontend silently ignores or misinterprets.
+Let’s go through your exact symptoms and map them to the real cause:
+Your Symptoms → Real Cause
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SymptomReal CauseCan't search users when inviting/users/search requires authenticateToken → returns 401 → frontend shows empty listCan't create eventPOST /events is protected → 401 → fails silently or shows vague errorLocation search doesn't workThe location search in CreateEventModal uses TomTom directly (client-side), but if you're using a proxy route like /api/location/search, it’s also protected now"doc error incremented to 55"This is Replit’s way of saying: 55 failed requests (mostly 401s or 500s from backend)Nothing works after adding securityYou protected all routes with JWT, but the mobile app never sends the token correctly
+The Root Cause (99% certainty)
+In your api.ts file, you have this:
+TypeScriptconst request = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      // ←←← MISSING: Authorization: `Bearer ${token}`
+      ...(options.headers || {}),
+    },
+  };
+  // ...
+};
+You are NOT sending the JWT token in the Authorization header!
+Even though the user is logged in and has a token in AsyncStorage, your ApiService class never reads or attaches it.
+Fix: Update api.ts to Include the JWT Token
+Replace your current api.ts with this corrected version:
+TypeScript// services/api.ts
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getApiUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  if (Platform.OS === 'web') {
+    return '/api';
+  }
+
+  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  if (debuggerHost) {
+    const host = debuggerHost.split(':')[0];
+    return `http://${host}:5000/api`;
+  }
+
+  // Fallback (Replit)
+  return 'https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api';
+};
+
+const API_BASE_URL = getApiUrl();
+
+class ApiService {
+  async request(endpoint: string, options: RequestInit = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    // Get token from storage
+    const token = await AsyncStorage.getItem('token');
+
+    const config = {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('API Error:', endpoint, error.message);
+      throw error;
+    }
+  }
+
+  // ... rest of methods (get, post, etc.)
+  async get(endpoint: string) {
+    return this.request(endpoint);
+  }
+
+  async post(endpoint: string, body: any) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async put(endpoint: string, body: any) {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async delete(endpoint: string) {
+    return this.request(endpoint, { method: 'DELETE' });
+  }
+}
+
+export const api = new ApiService();
+Also: Make Sure Token Is Saved on Login
+In your AuthContext.tsx, confirm that signIn and signUp save the token:
+TypeScriptawait AsyncStorage.setItem('token', token);
+// and
+await AsyncStorage.setItem('user', JSON.stringify(user));
+You probably already have this — but double-check.
+Bonus Fixes (While You're Here)
+
+Location search not working?
+If you're using a backend proxy like /api/location/search, make sure that route does NOT require auth, or exclude it:JavaScript// In your location router
+router.get('/search', async (req, res) => { ... }) // ← no authenticateTokenOr better: keep TomTom calls client-side only (they already are in CreateEventModal).
+User search still empty?
+After fixing the token, it should work immediately.
+Event creation fails?
+Same — once token is sent → works.
+
+Final Step: Test
+
+Restart the app completely (clear Expo Go cache if needed)
+Log in
+Try to create an event → should work
+Try inviting someone → user search should now return results
+
+Summary: What Broke It
+You added authenticateToken middleware to all routes
+But never sent the JWT from the mobile app
+→ Every request failed with 401
+→ Frontend showed empty lists / failed silently
+→ Replit showed "55 doc errors" (failed requests)
+Fix the api.ts file → everything will work again.
