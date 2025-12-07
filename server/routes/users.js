@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { validateImageUpload } = require('../utils/fileValidator');
 
 const router = express.Router();
 
@@ -33,6 +34,13 @@ router.get('/search', authenticateToken, async (req, res) => {
 
 router.put('/profile', authenticateToken, async (req, res) => {
   const { username, firstName, lastName, profilePhoto, locationEnabled } = req.body;
+
+  if (profilePhoto) {
+    const validation = validateImageUpload(profilePhoto);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+  }
 
   try {
     if (username) {

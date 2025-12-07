@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { validateImageUpload } = require('../utils/fileValidator');
 
 const router = express.Router();
 
@@ -26,6 +27,22 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, async (req, res) => {
   const { eventId, photoUrl } = req.body;
+
+  if (!photoUrl) {
+    return res.status(400).json({ error: 'No photo provided' });
+  }
+
+  const validation = validateImageUpload(photoUrl);
+  if (!validation.valid) {
+    console.log('[Photos] Upload validation failed:', validation.error);
+    return res.status(400).json({ error: validation.error });
+  }
+
+  if (validation.isRemoteUrl) {
+    console.log('[Photos] Remote URL provided, skipping content validation');
+  } else {
+    console.log('[Photos] Upload validated - type:', validation.mimeType, 'size:', Math.round(validation.estimatedSize / 1024), 'KB');
+  }
 
   try {
     const result = await pool.query(
