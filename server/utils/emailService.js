@@ -89,7 +89,7 @@ const sendVerificationEmail = async (email, code) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Hangouts <onboarding@resend.dev>',
+      from: 'Hangouts <noreply@hangouts-app.com>',
       to: [email],
       subject: 'Verify your email - Hangouts',
       html: getEmailTemplate(code),
