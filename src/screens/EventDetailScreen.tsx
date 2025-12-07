@@ -256,6 +256,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
         visible={showShare}
         onClose={() => setShowShare(false)}
         eventId={eventId}
+        userStatus={event.attendees?.find((a: any) => a.id === user?.id)?.status}
+        isHost={event.isHost}
       />
 
       <RidesModal
