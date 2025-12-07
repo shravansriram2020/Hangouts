@@ -141,6 +141,13 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const creditsSlideValue = useRef(new Animated.Value(30)).current;
 
   const handleClose = () => {
+    setUsername(user?.username || '');
+    setFirstName(user?.firstName || '');
+    setLastName(user?.lastName || '');
+    setProfilePhoto(user?.profilePhoto || '');
+    setLocationEnabled(user?.locationEnabled || false);
+    setNewPassword('');
+    setConfirmPassword('');
     setCurrentView('settings');
     creditsAnimValue.setValue(0);
     creditsSlideValue.setValue(30);

@@ -53,29 +53,48 @@ router.put('/profile', authenticateToken, async (req, res) => {
       }
     }
 
-    const result = await pool.query(
-      `UPDATE users SET 
-        username = COALESCE($1, username),
-        first_name = COALESCE($2, first_name),
-        last_name = COALESCE($3, last_name),
-        profile_photo = COALESCE($4, profile_photo),
-        location_enabled = COALESCE($5, location_enabled),
-        updated_at = NOW()
-       WHERE id = $6
-       RETURNING id, email, username, first_name, last_name, profile_photo, location_enabled`,
-      [username?.toLowerCase(), firstName, lastName, profilePhoto, locationEnabled, req.user.id]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      const result = await client.query(
+        `UPDATE users SET 
+          username = COALESCE($1, username),
+          first_name = COALESCE($2, first_name),
+          last_name = COALESCE($3, last_name),
+          profile_photo = COALESCE($4, profile_photo),
+          location_enabled = COALESCE($5, location_enabled),
+          updated_at = NOW()
+         WHERE id = $6
+         RETURNING id, email, username, first_name, last_name, profile_photo, location_enabled`,
+        [username?.toLowerCase(), firstName, lastName, profilePhoto, locationEnabled, req.user.id]
+      );
 
-    const user = result.rows[0];
-    res.json({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      profilePhoto: user.profile_photo,
-      locationEnabled: user.location_enabled
-    });
+      if (locationEnabled === false) {
+        await client.query(
+          'UPDATE event_attendees SET location_sharing = false WHERE user_id = $1',
+          [req.user.id]
+        );
+      }
+      
+      await client.query('COMMIT');
+
+      const user = result.rows[0];
+      res.json({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        profilePhoto: user.profile_photo,
+        locationEnabled: user.location_enabled
+      });
+    } catch (txError) {
+      await client.query('ROLLBACK');
+      throw txError;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
