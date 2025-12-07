@@ -113,9 +113,10 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={styles.containerWrapper}>
+    <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
+      <View style={styles.overlay}>
+        <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={onClose} />
+        <View style={styles.containerWrapper}>
           <BlurView intensity={80} tint="light" style={styles.container}>
             <View style={styles.header}>
               <View style={styles.headerLeft}>
@@ -158,8 +159,8 @@ export default function NotificationsModal({ visible, onClose }: Props) {
               />
             )}
           </BlurView>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -168,10 +169,12 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingTop: 100,
-    paddingHorizontal: 20,
+  },
+  dismissArea: {
+    height: 100,
   },
   containerWrapper: {
+    marginHorizontal: 20,
     borderRadius: 20,
     overflow: 'hidden',
     maxHeight: '70%',
