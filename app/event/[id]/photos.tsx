@@ -260,9 +260,12 @@ export default function PhotosScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderPhoto}
           numColumns={2}
-          contentContainerStyle={styles.photoGrid}
+          contentContainerStyle={styles.photoGridContent}
           columnWrapperStyle={styles.photoRow}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+          style={styles.photoGrid}
         />
       )}
 
@@ -416,6 +419,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   photoGrid: {
+    flex: 1,
+  },
+  photoGridContent: {
     paddingBottom: 20,
   },
   photoRow: {

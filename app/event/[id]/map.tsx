@@ -124,7 +124,8 @@ export default function MapScreen() {
   }, [user]);
 
   useEffect(() => {
-    if (!globalLocationEnabled && locationSharing) {
+    // Use user?.locationEnabled directly to avoid async state timing issues
+    if (!user?.locationEnabled && locationSharing) {
       setLocationSharing(false);
       setIsOnMyWay(false);
       if (event?.id) {
@@ -132,7 +133,7 @@ export default function MapScreen() {
       }
       stopLocationUpdates();
     }
-  }, [globalLocationEnabled]);
+  }, [user?.locationEnabled]);
 
   useEffect(() => {
     if (event?.id) {
@@ -164,7 +165,8 @@ export default function MapScreen() {
       const savedState = await AsyncStorage.getItem(`location_sharing_${event.id}`);
       if (savedState !== null) {
         const state = JSON.parse(savedState);
-        if (globalLocationEnabled) {
+        // Use user?.locationEnabled directly to avoid async state timing issues
+        if (user?.locationEnabled) {
           setLocationSharing(state.sharing);
           setIsOnMyWay(state.isOnMyWay);
         } else {
@@ -323,7 +325,8 @@ export default function MapScreen() {
   };
 
   const toggleLocationSharing = async (value: boolean) => {
-    if (value && !globalLocationEnabled) {
+    // Use user?.locationEnabled directly to avoid async state timing issues
+    if (value && !user?.locationEnabled) {
       Alert.alert(
         'Location Sharing Disabled',
         'Please enable location sharing in Settings first to share your location for this event.',
@@ -348,7 +351,8 @@ export default function MapScreen() {
   };
 
   const handleMarkOnMyWay = async () => {
-    if (!isOnMyWay && !globalLocationEnabled) {
+    // Use user?.locationEnabled directly to avoid async state timing issues
+    if (!isOnMyWay && !user?.locationEnabled) {
       Alert.alert(
         'Location Sharing Disabled',
         'Please enable location sharing in Settings first to share your location.',

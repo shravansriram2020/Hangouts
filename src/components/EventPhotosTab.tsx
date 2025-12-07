@@ -147,6 +147,9 @@ export default function EventPhotosTab({ eventId }: Props) {
           numColumns={3}
           style={styles.photoGrid}
           contentContainerStyle={styles.photoGridContent}
+          scrollEnabled={true}
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
         />
       )}
 
