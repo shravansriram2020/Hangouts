@@ -152,6 +152,9 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={true}
+                scrollEnabled={true}
+                nestedScrollEnabled={true}
+                bounces={true}
               />
             )}
           </BlurView>
@@ -181,6 +184,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.92)',
     overflow: 'hidden',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -217,7 +221,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 16,
-    flexGrow: 1,
+    flex: 1,
   },
   listContent: {
     paddingBottom: 16,
