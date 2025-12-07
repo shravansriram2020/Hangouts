@@ -91,7 +91,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/money', moneyRoutes);
 app.use('/api/messages', messageLimiter, messagesRoutes);
-app.use('/api/photos', photosRoutes);
+app.use('/api/photos', express.json({ limit: '15mb' }), photosRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
