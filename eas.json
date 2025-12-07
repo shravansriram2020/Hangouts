@@ -9,7 +9,7 @@
       "distribution": "internal",
       "ios": {
         "simulator": false,
-        "credentialsSource": "remote"
+        "credentialsSource": "local"
       },
       "android": {
         "buildType": "apk"
