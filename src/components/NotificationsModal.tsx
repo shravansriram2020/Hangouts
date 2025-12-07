@@ -9,7 +9,6 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 
@@ -117,7 +116,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={onClose} />
         <View style={styles.containerWrapper}>
-          <BlurView intensity={80} tint="light" style={styles.container}>
+          <View style={styles.container}>
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <Text style={styles.headerTitle}>Notifications</Text>
@@ -158,7 +157,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 bounces={true}
               />
             )}
-          </BlurView>
+          </View>
         </View>
       </View>
     </Modal>
@@ -185,9 +184,10 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   container: {
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     flex: 1,
+    borderRadius: 20,
   },
   header: {
     flexDirection: 'row',
