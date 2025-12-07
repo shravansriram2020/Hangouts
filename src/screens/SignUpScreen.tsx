@@ -80,7 +80,13 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
       }
 
       setStep('verify');
-      setVerificationCode(['', '', '', '', '', '']);
+      // If dev code is provided (email service in test mode), auto-fill it
+      if (data.devCode) {
+        const codeDigits = data.devCode.toString().split('');
+        setVerificationCode(codeDigits);
+      } else {
+        setVerificationCode(['', '', '', '', '', '']);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to send verification code');
     } finally {

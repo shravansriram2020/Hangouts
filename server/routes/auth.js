@@ -67,9 +67,23 @@ router.post('/send-code', async (req, res) => {
       [email.toLowerCase(), code, expiresAt]
     );
 
-    await sendVerificationEmail(email, code);
-
-    res.json({ message: 'Verification code sent' });
+    try {
+      await sendVerificationEmail(email, code);
+      res.json({ message: 'Verification code sent' });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError.message);
+      // In development, return the code if email fails (Resend test mode limitation)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV MODE] Verification code for ${email}: ${code}`);
+        res.json({ 
+          message: 'Verification code sent', 
+          devCode: code,
+          devNote: 'Email service in test mode - use this code to verify'
+        });
+      } else {
+        res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+      }
+    }
   } catch (error) {
     console.error('Send code error:', error);
     res.status(500).json({ error: 'Failed to send verification code' });
