@@ -6,6 +6,16 @@ const router = express.Router();
 
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
+    const attendeeCheck = await pool.query(
+      `SELECT status FROM event_attendees 
+       WHERE event_id = $1 AND user_id = $2 AND status IN ('accepted', 'maybe')`,
+      [req.params.eventId, req.user.id]
+    );
+
+    if (attendeeCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'You must RSVP to the event to view conflicts' });
+    }
+
     const result = await pool.query(
       `SELECT c.*, u.first_name, u.profile_photo,
        (SELECT json_agg(json_build_object(
@@ -34,6 +44,16 @@ router.post('/', authenticateToken, async (req, res) => {
   const { eventId, conflictType, reason, suggestedTime, suggestedLocation, suggestedLat, suggestedLng } = req.body;
 
   try {
+    const attendeeCheck = await pool.query(
+      `SELECT status FROM event_attendees 
+       WHERE event_id = $1 AND user_id = $2 AND status IN ('accepted', 'maybe')`,
+      [eventId, req.user.id]
+    );
+
+    if (attendeeCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'You must RSVP to the event to report a conflict' });
+    }
+
     const result = await pool.query(
       `INSERT INTO conflicts (event_id, reporter_id, conflict_type, reason, suggested_time, suggested_location, suggested_lat, suggested_lng)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -75,6 +95,27 @@ router.post('/:id/vote', authenticateToken, async (req, res) => {
   const { vote } = req.body;
 
   try {
+    const conflictCheck = await pool.query(
+      'SELECT event_id FROM conflicts WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (conflictCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Conflict not found' });
+    }
+
+    const eventId = conflictCheck.rows[0].event_id;
+
+    const attendeeCheck = await pool.query(
+      `SELECT status FROM event_attendees 
+       WHERE event_id = $1 AND user_id = $2 AND status IN ('accepted', 'maybe')`,
+      [eventId, req.user.id]
+    );
+
+    if (attendeeCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'You must RSVP to the event to vote on conflicts' });
+    }
+
     await pool.query(
       `INSERT INTO conflict_votes (conflict_id, user_id, vote)
        VALUES ($1, $2, $3)

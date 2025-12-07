@@ -35,14 +35,20 @@ router.get('/search', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, async (req, res) => {
   const { username, firstName, lastName, profilePhoto, locationEnabled } = req.body;
 
-  if (profilePhoto) {
-    const validation = validateImageUpload(profilePhoto);
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error });
-    }
-  }
-
   try {
+    const currentUser = await pool.query(
+      'SELECT profile_photo FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const currentPhoto = currentUser.rows[0]?.profile_photo;
+
+    if (profilePhoto && profilePhoto !== currentPhoto) {
+      const validation = validateImageUpload(profilePhoto);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+    }
+
     if (username) {
       const existing = await pool.query(
         'SELECT id FROM users WHERE username = $1 AND id != $2',
