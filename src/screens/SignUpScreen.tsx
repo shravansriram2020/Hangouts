@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ interface Props {
   onSwitchToSignIn: () => void;
 }
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing';
 const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing';
 
@@ -36,8 +37,12 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [step, setStep] = useState<'form' | 'verify'>('form');
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const codeInputRefs = useRef<(TextInput | null)[]>([]);
 
-  const handleSignUp = async () => {
+  const handleSendCode = async () => {
     if (!email || !username || !firstName || !lastName || !password) {
       setError('Please fill in all fields');
       return;
@@ -52,6 +57,71 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
     setError('');
 
     try {
+      const response = await fetch(`${API_URL}/api/auth/send-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          username,
+          firstName,
+          lastName,
+          password,
+          agreedToTerms,
+          agreedToPrivacy,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send verification code');
+      }
+
+      setStep('verify');
+      setVerificationCode(['', '', '', '', '', '']);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const code = verificationCode.join('');
+    if (code.length !== 6) {
+      setError('Please enter the 6-digit verification code');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          code,
+          username,
+          firstName,
+          lastName,
+          password,
+          agreedToTerms,
+          agreedToPrivacy,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to verify code');
+      }
+
       await signUp({
         email,
         username,
@@ -60,11 +130,77 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         password,
         agreedToTerms,
         agreedToPrivacy,
+        token: data.token,
+        user: data.user,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      setError(err.message || 'Failed to verify code');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/send-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          username,
+          firstName,
+          lastName,
+          password,
+          agreedToTerms,
+          agreedToPrivacy,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend code');
+      }
+
+      setVerificationCode(['', '', '', '', '', '']);
+      setError('');
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCodeChange = (text: string, index: number) => {
+    if (text.length > 1) {
+      const chars = text.split('').slice(0, 6 - index);
+      const newCode = [...verificationCode];
+      chars.forEach((char, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = char;
+        }
+      });
+      setVerificationCode(newCode);
+      const nextIndex = Math.min(index + chars.length, 5);
+      codeInputRefs.current[nextIndex]?.focus();
+    } else {
+      const newCode = [...verificationCode];
+      newCode[index] = text;
+      setVerificationCode(newCode);
+      if (text && index < 5) {
+        codeInputRefs.current[index + 1]?.focus();
+      }
+    }
+  };
+
+  const handleCodeKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !verificationCode[index] && index > 0) {
+      codeInputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -84,6 +220,86 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
       <View style={styles.checkboxLabel}>{children}</View>
     </TouchableOpacity>
   );
+
+  if (step === 'verify') {
+    return (
+      <LinearGradient
+        colors={[Colors.backgroundGradientStart, Colors.backgroundGradientEnd]}
+        style={styles.container}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/images/Untitled design (6)_1762746470600_1764548145064.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+
+            <Text style={styles.tagline}>Verify Your Email</Text>
+
+            <Text style={styles.verifyMessage}>
+              We've sent a 6-digit code to{'\n'}
+              <Text style={styles.emailHighlight}>{email}</Text>
+            </Text>
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <View style={styles.codeContainer}>
+              {verificationCode.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (codeInputRefs.current[index] = ref)}
+                  style={styles.codeInput}
+                  value={digit}
+                  onChangeText={(text) => handleCodeChange(text.replace(/[^0-9]/g, ''), index)}
+                  onKeyPress={({ nativeEvent }) => handleCodeKeyPress(nativeEvent.key, index)}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.createButton, loading && styles.buttonDisabled]}
+              onPress={handleVerifyCode}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.createButtonText}>Verify & Create Account</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.resendButton}
+              onPress={handleResendCode}
+              disabled={loading}
+            >
+              <Text style={styles.resendText}>Didn't receive the code? Resend</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => setStep('form')}
+            >
+              <Ionicons name="arrow-back" size={20} color={Colors.secondary} />
+              <Text style={styles.backText}>Back to sign up</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
@@ -209,7 +425,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
 
           <TouchableOpacity
             style={[styles.createButton, loading && styles.buttonDisabled]}
-            onPress={handleSignUp}
+            onPress={handleSendCode}
             disabled={loading}
           >
             {loading ? (
@@ -258,6 +474,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
     fontFamily: 'Prompt-Regular',
+  },
+  verifyMessage: {
+    fontSize: 16,
+    color: Colors.secondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: 'Prompt-Regular',
+    lineHeight: 24,
+  },
+  emailHighlight: {
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
   },
   errorText: {
     color: Colors.red,
@@ -359,5 +587,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Prompt-SemiBold',
     textDecorationLine: 'underline',
+  },
+  codeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  codeInput: {
+    width: 48,
+    height: 56,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    fontSize: 24,
+    fontFamily: 'Prompt-SemiBold',
+    textAlign: 'center',
+    color: Colors.secondary,
+  },
+  resendButton: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  resendText: {
+    color: Colors.secondary,
+    fontSize: 14,
+    fontFamily: 'Prompt-Regular',
+    textDecorationLine: 'underline',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
+  backText: {
+    color: Colors.secondary,
+    fontSize: 14,
+    fontFamily: 'Prompt-Medium',
   },
 });

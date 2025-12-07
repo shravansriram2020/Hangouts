@@ -31,6 +31,8 @@ interface SignUpData {
   password: string;
   agreedToTerms: boolean;
   agreedToPrivacy: boolean;
+  token?: string;
+  user?: User;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,8 +76,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (data: SignUpData) => {
-    const response = await api.post('/auth/signup', data);
-    const { user: userData, token: authToken } = response;
+    let userData: User;
+    let authToken: string;
+
+    if (data.token && data.user) {
+      userData = data.user;
+      authToken = data.token;
+    } else {
+      const response = await api.post('/auth/signup', data);
+      userData = response.user;
+      authToken = response.token;
+    }
     
     await AsyncStorage.setItem('token', authToken);
     await AsyncStorage.setItem('user', JSON.stringify(userData));
