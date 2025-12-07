@@ -160,8 +160,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   subHeaderText: {
     fontSize: 13,
@@ -188,8 +186,6 @@ const styles = StyleSheet.create({
   notification: {
     flexDirection: 'row',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   unread: {
     backgroundColor: 'rgba(30, 58, 95, 0.06)',
