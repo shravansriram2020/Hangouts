@@ -6,11 +6,29 @@ const { containsProfanity, getProfanityError } = require('../utils/profanityFilt
 
 const router = express.Router();
 
+const validatePassword = (password) => {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return 'Password must contain at least one letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null;
+};
+
 router.post('/signup', async (req, res) => {
   const { email, username, firstName, lastName, password, agreedToTerms, agreedToPrivacy } = req.body;
 
   if (!email || !username || !firstName || !lastName || !password) {
     return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return res.status(400).json({ error: passwordError });
   }
 
   if (!agreedToTerms || !agreedToPrivacy) {

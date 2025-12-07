@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { pool, initDb } = require('./db');
@@ -53,9 +54,33 @@ const locationLimiter = rateLimit({
   message: { error: 'Too many location requests, please slow down.' },
 });
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+const allowedOrigins = [
+  process.env.EXPO_PUBLIC_API_URL,
+  'https://hangouts-devteam.replit.app',
+  /\.replit\.dev$/,
+  /\.exp\.direct$/
+].filter(Boolean);
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return allowed === origin;
+    });
+    if (isAllowed) return callback(null, true);
+    callback(null, true);
+  },
+  credentials: true
+}));
+
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(globalLimiter);

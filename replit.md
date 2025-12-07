@@ -220,8 +220,12 @@ Document databases (MongoDB) were considered but relational model chosen for com
   - Auth endpoints (/login, /signup): 20 requests per 15 minutes (brute force protection)
   - Messages: 60 requests per minute
   - Location: 100 requests per minute
-- JWT authentication uses SESSION_SECRET from secure secrets
+- JWT authentication uses SESSION_SECRET from secure secrets (fails fast if missing)
 - Shared environment only contains non-sensitive public URLs
+- Helmet.js security headers enabled (XSS protection, MIME sniffing prevention, etc.)
+- Password strength requirements: minimum 8 characters with at least one letter and one number
+- CORS configured to allow only trusted origins (Replit dev/production domains)
+- Request body size limited to 5MB to prevent DoS attacks
 
 **Pros of Current Stack:**
 - Expo provides unified development experience across platforms

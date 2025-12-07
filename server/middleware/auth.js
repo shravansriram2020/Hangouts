@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET or SESSION_SECRET environment variable is required');
+  process.exit(1);
+}
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
