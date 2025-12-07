@@ -57,7 +57,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/send-code`, {
+      const response = await fetch(`${API_URL}/auth/send-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/verify-code`, {
+      const response = await fetch(`${API_URL}/auth/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/send-code`, {
+      const response = await fetch(`${API_URL}/auth/send-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
               {verificationCode.map((digit, index) => (
                 <TextInput
                   key={index}
-                  ref={(ref) => (codeInputRefs.current[index] = ref)}
+                  ref={(ref) => { codeInputRefs.current[index] = ref; }}
                   style={styles.codeInput}
                   value={digit}
                   onChangeText={(text) => handleCodeChange(text.replace(/[^0-9]/g, ''), index)}
