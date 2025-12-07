@@ -432,6 +432,20 @@ router.put('/toggle-sharing', authenticateToken, async (req, res) => {
   const { eventId, sharing } = req.body;
 
   try {
+    const userResult = await pool.query(
+      'SELECT location_enabled FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    
+    const globalLocationEnabled = userResult.rows[0]?.location_enabled;
+    
+    if (!globalLocationEnabled && sharing === true) {
+      return res.status(400).json({ 
+        error: 'Location sharing is disabled in your settings',
+        globalDisabled: true 
+      });
+    }
+
     await pool.query(
       'UPDATE event_attendees SET location_sharing = $1 WHERE event_id = $2 AND user_id = $3',
       [sharing, eventId, req.user.id]
@@ -467,7 +481,7 @@ router.get('/attendees/:eventId', authenticateToken, async (req, res) => {
        ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way, ea.location_sharing
        FROM event_attendees ea
        JOIN users u ON ea.user_id = u.id
-       WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted'`,
+       WHERE ea.event_id = $1 AND ea.location_sharing = true AND ea.status = 'accepted' AND u.location_enabled = true`,
       [req.params.eventId]
     );
 

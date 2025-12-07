@@ -80,13 +80,18 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
   };
 
   const toggleLocationSharing = async (value: boolean) => {
-    setLocationSharing(value);
+    if (value && !user?.locationEnabled) {
+      return;
+    }
+    
     try {
       await api.put('/location/toggle-sharing', {
         eventId,
         sharing: value,
       });
-    } catch (error) {
+      setLocationSharing(value);
+    } catch (error: any) {
+      setLocationSharing(false);
       console.error('Toggle sharing error:', error);
     }
   };
@@ -119,12 +124,15 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
           <Text style={styles.sharingCount}>{sharingCount} sharing</Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.shareLabel}>Share my location</Text>
+          <Text style={[styles.shareLabel, !user?.locationEnabled && styles.disabledLabel]}>
+            {user?.locationEnabled ? 'Share my location' : 'Location disabled in Settings'}
+          </Text>
           <Switch
             value={locationSharing}
             onValueChange={toggleLocationSharing}
             trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
             thumbColor={locationSharing ? Colors.green : Colors.grayMedium}
+            disabled={!user?.locationEnabled}
           />
         </View>
       </View>
@@ -259,6 +267,10 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontFamily: 'Prompt-Regular',
     marginRight: 8,
+  },
+  disabledLabel: {
+    color: Colors.gray,
+    fontSize: 12,
   },
   onMyWayButton: {
     flexDirection: 'row',
