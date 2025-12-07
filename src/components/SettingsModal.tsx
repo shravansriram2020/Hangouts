@@ -212,7 +212,8 @@ export default function SettingsModal({ visible, onClose }: Props) {
     });
 
     if (!result.canceled && result.assets[0].base64) {
-      const photoData = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      const mimeType = result.assets[0].mimeType || 'image/jpeg';
+      const photoData = `data:${mimeType};base64,${result.assets[0].base64}`;
       setProfilePhoto(photoData);
     }
   };
