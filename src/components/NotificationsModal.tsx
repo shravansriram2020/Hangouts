@@ -108,7 +108,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       onClose={onClose}
       title="Notifications"
       noScroll={true}
-      fullHeight={false}
+      fullHeight={true}
     >
       <View style={styles.container}>
         <View style={styles.subHeader}>
