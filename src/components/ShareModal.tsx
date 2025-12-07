@@ -33,19 +33,9 @@ interface UserResult {
 }
 
 const getAppDomain = () => {
-  // Use production domain if available, otherwise fall back to API URL
-  const productionDomain = process.env.EXPO_PUBLIC_APP_DOMAIN;
-  if (productionDomain) {
-    return productionDomain;
-  }
-  
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || '';
   try {
     const url = new URL(apiUrl);
-    // Don't use Replit dev domains for share links
-    if (url.host.includes('.replit.') || url.host.includes('.repl.')) {
-      return 'hangouts.app';
-    }
     return url.host;
   } catch {
     return 'hangouts.app';

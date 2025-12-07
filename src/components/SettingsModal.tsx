@@ -21,8 +21,8 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 
-const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/pub';
-const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/pub';
+const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing';
+const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing';
 
 interface Props {
   visible: boolean;
@@ -131,7 +131,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || '');
-  const [locationEnabled, setLocationEnabled] = useState(user?.locationEnabled !== false);
+  const [locationEnabled, setLocationEnabled] = useState(user?.locationEnabled || false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -191,7 +191,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
       setFirstName(user.firstName);
       setLastName(user.lastName);
       setProfilePhoto(user.profilePhoto || '');
-      setLocationEnabled(user.locationEnabled !== false);
+      setLocationEnabled(user.locationEnabled || false);
     }
   }, [user]);
 

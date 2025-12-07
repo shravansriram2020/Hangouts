@@ -85,7 +85,7 @@ export default function MapScreen() {
   const [useFallbackMap, setUseFallbackMap] = useState(!nativeMapsAvailable);
   const [locationSharing, setLocationSharing] = useState(false);
   const [isOnMyWay, setIsOnMyWay] = useState(false);
-  const [globalLocationEnabled, setGlobalLocationEnabled] = useState(true);
+  const [globalLocationEnabled, setGlobalLocationEnabled] = useState(false);
   const [sharingCount, setSharingCount] = useState(0);
   const [attendeeLocations, setAttendeeLocations] = useState<AttendeeLocation[]>([]);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -120,21 +120,17 @@ export default function MapScreen() {
   }), [eventLat, eventLng]);
 
   useEffect(() => {
-    setGlobalLocationEnabled(user?.locationEnabled !== false);
-  }, [user?.locationEnabled]);
+    loadGlobalLocationSetting();
+  }, [user]);
 
   useEffect(() => {
-    if (!globalLocationEnabled) {
+    if (!globalLocationEnabled && locationSharing) {
       setLocationSharing(false);
       setIsOnMyWay(false);
-      stopLocationUpdates();
       if (event?.id) {
-        AsyncStorage.removeItem(`location_sharing_${event.id}`).catch(() => {});
-        api.put('/location/toggle-sharing', {
-          eventId: event.id,
-          sharing: false,
-        }).catch(err => console.log('Failed to disable sharing:', err));
+        saveLocationSharingState(false, false);
       }
+      stopLocationUpdates();
     }
   }, [globalLocationEnabled]);
 
@@ -146,6 +142,12 @@ export default function MapScreen() {
       return () => clearInterval(interval);
     }
   }, [event?.id, globalLocationEnabled, user?.locationEnabled]);
+
+  const loadGlobalLocationSetting = async () => {
+    if (user?.locationEnabled !== undefined) {
+      setGlobalLocationEnabled(user.locationEnabled);
+    }
+  };
 
   useEffect(() => {
     if (locationSharing) {
@@ -253,13 +255,6 @@ export default function MapScreen() {
   };
 
   const startLocationUpdates = async () => {
-    if (!globalLocationEnabled) {
-      console.log('Global location sharing is disabled');
-      setLocationSharing(false);
-      setIsOnMyWay(false);
-      return;
-    }
-    
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -314,7 +309,7 @@ export default function MapScreen() {
   };
 
   const updateLocationOnServer = async (lat: number, lng: number) => {
-    if (!event?.id || !globalLocationEnabled) return;
+    if (!event?.id) return;
     try {
       await api.put('/location/update', {
         eventId: event.id,
@@ -642,56 +637,44 @@ export default function MapScreen() {
     <LinearGradient colors={gradientColors as [string, string]} style={styles.container}>
       <View style={styles.controls}>
         {Platform.OS === 'web' ? (
-          <View style={[styles.sharingToggleGlassWeb, !globalLocationEnabled && styles.sharingToggleDisabled]}>
+          <View style={styles.sharingToggleGlassWeb}>
             <View style={styles.sharingInfo}>
               <Ionicons 
-                name={!globalLocationEnabled ? "location-outline" : (locationSharing ? "location" : "location-outline")} 
+                name={locationSharing ? "location" : "location-outline"} 
                 size={20} 
-                color={!globalLocationEnabled ? Colors.grayMedium : (locationSharing ? "#10B981" : Colors.secondary)} 
+                color={locationSharing ? "#10B981" : Colors.secondary} 
               />
-              <View>
-                <Text style={[styles.sharingText, !globalLocationEnabled && styles.sharingTextDisabled]}>Share my location</Text>
-                {!globalLocationEnabled && (
-                  <Text style={styles.sharingDisabledHint}>Enable in Settings first</Text>
-                )}
-              </View>
+              <Text style={styles.sharingText}>Share my location</Text>
             </View>
             <Switch
-              value={globalLocationEnabled && locationSharing}
+              value={locationSharing}
               onValueChange={toggleLocationSharing}
               trackColor={{ false: Colors.grayLight, true: '#10B981' }}
               thumbColor="white"
-              disabled={!globalLocationEnabled}
             />
           </View>
         ) : (
-          <BlurView intensity={80} tint="light" style={[styles.sharingToggleGlass, !globalLocationEnabled && styles.sharingToggleDisabled]}>
+          <BlurView intensity={80} tint="light" style={styles.sharingToggleGlass}>
             <View style={styles.sharingToggleInner}>
               <View style={styles.sharingInfo}>
                 <Ionicons 
-                  name={!globalLocationEnabled ? "location-outline" : (locationSharing ? "location" : "location-outline")} 
+                  name={locationSharing ? "location" : "location-outline"} 
                   size={20} 
-                  color={!globalLocationEnabled ? Colors.grayMedium : (locationSharing ? "#10B981" : Colors.secondary)} 
+                  color={locationSharing ? "#10B981" : Colors.secondary} 
                 />
-                <View>
-                  <Text style={[styles.sharingText, !globalLocationEnabled && styles.sharingTextDisabled]}>Share my location</Text>
-                  {!globalLocationEnabled && (
-                    <Text style={styles.sharingDisabledHint}>Enable in Settings first</Text>
-                  )}
-                </View>
+                <Text style={styles.sharingText}>Share my location</Text>
               </View>
               <Switch
-                value={globalLocationEnabled && locationSharing}
+                value={locationSharing}
                 onValueChange={toggleLocationSharing}
                 trackColor={{ false: Colors.grayLight, true: '#10B981' }}
                 thumbColor="white"
-                disabled={!globalLocationEnabled}
               />
             </View>
           </BlurView>
         )}
 
-        {isEventDay && globalLocationEnabled && (
+        {isEventDay && (
           <TouchableOpacity
             style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
             onPress={handleMarkOnMyWay}
@@ -1122,18 +1105,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.medium,
     color: Colors.secondary,
-  },
-  sharingTextDisabled: {
-    color: Colors.grayMedium,
-  },
-  sharingDisabledHint: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
-    color: Colors.grayMedium,
-    marginTop: 2,
-  },
-  sharingToggleDisabled: {
-    opacity: 0.7,
   },
   onMyWayButton: {
     flexDirection: 'row',

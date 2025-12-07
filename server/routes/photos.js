@@ -86,33 +86,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Cleanup endpoint for ephemeral photos older than 30 days
-// This serves as a fallback if the DB trigger fails
-router.post('/cleanup', async (req, res) => {
-  const cleanupKey = req.headers['x-cleanup-key'];
-  const expectedKey = process.env.CLEANUP_SECRET_KEY;
-  
-  // Only allow with valid cleanup key (for cron jobs)
-  if (!expectedKey || cleanupKey !== expectedKey) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  try {
-    const result = await pool.query(
-      `DELETE FROM event_photos 
-       WHERE created_at < NOW() - INTERVAL '30 days'
-       RETURNING id`
-    );
-    
-    console.log(`[Cleanup] Deleted ${result.rowCount} ephemeral photos older than 30 days`);
-    res.json({ 
-      message: 'Cleanup complete', 
-      deletedCount: result.rowCount 
-    });
-  } catch (error) {
-    console.error('Photo cleanup error:', error);
-    res.status(500).json({ error: 'Failed to cleanup photos' });
-  }
-});
-
 module.exports = router;
