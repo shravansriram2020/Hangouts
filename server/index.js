@@ -57,8 +57,11 @@ const locationLimiter = rateLimit({
 const allowedOrigins = [
   process.env.EXPO_PUBLIC_API_URL,
   'https://hangouts-devteam.replit.app',
+  'https://api.hangouts-app.com',
+  'https://hangouts-app.com',
   /\.replit\.dev$/,
-  /\.exp\.direct$/
+  /\.exp\.direct$/,
+  /\.hangouts-app\.com$/
 ].filter(Boolean);
 
 app.use(cors({
