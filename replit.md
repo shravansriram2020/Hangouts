@@ -67,6 +67,15 @@ Preferred communication style: Simple, everyday language.
 ### Event Management
 - Delete event button properly gated to hosts only (isHost check)
 
+### Email Verification (December 2024)
+- **Two-Step Signup Flow**: Users now verify their email before account creation
+- **Send Verification Code**: POST `/api/auth/send-code` validates all inputs, checks for existing users, generates 6-digit code, stores with 10-minute expiration, sends branded HTML email via Resend API
+- **Verify Code Endpoint**: POST `/api/auth/verify-code` mirrors send-code validation (password strength, profanity filter, terms agreement, uniqueness), verifies code, creates user, returns JWT token
+- **Branded Email Template**: Light blue gradient header, glassmorphism card design, 6-digit code display, matches app branding
+- **Frontend Verification UI**: 6-digit code input with auto-focus navigation between digits, resend code functionality, back button to edit form
+- **Database**: `verification_codes` table stores email, code, expires_at, used flag
+- **Security**: Codes expire after 10 minutes, single-use only, same validation on both endpoints prevents race conditions
+
 ## System Architecture
 
 ### Frontend Architecture
