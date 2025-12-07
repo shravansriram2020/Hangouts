@@ -6,11 +6,13 @@ import {
   Modal,
   TouchableOpacity,
   FlatList,
-  Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface Props {
   visible: boolean;
@@ -61,22 +63,14 @@ export default function NotificationsModal({ visible, onClose }: Props) {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'invite':
-        return 'calendar-outline';
-      case 'ride':
-        return 'car-outline';
-      case 'money':
-        return 'cash-outline';
-      case 'conflict':
-        return 'alert-circle-outline';
-      case 'rsvp':
-        return 'checkmark-circle-outline';
-      case 'message':
-        return 'chatbubble-outline';
-      case 'photo':
-        return 'image-outline';
-      default:
-        return 'notifications-outline';
+      case 'invite': return 'calendar-outline';
+      case 'ride': return 'car-outline';
+      case 'money': return 'cash-outline';
+      case 'conflict': return 'alert-circle-outline';
+      case 'rsvp': return 'checkmark-circle-outline';
+      case 'message': return 'chatbubble-outline';
+      case 'photo': return 'image-outline';
+      default: return 'notifications-outline';
     }
   };
 
@@ -112,52 +106,53 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={onClose} />
-        <View style={styles.containerWrapper}>
-          <View style={styles.container}>
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <Text style={styles.headerTitle}>Notifications</Text>
-                <Text style={styles.headerSubtitle}>
-                  {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
-                </Text>
-              </View>
-              <View style={styles.headerRight}>
-                {notifications.length > 0 && (
-                  <TouchableOpacity style={styles.clearAllButton} onPress={handleDismissAll}>
-                    <Ionicons name="trash-outline" size={16} color={Colors.gray} />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                  <Ionicons name="close" size={20} color={Colors.secondary} />
-                </TouchableOpacity>
-              </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
+        <View style={styles.modalContent}>
+          <View style={styles.handle} />
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>Notifications</Text>
+              <Text style={styles.headerSubtitle}>
+                {unreadCount > 0 ? `${unreadCount} new` : 'All caught up!'}
+              </Text>
             </View>
-
-            {notifications.length === 0 ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconContainer}>
-                  <Ionicons name="notifications-off" size={28} color={Colors.white} />
-                </View>
-                <Text style={styles.emptyTitle}>No notifications</Text>
-                <Text style={styles.emptyDescription}>You're all caught up!</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={(item) => item.id}
-                style={styles.list}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={true}
-                scrollEnabled={true}
-                nestedScrollEnabled={true}
-                bounces={true}
-              />
-            )}
+            <View style={styles.headerRight}>
+              {notifications.length > 0 && (
+                <TouchableOpacity style={styles.clearAllButton} onPress={handleDismissAll}>
+                  <Ionicons name="trash-outline" size={16} color={Colors.gray} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={24} color={Colors.secondary} />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {notifications.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="notifications-off" size={32} color={Colors.white} />
+              </View>
+              <Text style={styles.emptyTitle}>No notifications</Text>
+              <Text style={styles.emptyDescription}>You're all caught up!</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={notifications}
+              renderItem={renderNotification}
+              keyExtractor={(item) => item.id}
+              style={styles.list}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={true}
+            />
+          )}
         </View>
       </View>
     </Modal>
@@ -165,38 +160,39 @@ export default function NotificationsModal({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  dismissArea: {
-    height: 100,
+  backdrop: {
+    flex: 1,
   },
-  containerWrapper: {
-    marginHorizontal: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-    maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  container: {
+  modalContent: {
     backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-    flex: 1,
-    borderRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    minHeight: SCREEN_HEIGHT * 0.5,
+    maxHeight: SCREEN_HEIGHT * 0.75,
+    paddingBottom: 34,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    borderBottomColor: '#F3F4F6',
   },
   headerLeft: {
     flex: 1,
@@ -204,108 +200,92 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     color: Colors.secondary,
     fontFamily: 'Prompt-Bold',
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
     marginTop: 2,
-  },
-  closeButton: {
   },
   clearAllButton: {
     padding: 4,
   },
   list: {
-    paddingHorizontal: 16,
     flex: 1,
   },
   listContent: {
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   notification: {
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    borderBottomColor: '#F3F4F6',
   },
   unread: {
-    backgroundColor: 'rgba(30, 58, 95, 0.08)',
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(30, 58, 95, 0.05)',
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(30, 58, 95, 0.1)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   notificationContent: {
     flex: 1,
   },
   notificationTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
   },
   notificationMessage: {
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
-    marginTop: 1,
-  },
-  notificationTime: {
-    fontSize: 10,
-    color: Colors.grayMedium,
-    fontFamily: 'Prompt-Regular',
-    marginTop: 3,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-  },
-  emptyIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
-  },
-  emptyDescription: {
     fontSize: 13,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
-  dismissAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.05)',
-    gap: 6,
+  notificationTime: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontFamily: 'Prompt-Regular',
+    marginTop: 4,
   },
-  dismissAllText: {
-    fontSize: 13,
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-SemiBold',
+  },
+  emptyDescription: {
+    fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Prompt-Regular',
+    marginTop: 4,
   },
 });
