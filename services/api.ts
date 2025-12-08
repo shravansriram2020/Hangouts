@@ -2,21 +2,30 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 const getApiUrl = () => {
+  // Check environment variable first
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
+  }
+  
+  // Check app.json extra config
+  const configApiUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (configApiUrl) {
+    return configApiUrl;
   }
   
   if (Platform.OS === 'web') {
     return '/api';
   }
   
+  // Development: use debugger host
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
   if (debuggerHost) {
     const host = debuggerHost.split(':')[0];
     return `http://${host}:5000/api`;
   }
   
-  return 'https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api';
+  // Production fallback
+  return 'https://api.hangouts-app.com/api';
 };
 
 const API_BASE_URL = getApiUrl();
