@@ -4,14 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Switch,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   eventId: string;
@@ -22,132 +20,84 @@ interface Props {
   } | null;
 }
 
+interface AttendeeLocation {
+  id: string;
+  user_id: string;
+  first_name: string;
+  profile_photo: string | null;
+  lat: number | null;
+  lng: number | null;
+  is_on_my_way: boolean;
+}
+
+interface RouteInfo {
+  distance: string;
+  duration: number;
+}
+
 export default function EventMapTab({ eventId, eventLocation }: Props) {
-  const { user } = useAuth();
-  const [attendeeLocations, setAttendeeLocations] = useState<any[]>([]);
-  const [locationSharing, setLocationSharing] = useState(false);
-  const [isOnMyWay, setIsOnMyWay] = useState(false);
-  const [selectedAttendee, setSelectedAttendee] = useState<any>(null);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [attendees, setAttendees] = useState<AttendeeLocation[]>([]);
+  const [selectedAttendee, setSelectedAttendee] = useState<AttendeeLocation | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
 
   useEffect(() => {
     if (eventId) {
-      fetchAttendeeLocations();
-      const interval = setInterval(fetchAttendeeLocations, 10000);
-      return () => clearInterval(interval);
+      fetchAttendees();
     }
   }, [eventId]);
 
-  useEffect(() => {
-    if (locationSharing) {
-      startLocationUpdates();
-    }
-  }, [locationSharing]);
-
-  const fetchAttendeeLocations = async () => {
+  const fetchAttendees = async () => {
     if (!eventId) return;
     try {
-      const data = await api.get(`/location/attendees/${eventId}`);
-      setAttendeeLocations(data);
+      const data = await api.get(`/events/${eventId}/attendees-locations`);
+      setAttendees(data || []);
     } catch (error) {
-      console.error('Failed to fetch attendee locations:', error);
+      console.error('Failed to fetch attendees:', error);
     }
   };
 
-  const startLocationUpdates = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationSharing(false);
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      setCurrentLocation({
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      });
-
-      await api.put('/location/update', {
-        eventId,
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        isOnMyWay,
-      });
-    } catch (error) {
-      console.error('Location error:', error);
-    }
-  };
-
-  const toggleLocationSharing = async (value: boolean) => {
-    if (value && !user?.locationEnabled) {
+  const handleAttendeePress = async (attendee: AttendeeLocation) => {
+    if (selectedAttendee?.id === attendee.id) {
+      setSelectedAttendee(null);
+      setRouteInfo(null);
       return;
     }
-    
-    try {
-      await api.put('/location/toggle-sharing', {
-        eventId,
-        sharing: value,
-      });
-      setLocationSharing(value);
-    } catch (error: any) {
-      setLocationSharing(false);
-      console.error('Toggle sharing error:', error);
-    }
-  };
 
-  const handleMarkOnMyWay = async () => {
-    const newValue = !isOnMyWay;
-    setIsOnMyWay(newValue);
-    
-    if (currentLocation) {
+    setSelectedAttendee(attendee);
+    setRouteInfo(null);
+
+    if (attendee.lat !== null && attendee.lng !== null && eventLocation) {
+      setLoadingRoute(true);
       try {
-        await api.put('/location/update', {
-          eventId,
-          lat: currentLocation.lat,
-          lng: currentLocation.lng,
-          isOnMyWay: newValue,
-        });
+        const route = await api.get(
+          `/location/route?fromLat=${attendee.lat}&fromLng=${attendee.lng}&toLat=${eventLocation.lat}&toLng=${eventLocation.lng}`
+        );
+        if (route.distance && route.duration) {
+          setRouteInfo({
+            distance: route.distance,
+            duration: route.duration,
+          });
+        }
       } catch (error) {
-        console.error('Update location error:', error);
+        console.error('Failed to get route:', error);
+      } finally {
+        setLoadingRoute(false);
       }
     }
   };
 
-  const sharingCount = attendeeLocations.filter(a => a.location_sharing).length;
+  const closeAttendeeCard = () => {
+    setSelectedAttendee(null);
+    setRouteInfo(null);
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="people-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.sharingCount}>{sharingCount} sharing</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <Text style={[styles.shareLabel, !user?.locationEnabled && styles.disabledLabel]}>
-            {user?.locationEnabled ? 'Share my location' : 'Location disabled in Settings'}
-          </Text>
-          <Switch
-            value={locationSharing}
-            onValueChange={toggleLocationSharing}
-            trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
-            thumbColor={locationSharing ? Colors.green : Colors.grayMedium}
-            disabled={!user?.locationEnabled}
-          />
-        </View>
+        <Ionicons name="people-outline" size={18} color={Colors.secondary} />
+        <Text style={styles.headerText}>{attendees.length} attendees</Text>
       </View>
-
-      {locationSharing && (
-        <TouchableOpacity
-          style={[styles.onMyWayButton, isOnMyWay && styles.onMyWayButtonActive]}
-          onPress={handleMarkOnMyWay}
-        >
-          <Ionicons name="navigate" size={18} color={Colors.white} />
-          <Text style={styles.onMyWayButtonText}>
-            {isOnMyWay ? "You're On Your Way!" : 'Mark as On My Way'}
-          </Text>
-        </TouchableOpacity>
-      )}
 
       <View style={styles.mapPlaceholder}>
         <View style={styles.mapContent}>
@@ -158,25 +108,35 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
             </View>
           )}
 
-          {attendeeLocations.map((attendee) => (
-            <TouchableOpacity
-              key={attendee.id}
-              style={styles.attendeeMarker}
-              onPress={() => setSelectedAttendee(
-                selectedAttendee?.id === attendee.id ? null : attendee
-              )}
-            >
-              {attendee.is_on_my_way ? (
-                <Text style={styles.carEmoji}>🚗</Text>
-              ) : attendee.profile_photo ? (
-                <Image source={{ uri: attendee.profile_photo }} style={styles.markerPhoto} />
-              ) : (
-                <View style={styles.markerPlaceholder}>
-                  <Text style={styles.markerInitial}>{attendee.first_name?.charAt(0)}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+          <View style={styles.attendeesGrid}>
+            {attendees.map((attendee) => (
+              <TouchableOpacity
+                key={attendee.id}
+                style={[
+                  styles.attendeeMarker,
+                  selectedAttendee?.id === attendee.id && styles.attendeeMarkerSelected,
+                ]}
+                onPress={() => handleAttendeePress(attendee)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {attendee.is_on_my_way ? (
+                  <View style={styles.carMarker}>
+                    <Text style={styles.carEmoji}>🚗</Text>
+                  </View>
+                ) : attendee.profile_photo ? (
+                  <Image source={{ uri: attendee.profile_photo }} style={styles.markerPhoto} />
+                ) : (
+                  <View style={styles.markerPlaceholder}>
+                    <Text style={styles.markerInitial}>{attendee.first_name?.charAt(0)}</Text>
+                  </View>
+                )}
+                <Text style={styles.markerName} numberOfLines={1}>
+                  {attendee.first_name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={styles.mapControls}>
@@ -194,6 +154,9 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
 
       {selectedAttendee && (
         <View style={styles.attendeeCard}>
+          <TouchableOpacity style={styles.closeCardButton} onPress={closeAttendeeCard}>
+            <Ionicons name="close" size={20} color={Colors.gray} />
+          </TouchableOpacity>
           <View style={styles.attendeeCardContent}>
             {selectedAttendee.profile_photo ? (
               <Image source={{ uri: selectedAttendee.profile_photo }} style={styles.attendeeCardPhoto} />
@@ -208,27 +171,36 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
               <Text style={styles.attendeeCardName}>{selectedAttendee.first_name}</Text>
               {selectedAttendee.is_on_my_way && (
                 <View style={styles.onMyWayBadge}>
-                  <Text style={styles.carEmoji}>🚗</Text>
-                  <Text style={styles.onMyWayBadgeText}>On my way</Text>
+                  <Text style={styles.carEmojiSmall}>🚗</Text>
+                  <Text style={styles.onMyWayBadgeText}>On their way</Text>
                 </View>
               )}
+              {loadingRoute ? (
+                <View style={styles.etaRow}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.etaLoadingText}>Calculating ETA...</Text>
+                </View>
+              ) : routeInfo ? (
+                <View style={styles.etaRow}>
+                  <Ionicons name="time-outline" size={14} color={Colors.primary} />
+                  <Text style={styles.etaText}>
+                    {routeInfo.duration} min • {routeInfo.distance} mi away
+                  </Text>
+                </View>
+              ) : selectedAttendee.lat !== null && selectedAttendee.lng !== null ? null : (
+                <Text style={styles.noLocationText}>Location not available</Text>
+              )}
             </View>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setSelectedAttendee(null)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </View>
       )}
 
-      <View style={styles.footer}>
-        <View style={styles.statusIndicator}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Your location is being shared in real-time</Text>
+      {!selectedAttendee && attendees.length > 0 && (
+        <View style={styles.hintContainer}>
+          <Ionicons name="hand-left-outline" size={16} color={Colors.gray} />
+          <Text style={styles.hintText}>Tap an attendee to see their ETA</Text>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -239,7 +211,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -248,48 +219,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sharingCount: {
+  headerText: {
     fontSize: 14,
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
     marginLeft: 6,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  shareLabel: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
-    marginRight: 8,
-  },
-  disabledLabel: {
-    color: Colors.gray,
-    fontSize: 12,
-  },
-  onMyWayButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.green,
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  onMyWayButtonActive: {
-    backgroundColor: Colors.primary,
-  },
-  onMyWayButtonText: {
-    fontSize: 14,
-    color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
-    marginLeft: 8,
   },
   mapPlaceholder: {
     flex: 1,
@@ -297,16 +231,14 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   mapContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 16,
   },
   eventPin: {
     alignItems: 'center',
+    marginBottom: 20,
   },
   eventPinLabel: {
     fontSize: 12,
@@ -314,33 +246,74 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     marginTop: 4,
   },
+  attendeesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+  },
   attendeeMarker: {
-    position: 'absolute',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
+    minWidth: 70,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  carEmoji: {
-    fontSize: 24,
+  attendeeMarkerSelected: {
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 2,
+    borderColor: Colors.primary,
   },
-  markerPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: Colors.green,
-  },
-  markerPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+  carMarker: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.greenLight,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
     borderColor: Colors.green,
   },
+  carEmoji: {
+    fontSize: 24,
+  },
+  carEmojiSmall: {
+    fontSize: 14,
+  },
+  markerPhoto: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: Colors.primary,
+  },
+  markerPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: Colors.primaryLight,
+  },
   markerInitial: {
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
+  },
+  markerName: {
+    fontSize: 11,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
+    marginTop: 4,
+    maxWidth: 60,
+    textAlign: 'center',
   },
   mapControls: {
     position: 'absolute',
@@ -367,28 +340,40 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  closeCardButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+    padding: 4,
   },
   attendeeCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   attendeeCardPhoto: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 14,
   },
   attendeeCardPhotoPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   attendeeCardInitial: {
-    fontSize: 20,
+    fontSize: 22,
     color: Colors.white,
     fontFamily: 'Prompt-Bold',
   },
@@ -396,7 +381,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   attendeeCardName: {
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.secondary,
     fontFamily: 'Prompt-SemiBold',
   },
@@ -406,40 +391,45 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   onMyWayBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.green,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 4,
   },
-  cancelButton: {
-    backgroundColor: Colors.grayLight,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  statusIndicator: {
+  etaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.green,
-    marginRight: 8,
+  etaText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 6,
   },
-  statusText: {
-    fontSize: 12,
-    color: Colors.green,
+  etaLoadingText: {
+    fontSize: 13,
+    color: Colors.gray,
     fontFamily: 'Prompt-Regular',
+    marginLeft: 8,
+  },
+  noLocationText: {
+    fontSize: 13,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 4,
+  },
+  hintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  hintText: {
+    fontSize: 13,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+    marginLeft: 6,
   },
 });

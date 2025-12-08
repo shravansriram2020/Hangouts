@@ -457,4 +457,23 @@ router.get('/:id/user-status', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/:id/attendees-locations', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT ea.id, ea.user_id, u.first_name, u.profile_photo, 
+       ea.current_lat as lat, ea.current_lng as lng, ea.is_on_my_way
+       FROM event_attendees ea
+       JOIN users u ON ea.user_id = u.id
+       WHERE ea.event_id = $1 AND ea.status = 'accepted'
+       ORDER BY u.first_name`,
+      [req.params.id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get attendee locations error:', error);
+    res.status(500).json({ error: 'Failed to get attendee locations' });
+  }
+});
+
 module.exports = router;
