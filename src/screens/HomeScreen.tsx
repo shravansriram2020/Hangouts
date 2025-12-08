@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,16 +22,29 @@ import CreateEventModal from '../components/CreateEventModal';
 import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
 
-export default function HomeScreen({ navigation }: any) {
+interface HomeScreenProps {
+  navigation: any;
+  initialEvents?: any[];
+  initialArchivedEvents?: any[];
+  initialUnreadCount?: number;
+}
+
+export default function HomeScreen({ 
+  navigation, 
+  initialEvents, 
+  initialArchivedEvents, 
+  initialUnreadCount 
+}: HomeScreenProps) {
   const { user } = useAuth();
-  const [events, setEvents] = useState<any[]>([]);
-  const [archivedEvents, setArchivedEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>(initialEvents || []);
+  const [archivedEvents, setArchivedEvents] = useState<any[]>(initialArchivedEvents || []);
   const [refreshing, setRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount || 0);
   const [activeTab, setActiveTab] = useState<'current' | 'archived'>('current');
+  const hasInitialData = useRef(!!initialEvents);
 
   const fetchEvents = async () => {
     try {
@@ -49,7 +62,9 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   useEffect(() => {
-    fetchEvents();
+    if (!hasInitialData.current) {
+      fetchEvents();
+    }
 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {

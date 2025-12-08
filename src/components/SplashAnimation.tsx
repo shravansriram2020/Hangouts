@@ -54,23 +54,19 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   const startPlayback = async () => {
     setIsPlaying(true);
     
-    // Start video immediately
+    // Start video and sound together
+    try {
+      if (soundRef.current) {
+        await soundRef.current.setPositionAsync(0);
+        soundRef.current.playAsync();
+      }
+    } catch (error) {
+      console.log('Error playing sound:', error);
+    }
+    
     if (videoRef.current) {
       await videoRef.current.playAsync();
     }
-    
-    // Delay sound by 1 second
-    setTimeout(async () => {
-      try {
-        if (soundRef.current) {
-          // Reset to beginning before playing to ensure it plays each time
-          await soundRef.current.setPositionAsync(0);
-          await soundRef.current.playAsync();
-        }
-      } catch (error) {
-        console.log('Error playing sound:', error);
-      }
-    }, 1000);
   };
 
   const handleVideoEnd = () => {
