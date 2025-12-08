@@ -17,11 +17,7 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "associatedDomains": [
-        "applinks:hangouts-app.com",
-        "applinks:www.hangouts-app.com"
-      ]
+      }
     },
     "android": {
       "package": "com.sdj.hangouts",
@@ -34,25 +30,6 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "hangouts-app.com",
-              "pathPrefix": "/event"
-            },
-            {
-              "scheme": "https",
-              "host": "www.hangouts-app.com",
-              "pathPrefix": "/event"
-            }
-          ],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
       ]
     },
     "web": {

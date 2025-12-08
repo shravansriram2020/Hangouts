@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts } from '../../constants/theme';
@@ -32,11 +31,6 @@ interface UserResult {
   profilePhoto: string | null;
 }
 
-const getAppDomain = () => {
-  // Always use the main website domain for share links
-  return 'hangouts-app.com';
-};
-
 export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
   const [activeTab, setActiveTab] = useState<'url' | 'username'>('url');
   const [copied, setCopied] = useState(false);
@@ -47,7 +41,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const eventLink = `https://${getAppDomain()}/event/${eventId}`;
+  const eventLink = `hangouts://event/${eventId}`;
 
   const handleCopyLink = async () => {
     try {
