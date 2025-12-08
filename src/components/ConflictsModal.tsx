@@ -399,7 +399,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     try {
       await api.post(`/conflicts/${conflictId}/vote`, { vote });
       fetchConflicts();
-      api.put(`/notifications/event/${eventId}/type/conflict/read`).catch(() => {});
+      api.put(`/notifications/event/${eventId}/type/conflict/read`, {}).catch(() => {});
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to vote');
     }
