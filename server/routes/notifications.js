@@ -65,6 +65,20 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
   }
 });
 
+router.put('/event/:eventId/type/:type/read', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE notifications SET is_read = true WHERE event_id = $1 AND user_id = $2 AND type = $3',
+      [req.params.eventId, req.user.id, req.params.type]
+    );
+
+    res.json({ message: 'Notifications marked as read' });
+  } catch (error) {
+    console.error('Mark read by type error:', error);
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
 router.delete('/all', authenticateToken, async (req, res) => {
   try {
     await pool.query(

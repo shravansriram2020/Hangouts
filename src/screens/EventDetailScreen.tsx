@@ -16,7 +16,6 @@ import { useAuth } from '../../context/AuthContext';
 
 import EventDetailsTab from '../components/EventDetailsTab';
 import EventMessagesTab from '../components/EventMessagesTab';
-import EventMapTab from '../components/EventMapTab';
 import EventPhotosTab from '../components/EventPhotosTab';
 import ShareEventModal from '../components/ShareEventModal';
 import RidesModal from '../components/RidesModal';
@@ -125,17 +124,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
       case 1:
         return <EventMessagesTab eventId={eventId} onConflictPress={() => setShowConflicts(true)} />;
       case 2:
-        return (
-          <EventMapTab
-            eventId={eventId}
-            eventLocation={event?.location_lat && event?.location_lng ? {
-              lat: event.location_lat,
-              lng: event.location_lng,
-              address: event.location_address || '',
-            } : null}
-          />
-        );
-      case 3:
         return <EventPhotosTab eventId={eventId} />;
       default:
         return null;
@@ -247,13 +235,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
             style={[styles.navPillItem, activeTab === 2 && styles.navPillItemActive]}
             onPress={() => setActiveTab(2)}
           >
-            <Ionicons name="map-outline" size={20} color={activeTab === 2 ? Colors.primary : Colors.gray} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navPillItem, activeTab === 3 && styles.navPillItemActive]}
-            onPress={() => setActiveTab(3)}
-          >
-            <Ionicons name="images-outline" size={20} color={activeTab === 3 ? Colors.primary : Colors.gray} />
+            <Ionicons name="images-outline" size={20} color={activeTab === 2 ? Colors.primary : Colors.gray} />
           </TouchableOpacity>
         </View>
       </View>

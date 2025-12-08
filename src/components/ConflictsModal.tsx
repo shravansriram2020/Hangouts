@@ -399,6 +399,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     try {
       await api.post(`/conflicts/${conflictId}/vote`, { vote });
       fetchConflicts();
+      api.put(`/notifications/event/${eventId}/type/conflict/read`).catch(() => {});
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to vote');
     }
@@ -516,7 +517,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                         </TouchableOpacity>
                       </View>
                     ) : (
-                      <>
+                      <View style={styles.locationSearchContainer}>
                         <View style={styles.locationInputContainer}>
                           <Ionicons name="search" size={18} color={Colors.gray} style={styles.searchIcon} />
                           <TextInput
@@ -532,32 +533,35 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                         </View>
 
                         {locationSuggestions.length > 0 && (
-                          <ScrollView 
-                            style={styles.suggestionsScrollView}
-                            nestedScrollEnabled={true}
-                            showsVerticalScrollIndicator={true}
-                          >
-                            {locationSuggestions.map((loc) => (
-                              <TouchableOpacity
-                                key={loc.id}
-                                style={styles.suggestionItem}
-                                onPress={() => selectLocation(loc)}
-                              >
-                                <Ionicons name="location" size={16} color={Colors.primary} />
-                                <View style={styles.suggestionItemText}>
-                                  <Text style={styles.suggestionName}>{loc.name}</Text>
-                                  <Text style={styles.suggestionAddress} numberOfLines={1}>{loc.address}</Text>
-                                </View>
-                                {loc.distanceMiles && (
-                                  <View style={styles.distanceBadge}>
-                                    <Text style={styles.distanceText}>{loc.distanceMiles} mi</Text>
+                          <View style={styles.suggestionsDropdownContainer}>
+                            <ScrollView 
+                              style={styles.suggestionsScrollView}
+                              nestedScrollEnabled={true}
+                              showsVerticalScrollIndicator={true}
+                              keyboardShouldPersistTaps="handled"
+                            >
+                              {locationSuggestions.map((loc) => (
+                                <TouchableOpacity
+                                  key={loc.id}
+                                  style={styles.suggestionItem}
+                                  onPress={() => selectLocation(loc)}
+                                >
+                                  <Ionicons name="location" size={16} color={Colors.primary} />
+                                  <View style={styles.suggestionItemText}>
+                                    <Text style={styles.suggestionName}>{loc.name}</Text>
+                                    <Text style={styles.suggestionAddress} numberOfLines={1}>{loc.address}</Text>
                                   </View>
-                                )}
-                              </TouchableOpacity>
-                            ))}
-                          </ScrollView>
+                                  {loc.distanceMiles && (
+                                    <View style={styles.distanceBadge}>
+                                      <Text style={styles.distanceText}>{loc.distanceMiles} mi</Text>
+                                    </View>
+                                  )}
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                          </View>
                         )}
-                      </>
+                      </View>
                     )}
 
                     <TouchableOpacity 
@@ -1127,6 +1131,14 @@ const styles = StyleSheet.create({
   iosDatePicker: {
     width: '100%',
     height: 200,
+  },
+  locationSearchContainer: {
+    zIndex: 100,
+    minHeight: 200,
+  },
+  suggestionsDropdownContainer: {
+    zIndex: 1000,
+    elevation: 10,
   },
   locationInputContainer: {
     flexDirection: 'row',
