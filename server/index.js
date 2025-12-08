@@ -143,37 +143,15 @@ app.get('/', (req, res) => {
           font-size: 14px;
         }
         p { color: #4a4a6a; line-height: 1.6; margin-bottom: 16px; }
-        .url { 
-          background: #f0f0f5; 
-          padding: 12px; 
-          border-radius: 8px; 
-          font-family: monospace;
-          font-size: 12px;
-          word-break: break-all;
-          margin: 16px 0;
-        }
-        .cta {
-          background: #7C3AED;
-          color: white;
-          padding: 14px 28px;
-          border-radius: 12px;
-          text-decoration: none;
-          display: inline-block;
-          margin-top: 16px;
-          font-weight: 600;
-        }
+        a { color: #7C3AED; text-decoration: none; font-weight: 600; }
+        a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
       <div class="card">
         <h1>Hangouts API Server</h1>
         <div class="status">Running</div>
-        <p>The backend API is running and ready to accept requests.</p>
-        <p><strong>To use the app:</strong></p>
-        <p>Open <strong>Expo Go</strong> on your mobile device and enter this URL:</p>
-        <div class="url" style="background: #7C3AED; color: white; font-size: 14px; font-weight: bold;">exp://75v3xi4-anonymous-8080.exp.direct</div>
-        <p style="color: #dc2626; font-weight: bold; margin-top: 20px;">DO NOT use the Replit domain URL!</p>
-        <p style="font-size: 12px; color: #666;">The Replit domain is for the API only. Use the tunnel URL above for Expo Go.</p>
+        <p>Hangouts is accessible by downloading the app on iOS/Android. Visit our landing page at <a href="https://hangouts-app.com">hangouts-app.com</a></p>
       </div>
     </body>
     </html>
