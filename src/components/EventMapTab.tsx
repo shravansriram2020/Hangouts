@@ -59,8 +59,6 @@ export default function EventMapTab({ eventId, eventLocation }: Props) {
 
   const handleAttendeePress = async (attendee: AttendeeLocation) => {
     if (selectedAttendee?.id === attendee.id) {
-      setSelectedAttendee(null);
-      setRouteInfo(null);
       return;
     }
 
@@ -348,10 +346,16 @@ const styles = StyleSheet.create({
   },
   closeCardButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     zIndex: 1,
-    padding: 4,
+    padding: 6,
+    backgroundColor: Colors.grayLight,
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   attendeeCardContent: {
     flexDirection: 'row',
