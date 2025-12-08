@@ -17,9 +17,16 @@ const detectSuggestion = (content) => {
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT m.*, u.first_name as user_name, u.profile_photo as user_profile_image
+      `SELECT 
+        m.*, 
+        u.first_name, 
+        u.profile_photo,
+        reply.content as reply_to_content,
+        reply_user.first_name as reply_to_user
        FROM messages m
        JOIN users u ON m.user_id = u.id
+       LEFT JOIN messages reply ON m.reply_to_id = reply.id
+       LEFT JOIN users reply_user ON reply.user_id = reply_user.id
        WHERE m.event_id = $1
        ORDER BY m.created_at ASC`,
       [req.params.eventId]

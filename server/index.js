@@ -82,11 +82,14 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(globalLimiter);
+
+app.use('/api/photos', express.json({ limit: '15mb' }), express.urlencoded({ extended: true, limit: '15mb' }), photosRoutes);
+
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', usersRoutes);
@@ -94,7 +97,6 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/money', moneyRoutes);
 app.use('/api/messages', messageLimiter, messagesRoutes);
-app.use('/api/photos', express.json({ limit: '15mb' }), photosRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);

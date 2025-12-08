@@ -20,11 +20,18 @@ interface Props {
   onConflictPress: () => void;
 }
 
+interface ReplyTo {
+  id: string;
+  content: string;
+  first_name: string;
+}
+
 export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -50,8 +57,10 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
       await api.post('/messages', {
         eventId,
         content: newMessage,
+        replyToId: replyTo?.id || null,
       });
       setNewMessage('');
+      setReplyTo(null);
       fetchMessages();
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -61,6 +70,18 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleReply = (message: any) => {
+    setReplyTo({
+      id: message.id,
+      content: message.content,
+      first_name: message.first_name,
+    });
+  };
+
+  const cancelReply = () => {
+    setReplyTo(null);
   };
 
   const formatTime = (dateStr: string) => {
@@ -78,6 +99,22 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
     return (
       <View style={[styles.messageRow, isOwnMessage && styles.messageRowOwn]}>
         <View style={[styles.messageBubble, isOwnMessage && styles.messageBubbleOwn]}>
+          {item.reply_to_id && item.reply_to_content && (
+            <View style={[styles.replyPreview, isOwnMessage && styles.replyPreviewOwn]}>
+              <View style={styles.replyBar} />
+              <View style={styles.replyContent}>
+                <Text style={[styles.replyPreviewName, isOwnMessage && styles.replyPreviewNameOwn]}>
+                  {item.reply_to_user}
+                </Text>
+                <Text 
+                  style={[styles.replyPreviewText, isOwnMessage && styles.replyPreviewTextOwn]} 
+                  numberOfLines={2}
+                >
+                  {item.reply_to_content}
+                </Text>
+              </View>
+            </View>
+          )}
           <Text style={[styles.messageText, isOwnMessage && styles.messageTextOwn]}>
             {item.content}
           </Text>
@@ -111,7 +148,7 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
             </View>
           )}
         </View>
-        <TouchableOpacity style={styles.replyButton}>
+        <TouchableOpacity style={styles.replyButton} onPress={() => handleReply(item)}>
           <Ionicons name="arrow-undo-outline" size={12} color={Colors.gray} />
           <Text style={styles.replyText}>Reply</Text>
         </TouchableOpacity>
@@ -135,12 +172,29 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
       />
 
+      {replyTo && (
+        <View style={styles.replyingToContainer}>
+          <View style={styles.replyingToContent}>
+            <View style={styles.replyBar} />
+            <View style={styles.replyingToText}>
+              <Text style={styles.replyingToLabel}>Replying to {replyTo.first_name}</Text>
+              <Text style={styles.replyingToMessage} numberOfLines={1}>
+                {replyTo.content}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={cancelReply} style={styles.cancelReplyButton}>
+            <Ionicons name="close" size={18} color={Colors.gray} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           value={newMessage}
           onChangeText={setNewMessage}
-          placeholder="Type a message..."
+          placeholder={replyTo ? `Reply to ${replyTo.first_name}...` : "Type a message..."}
           placeholderTextColor={Colors.grayMedium}
           multiline
         />
@@ -309,5 +363,71 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
     paddingBottom: 12,
+  },
+  replyPreview: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  replyPreviewOwn: {
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  replyBar: {
+    width: 3,
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  replyContent: {
+    flex: 1,
+  },
+  replyPreviewName: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontFamily: 'Prompt-Medium',
+    marginBottom: 2,
+  },
+  replyPreviewNameOwn: {
+    color: Colors.primaryLight,
+  },
+  replyPreviewText: {
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+  },
+  replyPreviewTextOwn: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  replyingToContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  replyingToContent: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  replyingToText: {
+    flex: 1,
+  },
+  replyingToLabel: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontFamily: 'Prompt-Medium',
+  },
+  replyingToMessage: {
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: 'Prompt-Regular',
+  },
+  cancelReplyButton: {
+    padding: 4,
   },
 });

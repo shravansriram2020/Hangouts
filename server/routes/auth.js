@@ -23,7 +23,10 @@ const validatePassword = (password) => {
 router.post('/send-code', async (req, res) => {
   const { email, username, firstName, lastName, password, agreedToTerms, agreedToPrivacy } = req.body;
 
+  console.log('[Auth] Send-code request for email:', email);
+
   if (!email || !username || !firstName || !lastName || !password) {
+    console.log('[Auth] Send-code failed: Missing required fields');
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -85,12 +88,13 @@ router.post('/send-code', async (req, res) => {
       }
     }
   } catch (error) {
-    console.error('Send code error:', error);
-    res.status(500).json({ error: 'Failed to send verification code' });
+    console.error('[Auth] Send code error:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to send verification code. Please try again.' });
   }
 });
 
 router.post('/verify-code', async (req, res) => {
+  console.log('[Auth] Verify-code request received');
   const { email, code, username, firstName, lastName, password, agreedToTerms, agreedToPrivacy } = req.body;
 
   if (!email || !code || !username || !firstName || !lastName || !password) {
@@ -163,15 +167,18 @@ router.post('/verify-code', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Verify code error:', error);
-    res.status(500).json({ error: 'Failed to verify code' });
+    console.error('[Auth] Verify code error:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to verify code. Please try again.' });
   }
 });
 
 router.post('/signup', async (req, res) => {
   const { email, username, firstName, lastName, password, agreedToTerms, agreedToPrivacy } = req.body;
 
+  console.log('[Auth] Signup request for email:', email);
+
   if (!email || !username || !firstName || !lastName || !password) {
+    console.log('[Auth] Signup failed: Missing required fields');
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -227,15 +234,18 @@ router.post('/signup', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Failed to create account' });
+    console.error('[Auth] Signup error:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to create account. Please try again.' });
   }
 });
 
 router.post('/signin', async (req, res) => {
   const { email, password } = req.body;
 
+  console.log('[Auth] Signin attempt for email:', email);
+
   if (!email || !password) {
+    console.log('[Auth] Signin failed: Missing email or password');
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
@@ -246,6 +256,7 @@ router.post('/signin', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.log('[Auth] Signin failed: User not found for email:', email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -253,10 +264,12 @@ router.post('/signin', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
+      console.log('[Auth] Signin failed: Invalid password for email:', email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const token = generateToken(user);
+    console.log('[Auth] Signin successful for user:', user.id);
 
     res.json({
       user: {
@@ -272,8 +285,8 @@ router.post('/signin', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Signin error:', error);
-    res.status(500).json({ error: 'Failed to sign in' });
+    console.error('[Auth] Signin error:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to sign in. Please try again.' });
   }
 });
 
