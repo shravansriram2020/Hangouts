@@ -132,22 +132,23 @@ function validateMagicBytes(base64Data, declaredMimeType) {
       };
     }
 
+    // If we detected a valid image type, accept it regardless of declared mime type
+    // iOS and different platforms may declare different mime types for the same image
     if (declaredMimeType) {
       const normalizedDeclared = declaredMimeType.toLowerCase();
       const normalizedDetected = detectedType.toLowerCase();
       
-      if (normalizedDeclared === 'image/jpg') {
-        if (normalizedDetected !== 'image/jpeg') {
-          return {
-            valid: false,
-            error: 'File content does not match declared file type',
-          };
-        }
-      } else if (normalizedDeclared !== normalizedDetected) {
-        return {
-          valid: false,
-          error: 'File content does not match declared file type',
-        };
+      // Allow jpg/jpeg mismatch
+      const isJpegMatch = (normalizedDeclared === 'image/jpg' || normalizedDeclared === 'image/jpeg') && 
+                          (normalizedDetected === 'image/jpg' || normalizedDetected === 'image/jpeg');
+      
+      // If detected type is a valid allowed image and declared is also an image type, accept it
+      const isValidImage = ALLOWED_MIME_TYPES.includes(normalizedDetected);
+      const declaredIsImage = normalizedDeclared.startsWith('image/');
+      
+      if (!isJpegMatch && normalizedDeclared !== normalizedDetected && isValidImage && declaredIsImage) {
+        // Log the mismatch but still accept since we detected a valid image format
+        console.log(`[FileValidator] Mime type mismatch: declared=${normalizedDeclared}, detected=${normalizedDetected} - accepting detected type`);
       }
     }
 
