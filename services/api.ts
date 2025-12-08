@@ -63,7 +63,10 @@ class ApiService {
         data = JSON.parse(text);
       } catch {
         console.error('[API] Non-JSON response:', text);
-        throw new Error(`Server error: ${text || 'Unable to connect to server'}`);
+        if (text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('<HTML')) {
+          throw new Error('Server is temporarily unavailable. Please try again later.');
+        }
+        throw new Error('Unable to connect to server. Please try again later.');
       }
 
       if (!response.ok) {
