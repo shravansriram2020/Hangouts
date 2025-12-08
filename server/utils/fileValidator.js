@@ -4,6 +4,8 @@ const ALLOWED_MIME_TYPES = [
   'image/png',
   'image/gif',
   'image/webp',
+  'image/heic',
+  'image/heif',
 ];
 
 const MAGIC_BYTES = {
@@ -22,7 +24,7 @@ const MAGIC_BYTES = {
 const WEBP_RIFF_HEADER = [0x52, 0x49, 0x46, 0x46];
 const WEBP_MARKER = [0x57, 0x45, 0x42, 0x50];
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const MAX_BASE64_LENGTH = Math.ceil(MAX_FILE_SIZE_BYTES * 1.37);
 
 function isRemoteUrl(str) {
@@ -122,6 +124,27 @@ function validateMagicBytes(base64Data, declaredMimeType) {
       
       if (isRiff && isWebp) {
         detectedType = 'image/webp';
+      }
+    }
+
+    // Check for HEIC/HEIF format (ISO Base Media File Format with ftyp box)
+    if (!detectedType) {
+      // HEIC/HEIF files start with a size field (4 bytes) followed by "ftyp"
+      const ftypMarker = [0x66, 0x74, 0x79, 0x70]; // "ftyp"
+      const hasFtyp = ftypMarker.every((byte, index) => bytes[4 + index] === byte);
+      if (hasFtyp) {
+        // Check for HEIC/HEIF brand markers - expanded list to cover all common variants
+        const brandBytes = bytes.slice(8, 12);
+        const brandStr = String.fromCharCode(...brandBytes);
+        const heicBrands = [
+          'heic', 'heix', 'hevc', 'hevx',  // HEIC variants
+          'heif', 'heim', 'heis', 'hevm',  // HEIF variants
+          'mif1', 'msf1',                   // HEIF image sequence
+          'avif', 'avis',                   // AVIF (AV1 Image)
+        ];
+        if (heicBrands.includes(brandStr)) {
+          detectedType = 'image/heic';
+        }
       }
     }
 

@@ -35,6 +35,7 @@ interface Props {
   eventTitle: string;
   currentLocation: { lat: number; lng: number } | null;
   locationEnabled: boolean;
+  fallbackLocation?: { lat: number; lng: number } | null;
 }
 
 export default function LocationSuggestModal({
@@ -44,6 +45,7 @@ export default function LocationSuggestModal({
   eventTitle,
   currentLocation,
   locationEnabled,
+  fallbackLocation,
 }: Props) {
   const [radius, setRadius] = useState(5);
   const [suggestion, setSuggestion] = useState<LocationSuggestion | null>(null);
@@ -53,6 +55,10 @@ export default function LocationSuggestModal({
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Use current location if available, otherwise use fallback location
+  const effectiveLocation = currentLocation || fallbackLocation;
+  const hasLocation = !!effectiveLocation;
 
   useEffect(() => {
     if (visible) {
@@ -70,7 +76,8 @@ export default function LocationSuggestModal({
         }),
       ]).start();
       
-      if (locationEnabled && currentLocation) {
+      // Fetch suggestions if we have any location (GPS or fallback)
+      if (hasLocation) {
         fetchSuggestion();
       }
     } else {
@@ -83,20 +90,20 @@ export default function LocationSuggestModal({
   }, [visible]);
 
   useEffect(() => {
-    if (visible && locationEnabled && currentLocation) {
+    if (visible && hasLocation) {
       fetchSuggestion();
     }
   }, [radius]);
 
   const fetchSuggestion = async () => {
-    if (!currentLocation) return;
+    if (!effectiveLocation) return;
 
     setLoading(true);
     try {
       const params = new URLSearchParams({
         title: eventTitle || '',
-        lat: currentLocation.lat.toString(),
-        lng: currentLocation.lng.toString(),
+        lat: effectiveLocation.lat.toString(),
+        lng: effectiveLocation.lng.toString(),
         radius: radius.toString(),
       });
 
@@ -225,12 +232,12 @@ export default function LocationSuggestModal({
           </View>
 
           <View style={styles.suggestionSection}>
-            {!locationEnabled ? (
+            {!hasLocation ? (
               <View style={styles.disabledState}>
                 <Ionicons name="location-outline" size={48} color={Colors.grayMedium} />
-                <Text style={styles.disabledText}>Location access is required</Text>
+                <Text style={styles.disabledText}>No location available</Text>
                 <Text style={styles.disabledSubtext}>
-                  Enable location services to get suggestions
+                  Enable location services or set an event location first
                 </Text>
               </View>
             ) : loading ? (
@@ -283,10 +290,10 @@ export default function LocationSuggestModal({
             <TouchableOpacity
               style={[
                 styles.suggestAgainButton,
-                (!locationEnabled || loading) && styles.buttonDisabled,
+                (!hasLocation || loading) && styles.buttonDisabled,
               ]}
               onPress={handleSuggestAgain}
-              disabled={!locationEnabled || loading}
+              disabled={!hasLocation || loading}
             >
               <Ionicons name="refresh" size={20} color={Colors.secondary} />
               <Text style={styles.suggestAgainText}>Suggest Again</Text>

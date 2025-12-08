@@ -24,17 +24,23 @@ interface Props {
   onCreateClick?: () => void;
   attendeeCount?: number;
   isArchived?: boolean;
+  initialRequests?: any[];
 }
 
-export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0, isArchived = false }: Props) {
+export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0, isArchived = false, initialRequests }: Props) {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>(initialRequests || []);
 
   useEffect(() => {
+    // Use initial requests immediately if provided
+    if (initialRequests && initialRequests.length > 0) {
+      setRequests(initialRequests);
+    }
     if (visible) {
+      // Refresh data in background
       fetchRequests();
     }
-  }, [visible]);
+  }, [visible, initialRequests]);
 
   const fetchRequests = async () => {
     try {

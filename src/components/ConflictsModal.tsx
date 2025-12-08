@@ -42,6 +42,7 @@ interface Props {
   onConflictUpdate?: () => void;
   onEventUpdated?: () => void;
   initialType?: 'time' | 'location' | 'other';
+  eventLocation?: { lat: number; lng: number } | null;
 }
 
 const CONFLICT_TYPES = [
@@ -50,7 +51,7 @@ const CONFLICT_TYPES = [
   { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, eventTitle, isHost, onConflictUpdate, onEventUpdated, initialType }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, eventTitle, isHost, onConflictUpdate, onEventUpdated, initialType, eventLocation }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [showCreateConflict, setShowCreateConflict] = useState(false);
@@ -195,6 +196,8 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     if (visible) {
       fetchConflicts();
       getCurrentLocation();
+      // Mark conflict notifications as read when modal opens
+      api.put(`/notifications/event/${eventId}/type/conflict/read`, {}).catch(() => {});
       // If initialType is provided, auto-open create form with that type selected
       if (initialType) {
         setShowCreateConflict(true);
@@ -234,10 +237,11 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
   };
 
   const handleOpenLocationSuggest = () => {
-    if (!locationEnabled) {
+    // Allow opening if we have GPS OR if we have the event location as fallback
+    if (!locationEnabled && !eventLocation) {
       Alert.alert(
         'Location Required',
-        'Please enable location services in your device settings to get smart location suggestions.',
+        'Please enable location services or set an event location first to get smart suggestions.',
         [{ text: 'OK' }]
       );
       return;
@@ -567,20 +571,20 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                     <TouchableOpacity 
                       style={[
                         styles.suggestButton,
-                        !locationEnabled && styles.suggestButtonDisabled,
+                        (!locationEnabled && !eventLocation) && styles.suggestButtonDisabled,
                       ]}
                       onPress={handleOpenLocationSuggest}
-                      disabled={!locationEnabled}
+                      disabled={!locationEnabled && !eventLocation}
                     >
-                      <Ionicons name="sparkles" size={18} color={locationEnabled ? Colors.white : Colors.grayMedium} />
+                      <Ionicons name="sparkles" size={18} color={(locationEnabled || eventLocation) ? Colors.white : Colors.grayMedium} />
                       <Text style={[
                         styles.suggestButtonText,
-                        !locationEnabled && styles.suggestButtonTextDisabled,
+                        (!locationEnabled && !eventLocation) && styles.suggestButtonTextDisabled,
                       ]}>Have Hangouts Suggest a Location</Text>
                     </TouchableOpacity>
-                    {!locationEnabled && (
+                    {!locationEnabled && !eventLocation && (
                       <Text style={styles.locationDisabledHint}>
-                        Enable location services to get smart suggestions
+                        Enable location services or set an event location
                       </Text>
                     )}
                   </>
@@ -850,6 +854,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
         eventTitle={eventTitle || 'hangout'}
         currentLocation={currentLocation}
         locationEnabled={locationEnabled}
+        fallbackLocation={eventLocation}
       />
     </>
   );

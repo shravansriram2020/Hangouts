@@ -292,8 +292,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
         visible={showConflicts}
         onClose={() => setShowConflicts(false)}
         eventId={eventId}
+        eventTitle={event.title}
         isHost={event.isHost}
         onEventUpdated={refreshEvent}
+        eventLocation={event.lat && event.lng ? { lat: event.lat, lng: event.lng } : null}
       />
 
       <NotesModal

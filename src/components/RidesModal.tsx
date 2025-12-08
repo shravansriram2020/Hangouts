@@ -22,17 +22,23 @@ interface Props {
   eventId: string;
   attendees?: any[];
   onCreateClick?: () => void;
+  initialRides?: any[];
 }
 
-export default function RidesModal({ visible, onClose, eventId, attendees, onCreateClick }: Props) {
+export default function RidesModal({ visible, onClose, eventId, attendees, onCreateClick, initialRides }: Props) {
   const { user } = useAuth();
-  const [rides, setRides] = useState<any[]>([]);
+  const [rides, setRides] = useState<any[]>(initialRides || []);
 
   useEffect(() => {
+    // Use initial rides immediately if provided
+    if (initialRides && initialRides.length > 0) {
+      setRides(initialRides);
+    }
     if (visible) {
+      // Refresh data in background
       fetchRides();
     }
-  }, [visible]);
+  }, [visible, initialRides]);
 
   const fetchRides = async () => {
     try {
