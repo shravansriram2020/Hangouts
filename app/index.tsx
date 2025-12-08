@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { Colors } from '../constants/theme';
 
 import SignInScreen from '../src/screens/SignInScreen';
 import SignUpScreen from '../src/screens/SignUpScreen';
@@ -18,9 +20,11 @@ export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [eventsLoaded, setEventsLoaded] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [preloadedEvents, setPreloadedEvents] = useState<any[]>([]);
   const [preloadedArchivedEvents, setPreloadedArchivedEvents] = useState<any[]>([]);
   const [preloadedUnreadCount, setPreloadedUnreadCount] = useState(0);
+  const previousUser = useRef<string | null>(null);
 
   useEffect(() => {
     if (user && !user.tutorialCompleted) {
@@ -30,17 +34,26 @@ export default function Index() {
 
   useEffect(() => {
     if (user && !loading) {
-      preloadEvents();
+      const isNewSignIn = previousUser.current === null && user.id;
+      if (isNewSignIn || !eventsLoaded) {
+        setLoadingEvents(true);
+        preloadEvents();
+      }
+      previousUser.current = user.id;
     } else if (!user && !loading) {
-      setEventsLoaded(true);
+      previousUser.current = null;
+      setEventsLoaded(false);
+      setPreloadedEvents([]);
+      setPreloadedArchivedEvents([]);
+      setPreloadedUnreadCount(0);
     }
   }, [user, loading]);
 
   useEffect(() => {
-    if (animationComplete && eventsLoaded) {
+    if (animationComplete && (eventsLoaded || !user)) {
       setShowSplash(false);
     }
-  }, [animationComplete, eventsLoaded]);
+  }, [animationComplete, eventsLoaded, user]);
 
   const preloadEvents = async () => {
     try {
@@ -56,6 +69,7 @@ export default function Index() {
       console.error('Failed to preload events:', error);
     } finally {
       setEventsLoaded(true);
+      setLoadingEvents(false);
     }
   };
 
@@ -72,6 +86,18 @@ export default function Index() {
       return <SignUpScreen onSwitchToSignIn={() => setShowSignUp(false)} />;
     }
     return <SignInScreen onSwitchToSignUp={() => setShowSignUp(true)} />;
+  }
+
+  if (loadingEvents || !eventsLoaded) {
+    return (
+      <LinearGradient
+        colors={[Colors.backgroundGradientStart, Colors.backgroundGradientEnd]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color={Colors.secondary} />
+        <Text style={styles.loadingText}>Loading your hangouts...</Text>
+      </LinearGradient>
+    );
   }
 
   if (showTutorial) {
@@ -104,5 +130,16 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
   },
 });
