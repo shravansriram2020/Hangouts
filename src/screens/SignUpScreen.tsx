@@ -85,14 +85,19 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Unable to connect to server. Please check your connection.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send verification code');
       }
 
       setStep('verify');
-      // If dev code is provided (email service in test mode), auto-fill it
       if (data.devCode) {
         const codeDigits = data.devCode.toString().split('');
         setVerificationCode(codeDigits);
@@ -100,7 +105,11 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         setVerificationCode(['', '', '', '', '', '']);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to send verification code');
+      if (err.message.includes('Network request failed') || err.message.includes('Failed to fetch')) {
+        setError('Unable to connect to server. Please check your connection.');
+      } else {
+        setError(err.message || 'Failed to send verification code');
+      }
     } finally {
       setLoading(false);
     }
@@ -134,7 +143,13 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Unable to connect to server. Please check your connection.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to verify code');
@@ -152,7 +167,11 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         user: data.user,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to verify code');
+      if (err.message.includes('Network request failed') || err.message.includes('Failed to fetch')) {
+        setError('Unable to connect to server. Please check your connection.');
+      } else {
+        setError(err.message || 'Failed to verify code');
+      }
     } finally {
       setLoading(false);
     }
@@ -179,7 +198,13 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Unable to connect to server. Please check your connection.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to resend code');
@@ -188,7 +213,11 @@ export default function SignUpScreen({ onSwitchToSignIn }: Props) {
       setVerificationCode(['', '', '', '', '', '']);
       setError('');
     } catch (err: any) {
-      setError(err.message || 'Failed to resend code');
+      if (err.message.includes('Network request failed') || err.message.includes('Failed to fetch')) {
+        setError('Unable to connect to server. Please check your connection.');
+      } else {
+        setError(err.message || 'Failed to resend code');
+      }
     } finally {
       setLoading(false);
     }

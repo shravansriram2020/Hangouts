@@ -1174,6 +1174,8 @@ const styles = StyleSheet.create({
     maxHeight: 180,
     borderWidth: 1,
     borderColor: Colors.grayLight,
+    zIndex: 1000,
+    elevation: 5,
   },
   suggestionsList: {
     backgroundColor: Colors.white,

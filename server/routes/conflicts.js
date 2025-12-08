@@ -123,6 +123,13 @@ router.post('/:id/vote', authenticateToken, async (req, res) => {
       [req.params.id, req.user.id, vote]
     );
 
+    // Mark conflict notifications for this event as read for the voting user
+    await pool.query(
+      `UPDATE notifications SET is_read = true 
+       WHERE user_id = $1 AND event_id = $2 AND type = 'conflict' AND is_read = false`,
+      [req.user.id, eventId]
+    );
+
     res.json({ message: 'Vote recorded' });
   } catch (error) {
     console.error('Vote error:', error);
