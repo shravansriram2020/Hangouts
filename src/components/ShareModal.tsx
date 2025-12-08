@@ -33,13 +33,8 @@ interface UserResult {
 }
 
 const getAppDomain = () => {
-  const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || '';
-  try {
-    const url = new URL(apiUrl);
-    return url.host;
-  } catch {
-    return 'hangouts.app';
-  }
+  // Always use the main website domain for share links
+  return 'hangouts-app.com';
 };
 
 export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
