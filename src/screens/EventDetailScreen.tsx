@@ -23,6 +23,8 @@ import RidesModal from '../components/RidesModal';
 import MoneyModal from '../components/MoneyModal';
 import ConflictsModal from '../components/ConflictsModal';
 import NotesModal from '../components/NotesModal';
+import CreateRideModal from '../components/CreateRideModal';
+import CreateMoneyModal from '../components/CreateMoneyModal';
 import LoadingDots from '../components/LoadingDots';
 
 export default function EventDetailScreen({ route, navigation }: any) {
@@ -37,6 +39,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
   const [showMoney, setShowMoney] = useState(false);
   const [showConflicts, setShowConflicts] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showCreateRide, setShowCreateRide] = useState(false);
+  const [showCreateMoney, setShowCreateMoney] = useState(false);
+  const [ridesKey, setRidesKey] = useState(0);
+  const [moneyKey, setMoneyKey] = useState(0);
 
   useEffect(() => {
     fetchEvent();
@@ -261,17 +267,43 @@ export default function EventDetailScreen({ route, navigation }: any) {
       />
 
       <RidesModal
+        key={ridesKey}
         visible={showRides}
         onClose={() => setShowRides(false)}
         eventId={eventId}
         attendees={event.attendees}
+        onCreateClick={() => setShowCreateRide(true)}
+      />
+
+      <CreateRideModal
+        visible={showCreateRide}
+        onClose={() => setShowCreateRide(false)}
+        eventId={eventId}
+        onCreated={() => {
+          setShowCreateRide(false);
+          setTimeout(() => setRidesKey(k => k + 1), 300);
+        }}
       />
 
       <MoneyModal
+        key={moneyKey}
         visible={showMoney}
         onClose={() => setShowMoney(false)}
         eventId={eventId}
         attendees={event.attendees}
+        onCreateClick={() => setShowCreateMoney(true)}
+        attendeeCount={event.attendees?.length || 0}
+      />
+
+      <CreateMoneyModal
+        visible={showCreateMoney}
+        onClose={() => setShowCreateMoney(false)}
+        eventId={eventId}
+        attendees={event.attendees || []}
+        onCreated={() => {
+          setShowCreateMoney(false);
+          setTimeout(() => setMoneyKey(k => k + 1), 300);
+        }}
       />
 
       <ConflictsModal

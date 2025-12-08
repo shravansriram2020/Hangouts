@@ -351,45 +351,47 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
       return;
     }
 
-    setLoading(true);
-    try {
-      // Combine date and time into ISO format for database storage
-      let isoDateTime: string | null = null;
-      if (selectedType === 'time' && suggestedDate && suggestedTime) {
-        const combined = new Date(suggestedDate);
-        combined.setHours(suggestedTime.getHours());
-        combined.setMinutes(suggestedTime.getMinutes());
-        combined.setSeconds(0);
-        combined.setMilliseconds(0);
-        isoDateTime = combined.toISOString();
-      }
-      
-      await api.post('/conflicts', {
-        eventId,
-        conflictType: selectedType,
-        reason,
-        suggestedTime: isoDateTime,
-        suggestedLocation: selectedType === 'location' ? suggestedLocation : null,
-        suggestedLat: selectedType === 'location' ? suggestedLat : null,
-        suggestedLng: selectedType === 'location' ? suggestedLng : null,
-      });
+    // Combine date and time into ISO format for database storage
+    let isoDateTime: string | null = null;
+    if (selectedType === 'time' && suggestedDate && suggestedTime) {
+      const combined = new Date(suggestedDate);
+      combined.setHours(suggestedTime.getHours());
+      combined.setMinutes(suggestedTime.getMinutes());
+      combined.setSeconds(0);
+      combined.setMilliseconds(0);
+      isoDateTime = combined.toISOString();
+    }
 
-      setShowCreateConflict(false);
-      setSelectedType('');
-      setReason('');
-      setSuggestedDate(null);
-      setSuggestedTime(null);
-      setSuggestedLocation('');
-      setSuggestedLocationName('');
-      setSuggestedLat(null);
-      setSuggestedLng(null);
-      setLocationQuery('');
-      setLocationSuggestions([]);
+    const conflictData = {
+      eventId,
+      conflictType: selectedType,
+      reason,
+      suggestedTime: isoDateTime,
+      suggestedLocation: selectedType === 'location' ? suggestedLocation : null,
+      suggestedLat: selectedType === 'location' ? suggestedLat : null,
+      suggestedLng: selectedType === 'location' ? suggestedLng : null,
+    };
+
+    // Optimistically close form and reset state
+    setShowCreateConflict(false);
+    setSelectedType('');
+    setReason('');
+    setSuggestedDate(null);
+    setSuggestedTime(null);
+    setSuggestedLocation('');
+    setSuggestedLocationName('');
+    setSuggestedLat(null);
+    setSuggestedLng(null);
+    setLocationQuery('');
+    setLocationSuggestions([]);
+
+    // Make API call in background, then refresh
+    try {
+      await api.post('/conflicts', conflictData);
       fetchConflicts();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to report conflict');
-    } finally {
-      setLoading(false);
+      fetchConflicts();
     }
   };
 
