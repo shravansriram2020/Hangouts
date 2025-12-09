@@ -56,13 +56,13 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
         description,
       });
 
-      // Reset form and close after successful creation
+      // Reset form after successful creation - stay open for more
       setSelectedOwer('');
       setAmount('');
       setDescription('');
+      setShowAttendeesList(false);
       setLoading(false);
       onCreated(response);
-      onClose();
     } catch (error: any) {
       setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create request');

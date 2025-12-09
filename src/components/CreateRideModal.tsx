@@ -47,14 +47,13 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated, 
         canDriveFrom,
       });
 
-      // Reset form and close after successful creation
+      // Reset form after successful creation - stay open for more
       setSpotsAvailable('');
       setPickupLocation('');
       setCanDriveTo(true);
       setCanDriveFrom(true);
       setLoading(false);
       onCreated(response);
-      onClose();
     } catch (error: any) {
       setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create ride');

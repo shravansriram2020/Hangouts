@@ -43,11 +43,11 @@ export default function CreateConflictsModal({ visible, onClose, eventId, onCrea
         suggestedLocation: conflictType === 'location' ? description.trim() : null,
       });
 
-      // Reset form and close after successful creation
+      // Reset form after successful creation - stay open for more
       setDescription('');
+      setConflictType('time');
       setLoading(false);
       onCreated(response);
-      onClose();
     } catch (error: any) {
       setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create conflict');
