@@ -204,9 +204,11 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     // Update event based on conflict type
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Parse the ISO string directly to extract the user's local time components
-      // This avoids timezone conversion issues from using new Date()
-      const isoString = conflict.suggested_time.toString();
+      // Convert Date object to ISO string to extract date/time components
+      // PostgreSQL returns timestamps as Date objects, so we need toISOString()
+      const isoString = conflict.suggested_time instanceof Date 
+        ? conflict.suggested_time.toISOString() 
+        : String(conflict.suggested_time);
       const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
       
       if (dateMatch) {
@@ -259,8 +261,10 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     let resolutionMessage = '';
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Parse the ISO string to extract local time components without timezone conversion
-      const isoString = conflict.suggested_time.toString();
+      // Convert Date object to ISO string to extract date/time components
+      const isoString = conflict.suggested_time instanceof Date 
+        ? conflict.suggested_time.toISOString() 
+        : String(conflict.suggested_time);
       const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
       if (dateMatch) {
         const [, year, month, day, hour, minute] = dateMatch;
