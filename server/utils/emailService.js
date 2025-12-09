@@ -1,10 +1,19 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
+const getLogoUrl = () => {
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
+  if (apiUrl) {
+    return apiUrl.replace('/api', '') + '/public/logo.png';
+  }
+  return 'https://hangouts-app.com/assets/images/image01.svg';
+};
+
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const getEmailTemplate = (code) => {
+  const logoUrl = getLogoUrl();
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +33,7 @@ const getEmailTemplate = (code) => {
                 <tr>
                   <td align="center" style="padding-bottom: 10px;">
                     <a href="https://hangouts-app.com" style="text-decoration: none;">
-                      <img src="https://hangouts-app.com/assets/images/image01.svg?v=7ac0d83a" alt="Hangouts" width="180" style="display: block; margin: 0 auto;" />
+                      <img src="${logoUrl}" alt="Hangouts" width="200" style="display: block; margin: 0 auto;" />
                     </a>
                   </td>
                 </tr>

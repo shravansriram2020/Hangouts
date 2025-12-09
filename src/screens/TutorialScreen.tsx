@@ -83,13 +83,24 @@ export default function TutorialScreen({ onComplete }: Props) {
 
   const requestLocationPermission = async () => {
     try {
-      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+      // First check if we already have foreground permission
+      const { status: existingForeground } = await Location.getForegroundPermissionsAsync();
+      
+      let foregroundStatus = existingForeground;
+      if (existingForeground !== 'granted') {
+        const result = await Location.requestForegroundPermissionsAsync();
+        foregroundStatus = result.status;
+      }
+      
       if (foregroundStatus === 'granted') {
+        setLocationEnabled(true);
+        
+        // On iOS, also request background permission
         if (Platform.OS === 'ios') {
-          const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-          setLocationEnabled(backgroundStatus === 'granted' || foregroundStatus === 'granted');
-        } else {
-          setLocationEnabled(true);
+          const { status: existingBackground } = await Location.getBackgroundPermissionsAsync();
+          if (existingBackground !== 'granted') {
+            await Location.requestBackgroundPermissionsAsync();
+          }
         }
       } else {
         Alert.alert(
@@ -100,6 +111,7 @@ export default function TutorialScreen({ onComplete }: Props) {
       }
     } catch (error) {
       console.error('Error requesting location permission:', error);
+      Alert.alert('Error', 'Failed to request location permission. Please try again.');
     }
   };
 
