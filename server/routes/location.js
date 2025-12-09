@@ -557,6 +557,33 @@ router.put('/update', authenticateToken, async (req, res) => {
   }
 });
 
+router.post('/background-update', authenticateToken, async (req, res) => {
+  const { lat, lng, timestamp } = req.body;
+
+  try {
+    await pool.query(
+      'UPDATE users SET current_lat = $1, current_lng = $2 WHERE id = $3',
+      [lat, lng, req.user.id]
+    );
+
+    const activeEvents = await pool.query(
+      `UPDATE event_attendees 
+       SET current_lat = $1, current_lng = $2
+       WHERE user_id = $3 AND location_sharing = true
+       AND event_id IN (
+         SELECT id FROM events 
+         WHERE date >= NOW() - INTERVAL '1 day'
+       )`,
+      [lat, lng, req.user.id]
+    );
+
+    res.json({ message: 'Background location updated', updated: activeEvents.rowCount });
+  } catch (error) {
+    console.error('Background location update error:', error);
+    res.status(500).json({ error: 'Failed to update background location' });
+  }
+});
+
 router.put('/toggle-sharing', authenticateToken, async (req, res) => {
   const { eventId, sharing } = req.body;
 

@@ -47,6 +47,25 @@ function getAPNsJWT() {
   return cachedJWT;
 }
 
+const INVALID_TOKEN_REASONS = [
+  'BadDeviceToken',
+  'DeviceTokenNotForTopic', 
+  'Unregistered',
+  'ExpiredToken'
+];
+
+async function handleInvalidToken(userId) {
+  try {
+    await pool.query(
+      'UPDATE users SET push_token = NULL WHERE id = $1',
+      [userId]
+    );
+    console.log(`Removed invalid push token for user ${userId}`);
+  } catch (error) {
+    console.error('Error removing invalid token:', error);
+  }
+}
+
 async function sendPushNotification(userId, title, body, data = {}) {
   try {
     const userResult = await pool.query(
@@ -99,25 +118,54 @@ async function sendPushNotification(userId, title, body, data = {}) {
       };
 
       const req = client.request(headers);
+      let responseBody = '';
+      let statusCode = 0;
 
       req.on('response', (headers) => {
-        const status = headers[':status'];
-        if (status === 200) {
+        statusCode = headers[':status'];
+        if (statusCode === 200) {
           console.log(`Push notification sent successfully to user ${userId}`);
           resolve(true);
-        } else {
-          console.error(`APNs error status: ${status}`);
+        }
+      });
+
+      req.on('data', (chunk) => {
+        responseBody += chunk;
+      });
+
+      req.on('end', () => {
+        if (statusCode !== 200) {
+          let errorReason = null;
+          
+          if (responseBody) {
+            try {
+              const errorDetails = JSON.parse(responseBody);
+              errorReason = errorDetails.reason;
+              console.error(`APNs error (${statusCode}):`, errorDetails);
+            } catch (e) {
+              console.error('APNs response:', responseBody);
+            }
+          }
+
+          if (statusCode === 410 || (statusCode === 400 && INVALID_TOKEN_REASONS.includes(errorReason))) {
+            console.log(`Removing invalid token for user ${userId}, reason: ${errorReason}`);
+            handleInvalidToken(userId).catch(err => 
+              console.error('Failed to remove invalid token:', err)
+            );
+          } else if (statusCode === 403) {
+            console.error('APNs authentication error - check credentials');
+          } else if (statusCode === 429) {
+            console.error('APNs rate limited - too many requests');
+          }
+          
           resolve(false);
         }
+        client.close();
       });
 
       req.on('error', (err) => {
         console.error('APNs request error:', err);
         resolve(false);
-      });
-
-      req.on('end', () => {
-        client.close();
       });
 
       req.write(JSON.stringify(payload));
