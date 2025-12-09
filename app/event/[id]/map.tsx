@@ -21,6 +21,11 @@ import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+import { 
+  startBackgroundLocationTracking, 
+  stopBackgroundLocationTracking, 
+  setOnMyWayStatus 
+} from '../../../services/backgroundLocation';
 
 
 const hexToRgb = (hex: string) => {
@@ -297,16 +302,30 @@ export default function MapScreen() {
           await calculateMyDistanceAndEta(newCoords.lat, newCoords.lng);
         }
       );
+
+      if (Platform.OS !== 'web' && event?.id) {
+        await setOnMyWayStatus(event.id, isOnMyWay);
+        const backgroundStarted = await startBackgroundLocationTracking(event.id);
+        if (backgroundStarted) {
+          console.log('Background location tracking enabled');
+        } else {
+          console.log('Background location tracking not available (foreground only)');
+        }
+      }
     } catch (error) {
       console.error('Location error:', error);
       setLocationSharing(false);
     }
   };
 
-  const stopLocationUpdates = () => {
+  const stopLocationUpdates = async () => {
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
+    }
+    
+    if (Platform.OS !== 'web') {
+      await stopBackgroundLocationTracking();
     }
   };
 
@@ -364,6 +383,10 @@ export default function MapScreen() {
     const newValue = !isOnMyWay;
     setIsOnMyWay(newValue);
     saveLocationSharingState(locationSharing, newValue);
+    
+    if (Platform.OS !== 'web' && event?.id) {
+      await setOnMyWayStatus(event.id, newValue);
+    }
     
     if (!locationSharing && newValue) {
       setLocationSharing(true);
