@@ -505,6 +505,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    minWidth: 120,
   },
   replyQuoteOwn: {
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
@@ -514,12 +515,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 2,
     marginRight: 8,
+    alignSelf: 'stretch',
   },
   replyQuoteBarOwn: {
     backgroundColor: Colors.primaryLight,
   },
   replyQuoteContent: {
     flex: 1,
+    flexShrink: 1,
   },
   replyQuoteName: {
     fontSize: 11,

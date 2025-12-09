@@ -30,15 +30,18 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
   const [rides, setRides] = useState<any[]>(initialRides || []);
 
   useEffect(() => {
-    // Use initial rides immediately if provided
-    if (initialRides && initialRides.length > 0) {
+    // Always sync with initialRides when it changes
+    if (initialRides) {
       setRides(initialRides);
     }
-    if (visible) {
-      // Refresh data in background
+  }, [initialRides]);
+  
+  useEffect(() => {
+    // Only fetch on open if we don't have data
+    if (visible && (!initialRides || initialRides.length === 0)) {
       fetchRides();
     }
-  }, [visible, initialRides]);
+  }, [visible]);
 
   const fetchRides = async () => {
     try {

@@ -32,15 +32,18 @@ export default function MoneyModal({ visible, onClose, eventId, attendees, onCre
   const [requests, setRequests] = useState<any[]>(initialRequests || []);
 
   useEffect(() => {
-    // Use initial requests immediately if provided
-    if (initialRequests && initialRequests.length > 0) {
+    // Always sync with initialRequests when it changes
+    if (initialRequests) {
       setRequests(initialRequests);
     }
-    if (visible) {
-      // Refresh data in background
+  }, [initialRequests]);
+  
+  useEffect(() => {
+    // Only fetch on open if we don't have data
+    if (visible && (!initialRequests || initialRequests.length === 0)) {
       fetchRequests();
     }
-  }, [visible, initialRequests]);
+  }, [visible]);
 
   const fetchRequests = async () => {
     try {
