@@ -26,6 +26,7 @@ const { width } = Dimensions.get('window');
 const TABS = [
   { key: 'details', icon: 'document-text-outline', iconFilled: 'document-text' },
   { key: 'messages', icon: 'chatbubble-outline', iconFilled: 'chatbubble' },
+  { key: 'map', icon: 'map-outline', iconFilled: 'map' },
   { key: 'photos', icon: 'images-outline', iconFilled: 'images' },
 ];
 
@@ -50,7 +51,7 @@ function EventLayoutContent() {
   const attendeesLoaded = event?.attendees !== undefined && event.attendees.length >= 0;
   const isHost = event?.isHost === true;
   const isAttending = isHost || userAttendee?.status === 'accepted';
-  const restrictedTabs = ['messages', 'photos'];
+  const restrictedTabs = ['messages', 'map', 'photos'];
 
   useEffect(() => {
     if (!loading && event && attendeesLoaded && !isHost && !isAttending && restrictedTabs.includes(currentTab)) {
