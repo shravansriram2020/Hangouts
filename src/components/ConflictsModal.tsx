@@ -40,7 +40,7 @@ interface Props {
   eventTitle?: string;
   isHost?: boolean;
   onConflictUpdate?: () => void;
-  onEventUpdated?: () => void;
+  onEventUpdated?: () => void | Promise<void>;
   initialType?: 'time' | 'location' | 'other';
   eventLocation?: { lat: number; lng: number } | null;
   pendingConflict?: any;
@@ -447,9 +447,11 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
         onPress: async () => {
           try {
             await api.put(`/conflicts/${conflictId}/resolve`, {});
-            fetchConflicts();
+            await fetchConflicts();
             onConflictUpdate?.();
-            onEventUpdated?.();
+            if (onEventUpdated) {
+              await onEventUpdated();
+            }
           } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to resolve conflict');
           }
