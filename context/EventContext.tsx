@@ -66,35 +66,43 @@ export function EventProvider({
 }) {
   const { loading: authLoading, token } = useAuth();
   const [event, setEvent] = useState<EventData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvent = async () => {
+  const fetchEvent = async (isInitial = false) => {
     if (!eventId) {
-      setLoading(false);
+      setInitialLoading(false);
       return;
     }
     
     try {
-      setLoading(true);
+      if (isInitial) {
+        setInitialLoading(true);
+      }
       setError(null);
       const data = await api.get(`/events/${eventId}`);
       setEvent(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load event');
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setInitialLoading(false);
+      }
     }
+  };
+
+  const refreshEvent = async () => {
+    await fetchEvent(false);
   };
 
   useEffect(() => {
     if (!authLoading && eventId) {
-      fetchEvent();
+      fetchEvent(true);
     }
   }, [eventId, authLoading, token]);
 
   return (
-    <EventContext.Provider value={{ event, loading: loading || authLoading, error, refreshEvent: fetchEvent }}>
+    <EventContext.Provider value={{ event, loading: initialLoading || authLoading, error, refreshEvent }}>
       {children}
     </EventContext.Provider>
   );
