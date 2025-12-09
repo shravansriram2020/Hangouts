@@ -10,6 +10,7 @@ interface SplashAnimationProps {
 
 export default function SplashAnimation({ onAnimationComplete }: SplashAnimationProps) {
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [soundLoaded, setSoundLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const videoRef = useRef<Video>(null);
@@ -36,8 +37,10 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
         { volume: 0.3 }
       );
       soundRef.current = sound;
+      setSoundLoaded(true);
     } catch (error) {
       console.log('Error loading sound:', error);
+      setSoundLoaded(true); // Mark as loaded even on error to not block video
     }
   };
 
@@ -45,25 +48,28 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
     setVideoLoaded(true);
   };
 
+  // Only start playback when BOTH video AND sound are loaded
   useEffect(() => {
-    if (videoLoaded && !isPlaying) {
+    if (videoLoaded && soundLoaded && !isPlaying) {
       startPlayback();
     }
-  }, [videoLoaded]);
+  }, [videoLoaded, soundLoaded]);
 
   const startPlayback = async () => {
     setIsPlaying(true);
     
-    // Start video FIRST, then sound plays in sync
+    // Start video and sound simultaneously for perfect sync
     try {
-      if (videoRef.current) {
-        await videoRef.current.playAsync();
-      }
-      // Play sound immediately after video starts
+      // Reset sound position first
       if (soundRef.current) {
         await soundRef.current.setPositionAsync(0);
-        soundRef.current.playAsync();
       }
+      
+      // Play both at the same time using Promise.all
+      await Promise.all([
+        videoRef.current?.playAsync(),
+        soundRef.current?.playAsync(),
+      ]);
     } catch (error) {
       console.log('Error during playback:', error);
     }

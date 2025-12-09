@@ -141,103 +141,203 @@ router.get('/search', authenticateToken, async (req, res) => {
 
 // TomTom Category mappings for smart suggestions
 // Reference: https://developer.tomtom.com/search-api/documentation/product-information/supported-category-codes
+// Each mapping includes priority (1=high, 3=low) for scoring relevance
 const CATEGORY_MAPPINGS = {
-  // Movies/Cinema
-  movie: '7342',
-  cinema: '7342',
-  film: '7342',
-  theater: '7342',
-  theatre: '7342',
+  // Movies/Cinema - High priority
+  movie: { code: '7342', priority: 1 },
+  movies: { code: '7342', priority: 1 },
+  cinema: { code: '7342', priority: 1 },
+  film: { code: '7342', priority: 1 },
+  theater: { code: '7342', priority: 1 },
+  theatre: { code: '7342', priority: 1 },
+  flick: { code: '7342', priority: 2 },
+  screening: { code: '7342', priority: 2 },
   
-  // Restaurants/Food
-  dinner: '7315',
-  lunch: '7315',
-  food: '7315',
-  restaurant: '7315',
-  eat: '7315',
-  dining: '7315',
-  brunch: '7315',
-  breakfast: '7315',
+  // Restaurants/Food - High priority
+  dinner: { code: '7315', priority: 1 },
+  lunch: { code: '7315', priority: 1 },
+  food: { code: '7315', priority: 1 },
+  restaurant: { code: '7315', priority: 1 },
+  eat: { code: '7315', priority: 1 },
+  eating: { code: '7315', priority: 1 },
+  dining: { code: '7315', priority: 1 },
+  brunch: { code: '7315', priority: 1 },
+  breakfast: { code: '7315', priority: 1 },
+  meal: { code: '7315', priority: 1 },
+  hungry: { code: '7315', priority: 2 },
+  feast: { code: '7315', priority: 2 },
+  grub: { code: '7315', priority: 2 },
+  bite: { code: '7315', priority: 2 },
+  dine: { code: '7315', priority: 1 },
+  sushi: { code: '7315', priority: 1 },
+  pizza: { code: '7315', priority: 1 },
+  tacos: { code: '7315', priority: 1 },
+  burger: { code: '7315', priority: 1 },
+  burgers: { code: '7315', priority: 1 },
+  bbq: { code: '7315', priority: 1 },
+  steak: { code: '7315', priority: 1 },
+  seafood: { code: '7315', priority: 1 },
+  chinese: { code: '7315', priority: 2 },
+  italian: { code: '7315', priority: 2 },
+  mexican: { code: '7315', priority: 2 },
+  thai: { code: '7315', priority: 2 },
+  indian: { code: '7315', priority: 2 },
   
   // Bars/Nightlife
-  bar: '9376',
-  drinks: '9376',
-  pub: '9376',
-  nightclub: '9379',
-  club: '9379',
-  nightlife: '9379',
-  dancing: '9379',
+  bar: { code: '9376', priority: 1 },
+  bars: { code: '9376', priority: 1 },
+  drinks: { code: '9376', priority: 1 },
+  drinking: { code: '9376', priority: 1 },
+  pub: { code: '9376', priority: 1 },
+  pubs: { code: '9376', priority: 1 },
+  nightclub: { code: '9379', priority: 1 },
+  club: { code: '9379', priority: 1 },
+  clubbing: { code: '9379', priority: 1 },
+  nightlife: { code: '9379', priority: 1 },
+  dancing: { code: '9379', priority: 1 },
+  dance: { code: '9379', priority: 1 },
+  party: { code: '9379', priority: 1 },
+  partying: { code: '9379', priority: 1 },
+  cocktail: { code: '9376', priority: 1 },
+  cocktails: { code: '9376', priority: 1 },
+  beer: { code: '9376', priority: 1 },
+  wine: { code: '9376', priority: 1 },
+  happy: { code: '9376', priority: 2 }, // happy hour
+  pregame: { code: '9376', priority: 2 },
   
   // Coffee/Cafe
-  coffee: '9376006',
-  cafe: '9376006',
+  coffee: { code: '9376006', priority: 1 },
+  cafe: { code: '9376006', priority: 1 },
+  latte: { code: '9376006', priority: 1 },
+  espresso: { code: '9376006', priority: 1 },
+  tea: { code: '9376006', priority: 2 },
+  boba: { code: '9376006', priority: 1 },
+  matcha: { code: '9376006', priority: 2 },
   
   // Parks/Outdoors
-  park: '9362',
-  hike: '9362',
-  hiking: '9362',
-  picnic: '9362',
-  outdoor: '9362',
-  nature: '9362',
-  walk: '9362',
+  park: { code: '9362', priority: 1 },
+  parks: { code: '9362', priority: 1 },
+  hike: { code: '9362', priority: 1 },
+  hiking: { code: '9362', priority: 1 },
+  picnic: { code: '9362', priority: 1 },
+  outdoor: { code: '9362', priority: 1 },
+  outdoors: { code: '9362', priority: 1 },
+  nature: { code: '9362', priority: 1 },
+  walk: { code: '9362', priority: 1 },
+  walking: { code: '9362', priority: 1 },
+  trail: { code: '9362', priority: 1 },
+  trails: { code: '9362', priority: 1 },
+  garden: { code: '9362', priority: 2 },
+  botanical: { code: '9362', priority: 2 },
   
   // Sports/Fitness
-  gym: '7320',
-  workout: '7320',
-  fitness: '7320',
-  sport: '7374',
-  game: '7374',
-  bowling: '7339',
-  golf: '7335',
-  tennis: '7347',
-  basketball: '7374',
-  soccer: '7374',
-  football: '7374',
+  gym: { code: '7320', priority: 1 },
+  workout: { code: '7320', priority: 1 },
+  fitness: { code: '7320', priority: 1 },
+  exercise: { code: '7320', priority: 1 },
+  yoga: { code: '7320', priority: 1 },
+  pilates: { code: '7320', priority: 2 },
+  sport: { code: '7374', priority: 1 },
+  sports: { code: '7374', priority: 1 },
+  game: { code: '7374', priority: 2 },
+  bowling: { code: '7339', priority: 1 },
+  golf: { code: '7335', priority: 1 },
+  minigolf: { code: '7335', priority: 1 },
+  tennis: { code: '7347', priority: 1 },
+  basketball: { code: '7374', priority: 1 },
+  soccer: { code: '7374', priority: 1 },
+  football: { code: '7374', priority: 1 },
+  volleyball: { code: '7374', priority: 1 },
+  batting: { code: '7374', priority: 1 },
+  climbing: { code: '9362', priority: 1 },
+  rock: { code: '9362', priority: 2 },
+  skate: { code: '7374', priority: 1 },
+  skating: { code: '7374', priority: 1 },
   
   // Entertainment
-  arcade: '9902',
-  amusement: '9902',
-  theme: '9902',
-  fun: '9902',
-  entertainment: '9377',
-  concert: '7318',
-  music: '7318',
-  show: '7318',
+  arcade: { code: '9902', priority: 1 },
+  amusement: { code: '9902', priority: 1 },
+  theme: { code: '9902', priority: 2 },
+  fun: { code: '9902', priority: 3 },
+  entertainment: { code: '9377', priority: 2 },
+  concert: { code: '7318', priority: 1 },
+  concerts: { code: '7318', priority: 1 },
+  music: { code: '7318', priority: 2 },
+  show: { code: '7318', priority: 2 },
+  live: { code: '7318', priority: 2 },
+  comedy: { code: '7318', priority: 1 },
+  standup: { code: '7318', priority: 1 },
   
   // Shopping
-  shop: '9361',
-  shopping: '9361',
-  mall: '7373',
-  store: '9361',
+  shop: { code: '9361', priority: 1 },
+  shopping: { code: '9361', priority: 1 },
+  mall: { code: '7373', priority: 1 },
+  store: { code: '9361', priority: 2 },
   
   // Beach/Water
-  beach: '9357',
-  pool: '7338',
-  swim: '7338',
-  water: '9357',
+  beach: { code: '9357', priority: 1 },
+  pool: { code: '7338', priority: 1 },
+  swim: { code: '7338', priority: 1 },
+  swimming: { code: '7338', priority: 1 },
+  water: { code: '9357', priority: 2 },
+  waterpark: { code: '9902', priority: 1 },
   
   // Museums/Culture
-  museum: '7317',
-  art: '7317',
-  gallery: '7317',
-  exhibit: '7317',
+  museum: { code: '7317', priority: 1 },
+  museums: { code: '7317', priority: 1 },
+  art: { code: '7317', priority: 1 },
+  gallery: { code: '7317', priority: 1 },
+  exhibit: { code: '7317', priority: 1 },
+  exhibition: { code: '7317', priority: 1 },
+  zoo: { code: '9902', priority: 1 },
+  aquarium: { code: '9902', priority: 1 },
+  planetarium: { code: '7317', priority: 1 },
   
   // Spa/Relaxation
-  spa: '9356',
-  relax: '9356',
-  massage: '9356',
+  spa: { code: '9356', priority: 1 },
+  relax: { code: '9356', priority: 2 },
+  relaxing: { code: '9356', priority: 2 },
+  massage: { code: '9356', priority: 1 },
+  pampering: { code: '9356', priority: 2 },
   
   // Games/Activities
-  escape: '9902',
-  laser: '9902',
-  karaoke: '9379',
-  trivia: '9376',
-  board: '9902',
+  escape: { code: '9902', priority: 1 },
+  laser: { code: '9902', priority: 1 },
+  lasertag: { code: '9902', priority: 1 },
+  karaoke: { code: '9379', priority: 1 },
+  trivia: { code: '9376', priority: 1 },
+  board: { code: '9902', priority: 2 },
+  games: { code: '9902', priority: 2 },
+  axe: { code: '9902', priority: 1 }, // axe throwing
+  throwing: { code: '9902', priority: 2 },
+  trampoline: { code: '9902', priority: 1 },
+  paintball: { code: '9902', priority: 1 },
+  gokart: { code: '9902', priority: 1 },
+  racing: { code: '9902', priority: 2 },
   
   // Study/Work
-  library: '9913',
-  study: '9913',
-  cowork: '7388',
+  library: { code: '9913', priority: 1 },
+  study: { code: '9913', priority: 1 },
+  studying: { code: '9913', priority: 1 },
+  cowork: { code: '7388', priority: 1 },
+  coworking: { code: '7388', priority: 1 },
+  
+  // Social activities
+  meetup: { code: '9376006', priority: 2 },
+  hangout: { code: '9376006', priority: 2 },
+  hang: { code: '9376006', priority: 3 },
+  chill: { code: '9376006', priority: 2 },
+  catchup: { code: '9376006', priority: 2 },
+  
+  // Date activities
+  date: { code: '7315', priority: 2 },
+  romantic: { code: '7315', priority: 2 },
+  anniversary: { code: '7315', priority: 2 },
+  
+  // Special occasions
+  birthday: { code: '7315', priority: 2 },
+  celebration: { code: '7315', priority: 2 },
+  celebrate: { code: '7315', priority: 2 },
 };
 
 // Broad mixed categories for general hangouts - includes cafes, restaurants, entertainment, parks, bars
@@ -246,32 +346,61 @@ const MIXED_HANGOUT_CATEGORIES = '9376006,7315,9376,9362,7342,9902,9377,9361,737
 function getCategoriesFromTitle(title) {
   if (!title || title.trim() === '') {
     // No title - use broad mixed categories
-    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null };
+    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null, matchedKeywords: [] };
   }
   
   const lowerTitle = title.toLowerCase();
-  const foundCategories = new Set();
-  let primarySearchTerm = null;
+  // Clean and tokenize the title for better matching
+  const words = lowerTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/);
   
-  // Check each keyword in the title
-  for (const [keyword, categoryCode] of Object.entries(CATEGORY_MAPPINGS)) {
-    if (lowerTitle.includes(keyword)) {
-      foundCategories.add(categoryCode);
-      // Use the first matching keyword as primary search term
-      if (!primarySearchTerm) {
-        primarySearchTerm = keyword;
+  const foundMatches = [];
+  const processedKeywords = new Set();
+  
+  // Check each keyword in the title with priority scoring
+  for (const [keyword, data] of Object.entries(CATEGORY_MAPPINGS)) {
+    // Check for exact word match first (higher confidence)
+    const exactMatch = words.includes(keyword);
+    // Then check for partial match (word contains keyword)
+    const partialMatch = !exactMatch && lowerTitle.includes(keyword);
+    
+    if (exactMatch || partialMatch) {
+      // Avoid duplicate categories but track all matched keywords
+      if (!processedKeywords.has(keyword)) {
+        processedKeywords.add(keyword);
+        foundMatches.push({
+          keyword,
+          code: data.code,
+          priority: data.priority,
+          isExact: exactMatch
+        });
       }
     }
   }
   
   // If no specific categories found, use mixed hangout categories for variety
-  if (foundCategories.size === 0) {
-    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null };
+  if (foundMatches.length === 0) {
+    return { categories: MIXED_HANGOUT_CATEGORIES, searchTerm: null, matchedKeywords: [] };
   }
   
+  // Sort by priority (1 is highest) and exact match preference
+  foundMatches.sort((a, b) => {
+    // Exact matches first
+    if (a.isExact !== b.isExact) return b.isExact ? 1 : -1;
+    // Then by priority (lower number = higher priority)
+    return a.priority - b.priority;
+  });
+  
+  // Deduplicate category codes while preserving order
+  const uniqueCodes = [...new Set(foundMatches.map(m => m.code))];
+  
+  // Use the highest priority matched keyword as search term
+  const primarySearchTerm = foundMatches[0]?.keyword || null;
+  const matchedKeywords = foundMatches.map(m => m.keyword);
+  
   return { 
-    categories: Array.from(foundCategories).join(','),
-    searchTerm: primarySearchTerm
+    categories: uniqueCodes.join(','),
+    searchTerm: primarySearchTerm,
+    matchedKeywords
   };
 }
 
