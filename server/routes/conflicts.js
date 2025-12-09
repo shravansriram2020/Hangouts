@@ -145,6 +145,37 @@ router.post('/:id/vote', authenticateToken, async (req, res) => {
   }
 });
 
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const conflictCheck = await pool.query(
+      'SELECT * FROM conflicts WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (conflictCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Conflict not found' });
+    }
+
+    const conflict = conflictCheck.rows[0];
+
+    // Only the creator can delete their own conflict
+    if (conflict.reporter_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only delete conflicts you created' });
+    }
+
+    // Delete related votes first
+    await pool.query('DELETE FROM conflict_votes WHERE conflict_id = $1', [req.params.id]);
+    
+    // Delete the conflict
+    await pool.query('DELETE FROM conflicts WHERE id = $1', [req.params.id]);
+
+    res.json({ message: 'Conflict deleted' });
+  } catch (error) {
+    console.error('Delete conflict error:', error);
+    res.status(500).json({ error: 'Failed to delete conflict' });
+  }
+});
+
 router.put('/:id/resolve', authenticateToken, async (req, res) => {
   try {
     const conflictCheck = await pool.query(

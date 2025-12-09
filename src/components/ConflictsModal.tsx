@@ -458,6 +458,29 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     ]);
   };
 
+  const handleDeleteConflict = async (conflictId: string) => {
+    Alert.alert('Delete Conflict', 'Are you sure you want to delete this conflict? This will remove it for everyone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          // Optimistically remove conflict
+          const updatedConflicts = conflicts.filter(c => c.id !== conflictId);
+          setConflicts(updatedConflicts);
+
+          try {
+            await api.delete(`/conflicts/${conflictId}`);
+            onConflictUpdate?.();
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to delete conflict');
+            fetchConflicts();
+          }
+        },
+      },
+    ]);
+  };
+
   const getTypeInfo = (type: string) => {
     return CONFLICT_TYPES.find(t => t.id === type) || CONFLICT_TYPES[2];
   };
@@ -633,12 +656,12 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
               </View>
             ) : (
               <>
-                {conflicts.length === 0 ? (
+                {displayConflicts.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Text style={styles.emptyText}>No conflicts reported yet.</Text>
                   </View>
                 ) : (
-                  conflicts.map((conflict) => {
+                  displayConflicts.map((conflict) => {
                     const typeInfo = getTypeInfo(conflict.conflict_type);
                     const userVote = conflict.votes?.find((v: any) => v.userId === user?.id);
                     const yesVotes = conflict.votes?.filter((v: any) => v.vote === 'yes').length || 0;
@@ -707,14 +730,24 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                           </View>
                         </View>
 
-                        {isHost && (
-                          <TouchableOpacity
-                            style={styles.changeButton}
-                            onPress={() => handleResolve(conflict.id)}
-                          >
-                            <Text style={styles.changeButtonText}>Change</Text>
-                          </TouchableOpacity>
-                        )}
+                        <View style={styles.conflictActions}>
+                          {isHost && (
+                            <TouchableOpacity
+                              style={styles.changeButton}
+                              onPress={() => handleResolve(conflict.id)}
+                            >
+                              <Text style={styles.changeButtonText}>Change</Text>
+                            </TouchableOpacity>
+                          )}
+                          {(conflict.reporter_id === user?.id || conflict.created_by === user?.id) && !conflict.isPending && (
+                            <TouchableOpacity
+                              style={styles.deleteConflictButton}
+                              onPress={() => handleDeleteConflict(conflict.id)}
+                            >
+                              <Ionicons name="trash-outline" size={16} color={Colors.red} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       </View>
                     );
                   })
@@ -947,17 +980,28 @@ const styles = StyleSheet.create({
   voteButtonActiveNo: {
     backgroundColor: Colors.red,
   },
+  conflictActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
   changeButton: {
+    flex: 1,
     backgroundColor: Colors.primary,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 12,
   },
   changeButtonText: {
     fontSize: 14,
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
+  },
+  deleteConflictButton: {
+    padding: 10,
+    backgroundColor: Colors.redLight,
+    borderRadius: 8,
   },
   reportButton: {
     flexDirection: 'row',
