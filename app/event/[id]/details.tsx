@@ -497,6 +497,9 @@ export default function DetailsScreen() {
           setShowCreateRide(true);
         }}
         initialRides={cachedRides}
+        onRideDeleted={(rideId) => {
+          setCachedRides(prev => prev.filter(r => r.id !== rideId));
+        }}
       />
       <MoneyModal
         visible={showMoney}
@@ -508,6 +511,9 @@ export default function DetailsScreen() {
         }}
         attendeeCount={attendeeCount}
         initialRequests={cachedMoneyRequests}
+        onRequestDeleted={(requestId) => {
+          setCachedMoneyRequests(prev => prev.filter(r => r.id !== requestId));
+        }}
       />
       <CreateRideModal
         visible={showCreateRide}

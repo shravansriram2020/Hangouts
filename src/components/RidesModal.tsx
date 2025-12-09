@@ -23,9 +23,10 @@ interface Props {
   attendees?: any[];
   onCreateClick?: () => void;
   initialRides?: any[];
+  onRideDeleted?: (rideId: string) => void;
 }
 
-export default function RidesModal({ visible, onClose, eventId, attendees, onCreateClick, initialRides }: Props) {
+export default function RidesModal({ visible, onClose, eventId, attendees, onCreateClick, initialRides, onRideDeleted }: Props) {
   const { user } = useAuth();
   const [rides, setRides] = useState<any[]>(initialRides || []);
 
@@ -106,13 +107,15 @@ export default function RidesModal({ visible, onClose, eventId, attendees, onCre
         text: 'Yes',
         style: 'destructive',
         onPress: async () => {
-          // Optimistically remove ride
+          // Optimistically remove ride from local state
           const updatedRides = rides.filter(ride => ride.id !== rideId);
           setRides(updatedRides);
 
-          // Make API call in background
+          // Make API call
           try {
             await api.delete(`/rides/${rideId}`);
+            // Only notify parent after successful deletion
+            onRideDeleted?.(rideId);
           } catch (error) {
             Alert.alert('Error', 'Failed to cancel ride');
             fetchRides();

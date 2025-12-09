@@ -25,9 +25,10 @@ interface Props {
   attendeeCount?: number;
   isArchived?: boolean;
   initialRequests?: any[];
+  onRequestDeleted?: (requestId: string) => void;
 }
 
-export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0, isArchived = false, initialRequests }: Props) {
+export default function MoneyModal({ visible, onClose, eventId, attendees, onCreateClick, attendeeCount = 0, isArchived = false, initialRequests, onRequestDeleted }: Props) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<any[]>(initialRequests || []);
 
@@ -80,11 +81,17 @@ export default function MoneyModal({ visible, onClose, eventId, attendees, onCre
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          // Optimistically remove request from local state
+          const updatedRequests = requests.filter(r => r.id !== requestId);
+          setRequests(updatedRequests);
+          
           try {
             await api.delete(`/money/${requestId}`);
-            fetchRequests();
+            // Only notify parent after successful deletion
+            onRequestDeleted?.(requestId);
           } catch (error) {
             Alert.alert('Error', 'Failed to delete request');
+            fetchRequests();
           }
         },
       },
