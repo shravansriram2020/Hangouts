@@ -150,7 +150,13 @@ function EventLayoutContent() {
       <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <TouchableOpacity 
           style={styles.sideButton} 
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
         >
           <Ionicons name="arrow-back" size={22} color={Colors.secondary} />
         </TouchableOpacity>

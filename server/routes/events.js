@@ -424,10 +424,12 @@ router.post('/:id/rsvp', authenticateToken, async (req, res) => {
 
     const dbStatus = status === 'going' ? 'accepted' : 'maybe';
     
+    // Use UPSERT to handle users who access via invite link (not already in attendees table)
     await pool.query(
-      `UPDATE event_attendees SET status = $1 
-       WHERE event_id = $2 AND user_id = $3`,
-      [dbStatus, req.params.id, req.user.id]
+      `INSERT INTO event_attendees (event_id, user_id, status)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (event_id, user_id) DO UPDATE SET status = $3`,
+      [req.params.id, req.user.id, dbStatus]
     );
 
     // Notify other attendees about the RSVP
