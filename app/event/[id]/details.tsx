@@ -313,7 +313,10 @@ export default function DetailsScreen() {
 
       <TouchableOpacity 
         style={styles.conflictsContainer}
-        onPress={() => setShowConflicts(true)}
+        onPress={() => {
+          setConflictCount(0);
+          setShowConflicts(true);
+        }}
       >
         <BlurView intensity={60} tint="light" style={styles.conflictsCard}>
           <View style={styles.conflictsContent}>

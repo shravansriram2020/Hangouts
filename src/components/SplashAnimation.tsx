@@ -54,18 +54,18 @@ export default function SplashAnimation({ onAnimationComplete }: SplashAnimation
   const startPlayback = async () => {
     setIsPlaying(true);
     
-    // Start video and sound together
+    // Start video FIRST, then sound plays in sync
     try {
+      if (videoRef.current) {
+        await videoRef.current.playAsync();
+      }
+      // Play sound immediately after video starts
       if (soundRef.current) {
         await soundRef.current.setPositionAsync(0);
         soundRef.current.playAsync();
       }
     } catch (error) {
-      console.log('Error playing sound:', error);
-    }
-    
-    if (videoRef.current) {
-      await videoRef.current.playAsync();
+      console.log('Error during playback:', error);
     }
   };
 
