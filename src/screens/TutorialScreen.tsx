@@ -6,9 +6,13 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
+  Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 
@@ -55,6 +59,14 @@ const tutorialSteps = [
     bgColor: 'rgba(245, 158, 11, 0.15)',
   },
   {
+    title: 'Stay Connected',
+    description: 'Enable location sharing so friends can see your ETA, and turn on notifications to never miss an update!',
+    icon: 'notifications',
+    iconColor: '#6366F1',
+    bgColor: 'rgba(99, 102, 241, 0.15)',
+    isPermissionStep: true,
+  },
+  {
     title: "You're All Set!",
     description: 'Start creating hangouts and connecting with friends!',
     icon: 'checkmark-circle',
@@ -65,7 +77,66 @@ const tutorialSteps = [
 
 export default function TutorialScreen({ onComplete }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+      if (foregroundStatus === 'granted') {
+        if (Platform.OS === 'ios') {
+          const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+          setLocationEnabled(backgroundStatus === 'granted' || foregroundStatus === 'granted');
+        } else {
+          setLocationEnabled(true);
+        }
+      } else {
+        Alert.alert(
+          'Location Access',
+          'Location permission helps your friends see your ETA. You can enable it later in Settings.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus === 'granted') {
+        setNotificationsEnabled(true);
+        const token = await Notifications.getDevicePushTokenAsync();
+        if (token?.data) {
+          try {
+            await api.post('/notifications/register-token', {
+              token: token.data,
+              platform: Platform.OS,
+            });
+          } catch (error) {
+            console.error('Failed to register push token:', error);
+          }
+        }
+      } else {
+        Alert.alert(
+          'Notifications',
+          'Push notifications help you stay updated on hangout changes. You can enable them later in Settings.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+    }
+  };
 
   const handleNext = () => {
     if (currentStep < tutorialSteps.length - 1) {
@@ -123,6 +194,52 @@ export default function TutorialScreen({ onComplete }: Props) {
             </View>
             <Text style={styles.title}>{step.title}</Text>
             <Text style={styles.description}>{step.description}</Text>
+            
+            {(step as any).isPermissionStep && (
+              <View style={styles.permissionButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.permissionButton,
+                    locationEnabled && styles.permissionButtonEnabled,
+                  ]}
+                  onPress={requestLocationPermission}
+                  disabled={locationEnabled}
+                >
+                  <Ionicons
+                    name={locationEnabled ? 'checkmark-circle' : 'location'}
+                    size={24}
+                    color={locationEnabled ? '#10B981' : Colors.secondary}
+                  />
+                  <Text style={[
+                    styles.permissionButtonText,
+                    locationEnabled && styles.permissionButtonTextEnabled,
+                  ]}>
+                    {locationEnabled ? 'Location Enabled' : 'Enable Location'}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[
+                    styles.permissionButton,
+                    notificationsEnabled && styles.permissionButtonEnabled,
+                  ]}
+                  onPress={requestNotificationPermission}
+                  disabled={notificationsEnabled}
+                >
+                  <Ionicons
+                    name={notificationsEnabled ? 'checkmark-circle' : 'notifications'}
+                    size={24}
+                    color={notificationsEnabled ? '#10B981' : Colors.secondary}
+                  />
+                  <Text style={[
+                    styles.permissionButtonText,
+                    notificationsEnabled && styles.permissionButtonTextEnabled,
+                  ]}>
+                    {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -232,5 +349,34 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontFamily: 'Prompt-SemiBold',
     marginRight: 8,
+  },
+  permissionButtons: {
+    marginTop: 32,
+    width: '100%',
+    gap: 12,
+  },
+  permissionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 58, 95, 0.2)',
+  },
+  permissionButtonEnabled: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  permissionButtonText: {
+    fontSize: 16,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 12,
+  },
+  permissionButtonTextEnabled: {
+    color: '#10B981',
   },
 });

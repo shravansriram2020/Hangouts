@@ -10,6 +10,44 @@ const BUNDLE_ID = 'com.sdj.hangouts';
 let cachedJWT = null;
 let jwtExpiry = 0;
 
+function formatPrivateKey(key) {
+  if (!key) return null;
+  
+  let formattedKey = key
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim();
+  
+  if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}`;
+  }
+  if (!formattedKey.includes('-----END PRIVATE KEY-----')) {
+    formattedKey = `${formattedKey}\n-----END PRIVATE KEY-----`;
+  }
+  
+  const lines = formattedKey.split('\n');
+  const formattedLines = [];
+  let keyContent = '';
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === '-----BEGIN PRIVATE KEY-----') {
+      formattedLines.push(trimmedLine);
+    } else if (trimmedLine === '-----END PRIVATE KEY-----') {
+      if (keyContent) {
+        const chunks = keyContent.match(/.{1,64}/g) || [];
+        formattedLines.push(...chunks);
+      }
+      formattedLines.push(trimmedLine);
+    } else if (trimmedLine) {
+      keyContent += trimmedLine;
+    }
+  }
+  
+  return formattedLines.join('\n');
+}
+
 function getAPNsJWT() {
   const now = Math.floor(Date.now() / 1000);
   
@@ -26,25 +64,37 @@ function getAPNsJWT() {
     return null;
   }
 
-  const privateKey = authKey.replace(/\\n/g, '\n');
+  const privateKey = formatPrivateKey(authKey);
+  
+  if (!privateKey) {
+    console.error('Failed to format APNs private key');
+    return null;
+  }
 
-  jwtExpiry = now + 3600;
-  cachedJWT = jwt.sign(
-    {
-      iss: teamId,
-      iat: now
-    },
-    privateKey,
-    {
-      algorithm: 'ES256',
-      header: {
-        alg: 'ES256',
-        kid: keyId
+  try {
+    jwtExpiry = now + 3600;
+    cachedJWT = jwt.sign(
+      {
+        iss: teamId,
+        iat: now
+      },
+      privateKey,
+      {
+        algorithm: 'ES256',
+        header: {
+          alg: 'ES256',
+          kid: keyId
+        }
       }
-    }
-  );
+    );
 
-  return cachedJWT;
+    return cachedJWT;
+  } catch (error) {
+    console.error('Error signing APNs JWT:', error.message);
+    cachedJWT = null;
+    jwtExpiry = 0;
+    return null;
+  }
 }
 
 const INVALID_TOKEN_REASONS = [
