@@ -159,7 +159,12 @@ expertMode = true
 [userenv.shared]
 TERMS_OF_SERVICE_URL = "https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing"
 PRIVACY_POLICY_URL = "https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing"
+
+[userenv.development]
 EXPO_PUBLIC_API_URL = "https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5ud0.riker.replit.dev/api"
+
+[userenv.production]
+EXPO_PUBLIC_API_URL = "https://api.hangouts-app.com/api"
 
 [deployment]
 deploymentTarget = "autoscale"
