@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
@@ -32,22 +33,44 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
+  const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    fetchMessages(true);
+    const interval = setInterval(() => fetchNewMessages(), 3000);
     return () => clearInterval(interval);
   }, [eventId]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async (initial = false) => {
     try {
       const data = await api.get(`/messages/event/${eventId}`);
       setMessages(data);
+      if (data.length > 0) {
+        lastMessageIdRef.current = data[data.length - 1].id;
+      }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
+    } finally {
+      if (initial) setLoading(false);
     }
-  };
+  }, [eventId]);
+
+  const fetchNewMessages = useCallback(async () => {
+    try {
+      const data = await api.get(`/messages/event/${eventId}`);
+      if (data.length > 0) {
+        const lastId = data[data.length - 1].id;
+        if (lastId !== lastMessageIdRef.current) {
+          setMessages(data);
+          lastMessageIdRef.current = lastId;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch new messages:', error);
+    }
+  }, [eventId]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return;
@@ -162,15 +185,24 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={120}
     >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        style={styles.messagesList}
-        contentContainerStyle={styles.messagesContent}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-      />
+      {loading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContent}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          initialNumToRender={20}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+        />
+      )}
 
       {replyTo && (
         <View style={styles.replyingToContainer}>
@@ -218,6 +250,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   messagesList: {
     flex: 1,

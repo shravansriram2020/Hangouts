@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   FlatList,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
@@ -19,24 +20,30 @@ interface Props {
   eventId: string;
 }
 
+// Use blurhash for image placeholders (smoother loading)
+const BLURHASH = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7teleayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuay';
+
 export default function EventPhotosTab({ eventId }: Props) {
   const { user } = useAuth();
   const [photos, setPhotos] = useState<any[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPhotos();
   }, [eventId]);
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     try {
       const data = await api.get(`/photos/event/${eventId}`);
       setPhotos(data);
     } catch (error) {
       console.error('Failed to fetch photos:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [eventId]);
 
   const handleAddPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -103,7 +110,14 @@ export default function EventPhotosTab({ eventId }: Props) {
       style={[styles.photoItem, index % 3 === 0 && styles.photoItemFirst]}
       onPress={() => setSelectedPhoto(item)}
     >
-      <Image source={{ uri: item.photo_url }} style={styles.photoImage} />
+      <Image 
+        source={{ uri: item.photo_url }} 
+        style={styles.photoImage}
+        placeholder={BLURHASH}
+        contentFit="cover"
+        transition={200}
+        cachePolicy="memory-disk"
+      />
     </TouchableOpacity>
   );
 
@@ -129,7 +143,11 @@ export default function EventPhotosTab({ eventId }: Props) {
         )}
       </View>
 
-      {photos.length === 0 ? (
+      {loading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : photos.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIconContainer}>
             <Ionicons name="camera-outline" size={48} color={Colors.grayMedium} />
@@ -167,7 +185,8 @@ export default function EventPhotosTab({ eventId }: Props) {
               <Image
                 source={{ uri: selectedPhoto.photo_url }}
                 style={styles.modalImage}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
 
               <View style={styles.photoInfo}>
@@ -217,6 +236,11 @@ export default function EventPhotosTab({ eventId }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
