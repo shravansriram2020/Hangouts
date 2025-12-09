@@ -23,15 +23,9 @@ const getEmailTemplate = (code) => {
               <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td align="center" style="padding-bottom: 10px;">
-                    <div style="display: inline-block;">
-                      <svg width="40" height="40" viewBox="0 0 40 40" style="vertical-align: middle;">
-                        <rect width="40" height="40" rx="8" fill="#1a1a2e"/>
-                        <path d="M8 12 L20 20 L32 12" stroke="#E67E5A" stroke-width="3" fill="none"/>
-                        <path d="M8 16 L20 24 L32 16" stroke="#E6B85A" stroke-width="3" fill="none"/>
-                        <path d="M8 20 L20 28 L32 20" stroke="#5AACE6" stroke-width="3" fill="none"/>
-                      </svg>
-                      <span style="font-size: 28px; font-weight: bold; color: #1a1a2e; margin-left: 10px; vertical-align: middle;">Hangouts</span>
-                    </div>
+                    <a href="https://hangouts-app.com" style="text-decoration: none;">
+                      <img src="https://hangouts-app.com/logo.png" alt="Hangouts" width="180" style="display: block; margin: 0 auto;" />
+                    </a>
                   </td>
                 </tr>
               </table>
@@ -63,7 +57,10 @@ const getEmailTemplate = (code) => {
                 If you didn't request this code, you can safely ignore this email.
               </p>
               <p style="margin: 0; font-size: 12px; color: #6b6b8a;">
-                Connect, Plan, Sync Together
+                Making plans with friends just got easier
+              </p>
+              <p style="margin: 8px 0 0 0; font-size: 12px;">
+                <a href="https://hangouts-app.com" style="color: #5AACE6; text-decoration: none;">hangouts-app.com</a>
               </p>
             </td>
           </tr>
