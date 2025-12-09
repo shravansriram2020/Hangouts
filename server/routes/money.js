@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -51,6 +52,12 @@ router.post('/', authenticateToken, async (req, res) => {
        VALUES ($1, 'money', 'Money Request', $2, $3)`,
       [owerId, `${userResult.rows[0].first_name} requested $${amount}`, eventId]
     );
+    sendPushNotification(
+      owerId,
+      'Money Request',
+      `${userResult.rows[0].first_name} requested $${amount}`,
+      { type: 'money', eventId }
+    ).catch(console.error);
 
     // Return complete money request data with user info
     const completeRequest = {

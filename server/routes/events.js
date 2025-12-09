@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { containsProfanity, getProfanityError } = require('../utils/profanityFilter');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -61,6 +62,12 @@ router.post('/', authenticateToken, async (req, res) => {
            VALUES ($1, 'invite', 'Hangout Invitation', $2, $3)`,
           [userId, `You've been invited to ${title}`, event.id]
         );
+        sendPushNotification(
+          userId,
+          'Hangout Invitation',
+          `You've been invited to ${title}`,
+          { type: 'invite', eventId: event.id }
+        ).catch(console.error);
       }
     }
 
@@ -335,6 +342,12 @@ router.post('/:id/invite', authenticateToken, async (req, res) => {
        VALUES ($1, 'invite', 'Hangout Invitation', $2, $3)`,
       [userId, `You've been invited to ${eventResult.rows[0].title}`, req.params.id]
     );
+    sendPushNotification(
+      userId,
+      'Hangout Invitation',
+      `You've been invited to ${eventResult.rows[0].title}`,
+      { type: 'invite', eventId: req.params.id }
+    ).catch(console.error);
 
     res.json({ message: 'Invitation sent' });
   } catch (error) {
@@ -430,6 +443,12 @@ router.post('/:id/rsvp', authenticateToken, async (req, res) => {
          VALUES ($1, 'rsvp', 'RSVP Update', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name} ${statusText} to ${eventResult.rows[0].title}`, req.params.id]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'RSVP Update',
+        `${userResult.rows[0].first_name} ${statusText} to ${eventResult.rows[0].title}`,
+        { type: 'rsvp', eventId: req.params.id }
+      ).catch(console.error);
     }
     
     res.json({ message: 'RSVP updated', status: dbStatus });

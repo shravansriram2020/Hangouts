@@ -20,6 +20,7 @@ const initDb = async () => {
         current_lat DOUBLE PRECISION,
         current_lng DOUBLE PRECISION,
         tutorial_completed BOOLEAN DEFAULT false,
+        push_token TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );

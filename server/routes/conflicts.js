@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -82,6 +83,12 @@ router.post('/', authenticateToken, async (req, res) => {
          VALUES ($1, 'conflict', 'New Conflict Reported', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name} reported a ${conflictType} conflict for ${eventResult.rows[0].title}`, eventId]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'New Conflict Reported',
+        `${userResult.rows[0].first_name} reported a ${conflictType} conflict for ${eventResult.rows[0].title}`,
+        { type: 'conflict', eventId }
+      ).catch(console.error);
     }
 
     // Return complete conflict data with user info
@@ -277,6 +284,12 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
          VALUES ($1, 'conflict', 'Conflict Resolved', $2, $3)`,
         [attendee.user_id, resolutionMessage, conflict.event_id]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'Conflict Resolved',
+        resolutionMessage,
+        { type: 'conflict', eventId: conflict.event_id }
+      ).catch(console.error);
     }
 
     res.json({ message: 'Conflict resolved', conflictType: conflict.conflict_type });

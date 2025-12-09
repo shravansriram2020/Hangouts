@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { validateImageUpload } = require('../utils/fileValidator');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -80,6 +81,12 @@ router.post('/', authenticateToken, async (req, res) => {
          VALUES ($1, 'photo', 'New Photo Added', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name} added a photo to ${eventResult.rows[0].title}`, eventId]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'New Photo Added',
+        `${userResult.rows[0].first_name} added a photo to ${eventResult.rows[0].title}`,
+        { type: 'photo', eventId }
+      ).catch(console.error);
     }
 
     res.status(201).json(photoWithUser.rows[0]);

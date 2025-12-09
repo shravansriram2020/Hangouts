@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -86,6 +87,12 @@ router.post('/', authenticateToken, async (req, res) => {
          VALUES ($1, 'message', 'New Message', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name}: ${previewContent}`, eventId]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'New Message',
+        `${userResult.rows[0].first_name}: ${previewContent}`,
+        { type: 'message', eventId }
+      ).catch(console.error);
     }
 
     res.status(201).json(messageWithUser.rows[0]);

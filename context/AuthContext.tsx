@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
+import { registerForPushNotifications, unregisterPushNotifications } from '../src/services/pushNotifications';
 
 interface User {
   id: string;
@@ -55,6 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
         api.setToken(storedToken);
+        
+        registerForPushNotifications().catch(console.error);
       }
     } catch (error) {
       console.error('Error loading auth:', error);
@@ -73,6 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     api.setToken(authToken);
     setToken(authToken);
     setUser(userData);
+
+    registerForPushNotifications().catch(console.error);
   };
 
   const signUp = async (data: SignUpData) => {
@@ -94,9 +99,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     api.setToken(authToken);
     setToken(authToken);
     setUser(userData);
+
+    registerForPushNotifications().catch(console.error);
   };
 
   const signOut = async () => {
+    await unregisterPushNotifications().catch(console.error);
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
     api.setToken(null);

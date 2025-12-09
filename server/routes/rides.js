@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendPushNotification } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -58,6 +59,12 @@ router.post('/', authenticateToken, async (req, res) => {
          VALUES ($1, 'ride', 'New Ride Available', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name} is offering a ride`, eventId]
       );
+      sendPushNotification(
+        attendee.user_id,
+        'New Ride Available',
+        `${userResult.rows[0].first_name} is offering a ride`,
+        { type: 'ride', eventId }
+      ).catch(console.error);
     }
 
     // Return complete ride data with driver info
@@ -114,6 +121,12 @@ router.post('/:rideId/join', authenticateToken, async (req, res) => {
        VALUES ($1, 'ride', 'Passenger Joined', $2, $3)`,
       [ride.driver_id, `${userResult.rows[0].first_name} joined your ride`, ride.event_id]
     );
+    sendPushNotification(
+      ride.driver_id,
+      'Passenger Joined',
+      `${userResult.rows[0].first_name} joined your ride`,
+      { type: 'ride', eventId: ride.event_id }
+    ).catch(console.error);
 
     res.json({ message: 'Joined ride' });
   } catch (error) {
@@ -146,6 +159,12 @@ router.post('/:rideId/leave', authenticateToken, async (req, res) => {
          VALUES ($1, 'ride', 'Passenger Left', $2, $3)`,
         [ride.driver_id, `${userResult.rows[0].first_name} left your ride`, ride.event_id]
       );
+      sendPushNotification(
+        ride.driver_id,
+        'Passenger Left',
+        `${userResult.rows[0].first_name} left your ride`,
+        { type: 'ride', eventId: ride.event_id }
+      ).catch(console.error);
     }
 
     res.json({ message: 'Left ride' });

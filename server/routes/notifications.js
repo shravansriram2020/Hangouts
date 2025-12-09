@@ -4,6 +4,40 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.post('/push-token', authenticateToken, async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+
+    if (!pushToken) {
+      return res.status(400).json({ error: 'Push token is required' });
+    }
+
+    await pool.query(
+      'UPDATE users SET push_token = $1, updated_at = NOW() WHERE id = $2',
+      [pushToken, req.user.id]
+    );
+
+    res.json({ message: 'Push token registered successfully' });
+  } catch (error) {
+    console.error('Register push token error:', error);
+    res.status(500).json({ error: 'Failed to register push token' });
+  }
+});
+
+router.delete('/push-token', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE users SET push_token = NULL, updated_at = NOW() WHERE id = $1',
+      [req.user.id]
+    );
+
+    res.json({ message: 'Push token removed successfully' });
+  } catch (error) {
+    console.error('Remove push token error:', error);
+    res.status(500).json({ error: 'Failed to remove push token' });
+  }
+});
+
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
