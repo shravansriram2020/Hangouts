@@ -36,16 +36,12 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
   const lastMessageIdRef = useRef<string | null>(null);
-  const lastEventIdRef = useRef<string | null>(null);
   const initialScrollDoneRef = useRef(false);
 
   useEffect(() => {
-    if (lastEventIdRef.current !== eventId) {
-      setLoading(true);
-      initialScrollDoneRef.current = false;
-      fetchMessages(true);
-      lastEventIdRef.current = eventId;
-    }
+    setLoading(true);
+    initialScrollDoneRef.current = false;
+    fetchMessages(true);
     const interval = setInterval(() => fetchNewMessages(), 3000);
     return () => clearInterval(interval);
   }, [eventId]);

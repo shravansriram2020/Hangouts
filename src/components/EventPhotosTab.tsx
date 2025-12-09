@@ -31,14 +31,9 @@ export default function EventPhotosTab({ eventId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const lastEventIdRef = useRef<string | null>(null);
-
   useEffect(() => {
-    if (lastEventIdRef.current !== eventId) {
-      setLoading(true);
-      fetchPhotos();
-      lastEventIdRef.current = eventId;
-    }
+    setLoading(true);
+    fetchPhotos();
   }, [eventId]);
 
   const fetchPhotos = useCallback(async (isRefresh = false) => {

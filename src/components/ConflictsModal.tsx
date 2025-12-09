@@ -1194,7 +1194,6 @@ const styles = StyleSheet.create({
   },
   locationSearchContainer: {
     zIndex: 100,
-    minHeight: 200,
   },
   suggestionsDropdownContainer: {
     zIndex: 1000,
