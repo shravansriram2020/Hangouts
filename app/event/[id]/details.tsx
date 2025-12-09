@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -55,13 +56,30 @@ export default function DetailsScreen() {
   const [conflictCount, setConflictCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [cachedRides, setCachedRides] = useState<any[]>([]);
+  const [cachedMoneyRequests, setCachedMoneyRequests] = useState<any[]>([]);
 
   useEffect(() => {
     if (event?.id) {
       fetchConflictCount();
       fetchUserStatus();
+      fetchCachedData();
     }
   }, [event?.id]);
+
+  const fetchCachedData = async () => {
+    if (!event?.id) return;
+    try {
+      const [rides, money] = await Promise.all([
+        api.get(`/rides/event/${event.id}`),
+        api.get(`/money/event/${event.id}`)
+      ]);
+      setCachedRides(rides);
+      setCachedMoneyRequests(money);
+    } catch (error) {
+      console.error('Failed to prefetch data:', error);
+    }
+  };
 
   const fetchUserStatus = async () => {
     if (!event?.id) return;
@@ -88,10 +106,42 @@ export default function DetailsScreen() {
     if (!event?.id) return;
     try {
       const conflicts = await api.get(`/conflicts/event/${event.id}`);
-      const unresolvedCount = conflicts.filter((c: any) => !c.is_resolved).length;
-      setConflictCount(unresolvedCount);
+      const unresolvedConflicts = conflicts.filter((c: any) => !c.is_resolved);
+      const unresolvedCount = unresolvedConflicts.length;
+      
+      // Check if user has already seen these conflicts
+      const seenKey = `conflicts_seen_${event.id}`;
+      const seenData = await AsyncStorage.getItem(seenKey);
+      if (seenData) {
+        const { seenIds, seenAt } = JSON.parse(seenData);
+        // Only show badge for NEW conflicts added after user last viewed
+        const newConflicts = unresolvedConflicts.filter((c: any) => 
+          !seenIds.includes(c.id) || new Date(c.created_at) > new Date(seenAt)
+        );
+        setConflictCount(newConflicts.length);
+      } else {
+        setConflictCount(unresolvedCount);
+      }
     } catch (error) {
       console.error('Failed to fetch conflicts:', error);
+    }
+  };
+
+  const handleConflictsClose = async () => {
+    setShowConflicts(false);
+    // Save that user has seen all current conflicts
+    if (event?.id) {
+      try {
+        const conflicts = await api.get(`/conflicts/event/${event.id}`);
+        const unresolvedIds = conflicts.filter((c: any) => !c.is_resolved).map((c: any) => c.id);
+        await AsyncStorage.setItem(`conflicts_seen_${event.id}`, JSON.stringify({
+          seenIds: unresolvedIds,
+          seenAt: new Date().toISOString(),
+        }));
+        setConflictCount(0);
+      } catch (error) {
+        console.error('Failed to save conflicts seen state:', error);
+      }
     }
   };
 
@@ -314,7 +364,6 @@ export default function DetailsScreen() {
       <TouchableOpacity 
         style={styles.conflictsContainer}
         onPress={() => {
-          setConflictCount(0);
           setShowConflicts(true);
         }}
       >
@@ -438,6 +487,7 @@ export default function DetailsScreen() {
           setShowRides(false);
           setShowCreateRide(true);
         }}
+        initialRides={cachedRides}
       />
       <MoneyModal
         visible={showMoney}
@@ -448,19 +498,26 @@ export default function DetailsScreen() {
           setShowCreateMoney(true);
         }}
         attendeeCount={attendeeCount}
+        initialRequests={cachedMoneyRequests}
       />
       <CreateRideModal
         visible={showCreateRide}
         onClose={() => setShowCreateRide(false)}
         eventId={event.id}
-        onCreated={refreshEvent}
+        onCreated={() => {
+          fetchCachedData();
+          refreshEvent();
+        }}
       />
       <CreateMoneyModal
         visible={showCreateMoney}
         onClose={() => setShowCreateMoney(false)}
         eventId={event.id}
         attendees={event.attendees || []}
-        onCreated={refreshEvent}
+        onCreated={() => {
+          fetchCachedData();
+          refreshEvent();
+        }}
       />
       <CreateConflictsModal
         visible={showCreateConflicts}
@@ -473,12 +530,13 @@ export default function DetailsScreen() {
       />
       <ConflictsModal
         visible={showConflicts}
-        onClose={() => setShowConflicts(false)}
+        onClose={handleConflictsClose}
         eventId={event.id}
         eventTitle={event.title}
         isHost={event.isHost}
         onConflictUpdate={fetchConflictCount}
         onEventUpdated={refreshEvent}
+        eventLocation={event.location_lat && event.location_lng ? { lat: event.location_lat, lng: event.location_lng } : null}
       />
       <NotesModal
         visible={showNotes}
