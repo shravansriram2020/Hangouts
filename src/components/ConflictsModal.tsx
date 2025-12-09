@@ -464,7 +464,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
 
   return (
     <>
-    <GlassModal visible={visible} onClose={onClose} title="Event Conflicts" fullHeight>
+    <GlassModal visible={visible} onClose={onClose} title="Event Conflicts">
       <ScrollView style={styles.content}>
             {showCreateConflict ? (
               <View style={styles.createForm}>
@@ -598,25 +598,6 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                       </View>
                     )}
 
-                    <TouchableOpacity 
-                      style={[
-                        styles.suggestButton,
-                        (!locationEnabled && !eventLocation) && styles.suggestButtonDisabled,
-                      ]}
-                      onPress={handleOpenLocationSuggest}
-                      disabled={!locationEnabled && !eventLocation}
-                    >
-                      <Ionicons name="sparkles" size={18} color={(locationEnabled || eventLocation) ? Colors.white : Colors.grayMedium} />
-                      <Text style={[
-                        styles.suggestButtonText,
-                        (!locationEnabled && !eventLocation) && styles.suggestButtonTextDisabled,
-                      ]}>Have Hangouts Suggest a Location</Text>
-                    </TouchableOpacity>
-                    {!locationEnabled && !eventLocation && (
-                      <Text style={styles.locationDisabledHint}>
-                        Enable location services or set an event location
-                      </Text>
-                    )}
                   </>
                 )}
 
@@ -892,11 +873,11 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
 
 const styles = StyleSheet.create({
   content: {
-    padding: 20,
+    padding: 16,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 12,
   },
   emptyText: {
     fontSize: 14,

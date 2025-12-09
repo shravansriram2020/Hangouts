@@ -513,20 +513,12 @@ export default function DetailsScreen() {
         onClose={() => setShowCreateRide(false)}
         eventId={event.id}
         currentUser={user}
-        onCreated={(optimisticRide) => {
-          if (optimisticRide) {
-            setCachedRides(prev => [...prev, optimisticRide]);
-            setShowRides(true);
+        onCreated={(newRide) => {
+          if (newRide) {
+            setCachedRides(prev => [...prev, newRide]);
           }
-          setTimeout(async () => {
-            await fetchCachedData();
-            refreshEvent();
-          }, 800);
-        }}
-        onError={(tempId) => {
-          if (tempId?.startsWith('temp_')) {
-            setCachedRides(prev => prev.filter(r => r.id !== tempId));
-          }
+          setShowRides(true);
+          refreshEvent();
         }}
       />
       <CreateMoneyModal
@@ -534,20 +526,12 @@ export default function DetailsScreen() {
         onClose={() => setShowCreateMoney(false)}
         eventId={event.id}
         attendees={event.attendees || []}
-        onCreated={(optimisticRequest) => {
-          if (optimisticRequest) {
-            setCachedMoneyRequests(prev => [...prev, optimisticRequest]);
-            setShowMoney(true);
+        onCreated={(newRequest) => {
+          if (newRequest) {
+            setCachedMoneyRequests(prev => [...prev, newRequest]);
           }
-          setTimeout(async () => {
-            await fetchCachedData();
-            refreshEvent();
-          }, 800);
-        }}
-        onError={(tempId) => {
-          if (tempId?.startsWith('temp_')) {
-            setCachedMoneyRequests(prev => prev.filter(r => r.id !== tempId));
-          }
+          setShowMoney(true);
+          refreshEvent();
         }}
       />
       <CreateConflictsModal
@@ -555,23 +539,11 @@ export default function DetailsScreen() {
         onClose={() => setShowCreateConflicts(false)}
         eventId={event.id}
         currentUser={user}
-        onCreated={(optimisticConflict) => {
-          if (optimisticConflict) {
-            setConflictCount(prev => prev + 1);
-            setPendingConflict(optimisticConflict);
-            setShowConflicts(true);
-          }
-          setTimeout(() => {
-            setPendingConflict(null);
-            fetchConflictCount();
-            refreshEvent();
-          }, 800);
-        }}
-        onError={(tempId) => {
-          if (tempId?.startsWith('temp_') && pendingConflict?.id === tempId) {
-            setConflictCount(prev => Math.max(0, prev - 1));
-            setPendingConflict(null);
-          }
+        onCreated={() => {
+          setConflictCount(prev => prev + 1);
+          setShowConflicts(true);
+          fetchConflictCount();
+          refreshEvent();
         }}
       />
       <ConflictsModal

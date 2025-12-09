@@ -67,7 +67,7 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const userResult = await pool.query(
-      'SELECT first_name FROM users WHERE id = $1',
+      'SELECT first_name, profile_photo FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -84,7 +84,15 @@ router.post('/', authenticateToken, async (req, res) => {
       );
     }
 
-    res.status(201).json(result.rows[0]);
+    // Return complete conflict data with user info
+    const completeConflict = {
+      ...result.rows[0],
+      first_name: userResult.rows[0].first_name,
+      profile_photo: userResult.rows[0].profile_photo,
+      votes: null,
+    };
+
+    res.status(201).json(completeConflict);
   } catch (error) {
     console.error('Create conflict error:', error);
     res.status(500).json({ error: 'Failed to create conflict' });

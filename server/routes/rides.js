@@ -48,7 +48,7 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const userResult = await pool.query(
-      'SELECT first_name FROM users WHERE id = $1',
+      'SELECT first_name, username, profile_photo FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -60,7 +60,17 @@ router.post('/', authenticateToken, async (req, res) => {
       );
     }
 
-    res.status(201).json(result.rows[0]);
+    // Return complete ride data with driver info
+    const completeRide = {
+      ...result.rows[0],
+      username: userResult.rows[0].username,
+      first_name: userResult.rows[0].first_name,
+      profile_photo: userResult.rows[0].profile_photo,
+      passenger_count: 0,
+      passengers: null,
+    };
+
+    res.status(201).json(completeRide);
   } catch (error) {
     console.error('Create ride error:', error);
     res.status(500).json({ error: 'Failed to create ride' });

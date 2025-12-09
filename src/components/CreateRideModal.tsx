@@ -7,6 +7,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/theme';
@@ -27,6 +28,7 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated, 
   const [pickupLocation, setPickupLocation] = useState('');
   const [canDriveTo, setCanDriveTo] = useState(true);
   const [canDriveFrom, setCanDriveFrom] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handleCreateRide = async () => {
     if (!spotsAvailable || !pickupLocation) {
@@ -34,41 +36,27 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated, 
       return;
     }
 
-    // Create optimistic ride data
-    const optimisticRide = {
-      id: `temp_${Date.now()}`,
-      event_id: eventId,
-      driver_id: currentUser?.id,
-      driver_first_name: currentUser?.firstName || currentUser?.first_name,
-      driver_photo: currentUser?.profilePhoto || currentUser?.profile_photo,
-      spots_available: parseInt(spotsAvailable),
-      pickup_location: pickupLocation,
-      can_drive_to: canDriveTo,
-      can_drive_from: canDriveFrom,
-      passenger_count: 0,
-      passengers: [],
-      isPending: true,
-    };
+    setLoading(true);
 
-    // Reset form and close immediately
-    setSpotsAvailable('');
-    setPickupLocation('');
-    setCanDriveTo(true);
-    setCanDriveFrom(true);
-    onCreated(optimisticRide);
-    onClose();
-
-    // Make API call in background
     try {
-      await api.post('/rides', {
+      const response = await api.post('/rides', {
         eventId,
         spotsAvailable: parseInt(spotsAvailable),
         pickupLocation,
         canDriveTo,
         canDriveFrom,
       });
+
+      // Reset form and close after successful creation
+      setSpotsAvailable('');
+      setPickupLocation('');
+      setCanDriveTo(true);
+      setCanDriveFrom(true);
+      setLoading(false);
+      onCreated(response);
+      onClose();
     } catch (error: any) {
-      onError?.(optimisticRide.id);
+      setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create ride');
     }
   };
@@ -135,10 +123,15 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated, 
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleCreateRide}
+            disabled={loading}
           >
-            <Text style={styles.submitButtonText}>Offer Ride</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.submitButtonText}>Offer Ride</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

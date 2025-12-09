@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Colors, Fonts } from '../../constants/theme';
@@ -24,6 +25,7 @@ interface Props {
 export default function CreateConflictsModal({ visible, onClose, eventId, onCreated, onError, currentUser }: Props) {
   const [conflictType, setConflictType] = useState('time');
   const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleCreateConflict = async () => {
     if (!description.trim()) {
@@ -31,40 +33,23 @@ export default function CreateConflictsModal({ visible, onClose, eventId, onCrea
       return;
     }
 
-    // Create optimistic conflict matching API response shape
-    const optimisticConflict = {
-      id: `temp_${Date.now()}`,
-      event_id: eventId,
-      created_by: currentUser?.id,
-      creator_first_name: currentUser?.firstName || currentUser?.first_name,
-      creator_photo: currentUser?.profilePhoto || currentUser?.profile_photo,
-      conflict_type: conflictType,
-      reason: description.trim(),
-      suggested_time: null,
-      suggested_location: null,
-      is_resolved: false,
-      votes_yes: 0,
-      votes_no: 0,
-      isPending: true,
-    };
+    setLoading(true);
 
-    // Reset form and close immediately
-    const savedDescription = description.trim();
-    const savedType = conflictType;
-    setDescription('');
-    onCreated(optimisticConflict);
-    onClose();
-
-    // Make API call in background
     try {
-      await api.post('/conflicts', {
+      const response = await api.post('/conflicts', {
         eventId,
-        type: savedType,
-        description: savedDescription,
-        suggestedValue: savedDescription,
+        conflictType,
+        reason: description.trim(),
+        suggestedLocation: conflictType === 'location' ? description.trim() : null,
       });
+
+      // Reset form and close after successful creation
+      setDescription('');
+      setLoading(false);
+      onCreated(response);
+      onClose();
     } catch (error: any) {
-      onError?.(optimisticConflict.id);
+      setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create conflict');
     }
   };
@@ -113,10 +98,15 @@ export default function CreateConflictsModal({ visible, onClose, eventId, onCrea
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleCreateConflict}
+            disabled={loading}
           >
-            <Text style={styles.submitButtonText}>Report Conflict</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.submitButtonText}>Report Conflict</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -181,6 +171,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     fontSize: 13,

@@ -37,8 +37,13 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const userResult = await pool.query(
-      'SELECT first_name FROM users WHERE id = $1',
+      'SELECT first_name, profile_photo FROM users WHERE id = $1',
       [req.user.id]
+    );
+
+    const owerResult = await pool.query(
+      'SELECT first_name, profile_photo FROM users WHERE id = $1',
+      [owerId]
     );
 
     await pool.query(
@@ -47,7 +52,16 @@ router.post('/', authenticateToken, async (req, res) => {
       [owerId, `${userResult.rows[0].first_name} requested $${amount}`, eventId]
     );
 
-    res.status(201).json(result.rows[0]);
+    // Return complete money request data with user info
+    const completeRequest = {
+      ...result.rows[0],
+      requester_first_name: userResult.rows[0].first_name,
+      requester_photo: userResult.rows[0].profile_photo,
+      ower_first_name: owerResult.rows[0].first_name,
+      ower_photo: owerResult.rows[0].profile_photo,
+    };
+
+    res.status(201).json(completeRequest);
   } catch (error) {
     console.error('Create money request error:', error);
     res.status(500).json({ error: 'Failed to create money request' });

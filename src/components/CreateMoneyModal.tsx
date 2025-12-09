@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
@@ -32,6 +33,7 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [showAttendeesList, setShowAttendeesList] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Filter out current user from attendees list
   const otherAttendees = attendees?.filter((a: any) => a.id !== user?.id) || [];
@@ -44,39 +46,25 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
       return;
     }
 
-    // Create optimistic money request
-    const optimisticRequest = {
-      id: `temp_${Date.now()}`,
-      event_id: eventId,
-      requester_id: user?.id,
-      requester_first_name: user?.firstName || user?.first_name,
-      requester_photo: user?.profilePhoto || user?.profile_photo,
-      ower_id: selectedOwer,
-      ower_first_name: selectedAttendee?.first_name,
-      ower_photo: selectedAttendee?.profile_photo,
-      amount: parseFloat(amount),
-      description: description,
-      is_paid: false,
-      isPending: true,
-    };
+    setLoading(true);
 
-    // Reset form and close immediately  
-    setSelectedOwer('');
-    setAmount('');
-    setDescription('');
-    onCreated(optimisticRequest);
-    onClose();
-
-    // Make API call in background
     try {
-      await api.post('/money', {
+      const response = await api.post('/money', {
         eventId,
         owerId: selectedOwer,
         amount: parseFloat(amount),
         description,
       });
+
+      // Reset form and close after successful creation
+      setSelectedOwer('');
+      setAmount('');
+      setDescription('');
+      setLoading(false);
+      onCreated(response);
+      onClose();
     } catch (error: any) {
-      onError?.(optimisticRequest.id);
+      setLoading(false);
       Alert.alert('Error', error.message || 'Failed to create request');
     }
   };
@@ -202,11 +190,15 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitButton, !hasAttendees && styles.submitButtonDisabled]}
+            style={[styles.submitButton, (!hasAttendees || loading) && styles.submitButtonDisabled]}
             onPress={handleCreateRequest}
-            disabled={!hasAttendees}
+            disabled={!hasAttendees || loading}
           >
-            <Text style={styles.submitButtonText}>Send Request</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.submitButtonText}>Send Request</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
