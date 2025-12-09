@@ -163,6 +163,22 @@ export default function MessagesScreen() {
           )}
           <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
           <View style={[styles.messageBubble, isOwnMessage ? styles.messageBubbleOwn : styles.messageBubbleOther]}>
+            {item.reply_to_id && item.reply_to_content && (
+              <View style={[styles.replyQuote, isOwnMessage && styles.replyQuoteOwn]}>
+                <View style={[styles.replyQuoteBar, isOwnMessage && styles.replyQuoteBarOwn]} />
+                <View style={styles.replyQuoteContent}>
+                  <Text style={[styles.replyQuoteName, isOwnMessage && styles.replyQuoteNameOwn]}>
+                    {item.reply_to_user}
+                  </Text>
+                  <Text 
+                    style={[styles.replyQuoteText, isOwnMessage && styles.replyQuoteTextOwn]} 
+                    numberOfLines={2}
+                  >
+                    {item.reply_to_content}
+                  </Text>
+                </View>
+              </View>
+            )}
             <Text style={[styles.messageText, !isOwnMessage && styles.messageTextOther]}>{item.content}</Text>
             {(item.has_time_suggestion || item.has_location_suggestion) && (
               <TouchableOpacity 
@@ -482,5 +498,44 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 20,
+  },
+  replyQuote: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  replyQuoteOwn: {
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  replyQuoteBar: {
+    width: 3,
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  replyQuoteBarOwn: {
+    backgroundColor: Colors.primaryLight,
+  },
+  replyQuoteContent: {
+    flex: 1,
+  },
+  replyQuoteName: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.primary,
+    marginBottom: 2,
+  },
+  replyQuoteNameOwn: {
+    color: Colors.primaryLight,
+  },
+  replyQuoteText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+  },
+  replyQuoteTextOwn: {
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 });
