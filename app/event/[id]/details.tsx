@@ -372,6 +372,7 @@ export default function DetailsScreen() {
       <TouchableOpacity 
         style={styles.conflictsContainer}
         onPress={() => {
+          setConflictCount(0);
           setShowConflicts(true);
         }}
       >
@@ -517,6 +518,7 @@ export default function DetailsScreen() {
           if (newRide) {
             setCachedRides(prev => [...prev, newRide]);
           }
+          setShowCreateRide(false);
           setShowRides(true);
           refreshEvent();
         }}
@@ -530,6 +532,7 @@ export default function DetailsScreen() {
           if (newRequest) {
             setCachedMoneyRequests(prev => [...prev, newRequest]);
           }
+          setShowCreateMoney(false);
           setShowMoney(true);
           refreshEvent();
         }}
@@ -540,6 +543,7 @@ export default function DetailsScreen() {
         eventId={event.id}
         currentUser={user}
         onCreated={() => {
+          setShowCreateConflicts(false);
           setConflictCount(prev => prev + 1);
           setShowConflicts(true);
           fetchConflictCount();
