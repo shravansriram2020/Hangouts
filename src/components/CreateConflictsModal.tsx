@@ -16,10 +16,12 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
-  onCreated: () => void;
+  onCreated: (optimisticConflict?: any) => void;
+  onError?: (tempId: string) => void;
+  currentUser?: any;
 }
 
-export default function CreateConflictsModal({ visible, onClose, eventId, onCreated }: Props) {
+export default function CreateConflictsModal({ visible, onClose, eventId, onCreated, onError, currentUser }: Props) {
   const [conflictType, setConflictType] = useState('time');
   const [description, setDescription] = useState('');
 
@@ -29,20 +31,40 @@ export default function CreateConflictsModal({ visible, onClose, eventId, onCrea
       return;
     }
 
-    // Optimistically close and update UI
+    // Create optimistic conflict matching API response shape
+    const optimisticConflict = {
+      id: `temp_${Date.now()}`,
+      event_id: eventId,
+      created_by: currentUser?.id,
+      creator_first_name: currentUser?.firstName || currentUser?.first_name,
+      creator_photo: currentUser?.profilePhoto || currentUser?.profile_photo,
+      conflict_type: conflictType,
+      reason: description.trim(),
+      suggested_time: null,
+      suggested_location: null,
+      is_resolved: false,
+      votes_yes: 0,
+      votes_no: 0,
+      isPending: true,
+    };
+
+    // Reset form and close immediately
+    const savedDescription = description.trim();
+    const savedType = conflictType;
     setDescription('');
-    onCreated();
+    onCreated(optimisticConflict);
     onClose();
 
     // Make API call in background
     try {
       await api.post('/conflicts', {
         eventId,
-        type: conflictType,
-        description: description.trim(),
-        suggestedValue: description.trim(),
+        type: savedType,
+        description: savedDescription,
+        suggestedValue: savedDescription,
       });
     } catch (error: any) {
+      onError?.(optimisticConflict.id);
       Alert.alert('Error', error.message || 'Failed to create conflict');
     }
   };

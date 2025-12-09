@@ -43,6 +43,7 @@ interface Props {
   onEventUpdated?: () => void;
   initialType?: 'time' | 'location' | 'other';
   eventLocation?: { lat: number; lng: number } | null;
+  pendingConflict?: any;
 }
 
 const CONFLICT_TYPES = [
@@ -51,9 +52,14 @@ const CONFLICT_TYPES = [
   { id: 'other', label: 'Other', icon: 'warning-outline', color: Colors.yellow },
 ];
 
-export default function ConflictsModal({ visible, onClose, eventId, eventTitle, isHost, onConflictUpdate, onEventUpdated, initialType, eventLocation }: Props) {
+export default function ConflictsModal({ visible, onClose, eventId, eventTitle, isHost, onConflictUpdate, onEventUpdated, initialType, eventLocation, pendingConflict }: Props) {
   const { user } = useAuth();
   const [conflicts, setConflicts] = useState<any[]>([]);
+  
+  // Merge conflicts with any pending optimistic conflict
+  const displayConflicts = pendingConflict 
+    ? [...conflicts.filter(c => c.id !== pendingConflict.id), pendingConflict]
+    : conflicts;
   const [showCreateConflict, setShowCreateConflict] = useState(false);
   const [selectedType, setSelectedType] = useState('');
   const [reason, setReason] = useState('');
@@ -319,7 +325,8 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
   const fetchConflicts = async () => {
     try {
       const data = await api.get(`/conflicts/event/${eventId}`);
-      setConflicts(data);
+      // Replace all conflicts with real data, removing any pending optimistic items
+      setConflicts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch conflicts:', error);
     }
@@ -376,7 +383,29 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
       suggestedLng: selectedType === 'location' ? suggestedLng : null,
     };
 
-    // Optimistically close form and reset state
+    // Create optimistic conflict for immediate display
+    const optimisticConflict = {
+      id: `temp_${Date.now()}`,
+      event_id: eventId,
+      created_by: user?.id,
+      creator_first_name: user?.firstName,
+      creator_photo: user?.profilePhoto,
+      conflict_type: selectedType,
+      reason: reason,
+      suggested_time: isoDateTime,
+      suggested_location: selectedType === 'location' ? suggestedLocation : null,
+      suggested_lat: selectedType === 'location' ? suggestedLat : null,
+      suggested_lng: selectedType === 'location' ? suggestedLng : null,
+      is_resolved: false,
+      votes_yes: 0,
+      votes_no: 0,
+      isPending: true,
+    };
+
+    // Add optimistic conflict to list immediately
+    setConflicts(prev => [...prev, optimisticConflict]);
+
+    // Close form and reset state
     setShowCreateConflict(false);
     setSelectedType('');
     setReason('');
@@ -389,13 +418,14 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
     setLocationQuery('');
     setLocationSuggestions([]);
 
-    // Make API call in background, then refresh
+    // Make API call in background, then refresh to get real data
     try {
       await api.post('/conflicts', conflictData);
       fetchConflicts();
     } catch (error: any) {
+      // Remove optimistic conflict on failure
+      setConflicts(prev => prev.filter(c => c.id !== optimisticConflict.id));
       Alert.alert('Error', error.message || 'Failed to report conflict');
-      fetchConflicts();
     }
   };
 

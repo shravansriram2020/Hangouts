@@ -17,10 +17,12 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   eventId: string;
-  onCreated: () => void;
+  onCreated: (optimisticRide?: any) => void;
+  onError?: (tempId: string) => void;
+  currentUser?: any;
 }
 
-export default function CreateRideModal({ visible, onClose, eventId, onCreated }: Props) {
+export default function CreateRideModal({ visible, onClose, eventId, onCreated, onError, currentUser }: Props) {
   const [spotsAvailable, setSpotsAvailable] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [canDriveTo, setCanDriveTo] = useState(true);
@@ -32,12 +34,28 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
       return;
     }
 
-    // Optimistically close and update UI
+    // Create optimistic ride data
+    const optimisticRide = {
+      id: `temp_${Date.now()}`,
+      event_id: eventId,
+      driver_id: currentUser?.id,
+      driver_first_name: currentUser?.firstName || currentUser?.first_name,
+      driver_photo: currentUser?.profilePhoto || currentUser?.profile_photo,
+      spots_available: parseInt(spotsAvailable),
+      pickup_location: pickupLocation,
+      can_drive_to: canDriveTo,
+      can_drive_from: canDriveFrom,
+      passenger_count: 0,
+      passengers: [],
+      isPending: true,
+    };
+
+    // Reset form and close immediately
     setSpotsAvailable('');
     setPickupLocation('');
     setCanDriveTo(true);
     setCanDriveFrom(true);
-    onCreated();
+    onCreated(optimisticRide);
     onClose();
 
     // Make API call in background
@@ -50,6 +68,7 @@ export default function CreateRideModal({ visible, onClose, eventId, onCreated }
         canDriveFrom,
       });
     } catch (error: any) {
+      onError?.(optimisticRide.id);
       Alert.alert('Error', error.message || 'Failed to create ride');
     }
   };

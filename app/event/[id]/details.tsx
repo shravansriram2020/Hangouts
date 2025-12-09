@@ -58,6 +58,7 @@ export default function DetailsScreen() {
   const [userStatus, setUserStatus] = useState<string | null>(null);
   const [cachedRides, setCachedRides] = useState<any[]>([]);
   const [cachedMoneyRequests, setCachedMoneyRequests] = useState<any[]>([]);
+  const [pendingConflict, setPendingConflict] = useState<any | null>(null);
 
   useEffect(() => {
     if (event?.id) {
@@ -511,9 +512,21 @@ export default function DetailsScreen() {
         visible={showCreateRide}
         onClose={() => setShowCreateRide(false)}
         eventId={event.id}
-        onCreated={() => {
-          fetchCachedData();
-          refreshEvent();
+        currentUser={user}
+        onCreated={(optimisticRide) => {
+          if (optimisticRide) {
+            setCachedRides(prev => [...prev, optimisticRide]);
+            setShowRides(true);
+          }
+          setTimeout(async () => {
+            await fetchCachedData();
+            refreshEvent();
+          }, 800);
+        }}
+        onError={(tempId) => {
+          if (tempId?.startsWith('temp_')) {
+            setCachedRides(prev => prev.filter(r => r.id !== tempId));
+          }
         }}
       />
       <CreateMoneyModal
@@ -521,18 +534,44 @@ export default function DetailsScreen() {
         onClose={() => setShowCreateMoney(false)}
         eventId={event.id}
         attendees={event.attendees || []}
-        onCreated={() => {
-          fetchCachedData();
-          refreshEvent();
+        onCreated={(optimisticRequest) => {
+          if (optimisticRequest) {
+            setCachedMoneyRequests(prev => [...prev, optimisticRequest]);
+            setShowMoney(true);
+          }
+          setTimeout(async () => {
+            await fetchCachedData();
+            refreshEvent();
+          }, 800);
+        }}
+        onError={(tempId) => {
+          if (tempId?.startsWith('temp_')) {
+            setCachedMoneyRequests(prev => prev.filter(r => r.id !== tempId));
+          }
         }}
       />
       <CreateConflictsModal
         visible={showCreateConflicts}
         onClose={() => setShowCreateConflicts(false)}
         eventId={event.id}
-        onCreated={() => {
-          fetchConflictCount();
-          refreshEvent();
+        currentUser={user}
+        onCreated={(optimisticConflict) => {
+          if (optimisticConflict) {
+            setConflictCount(prev => prev + 1);
+            setPendingConflict(optimisticConflict);
+            setShowConflicts(true);
+          }
+          setTimeout(() => {
+            setPendingConflict(null);
+            fetchConflictCount();
+            refreshEvent();
+          }, 800);
+        }}
+        onError={(tempId) => {
+          if (tempId?.startsWith('temp_') && pendingConflict?.id === tempId) {
+            setConflictCount(prev => Math.max(0, prev - 1));
+            setPendingConflict(null);
+          }
         }}
       />
       <ConflictsModal
@@ -544,6 +583,7 @@ export default function DetailsScreen() {
         onConflictUpdate={fetchConflictCount}
         onEventUpdated={refreshEvent}
         eventLocation={event.location_lat && event.location_lng ? { lat: event.location_lat, lng: event.location_lng } : null}
+        pendingConflict={pendingConflict}
       />
       <NotesModal
         visible={showNotes}

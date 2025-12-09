@@ -20,27 +20,49 @@ interface Props {
   onClose: () => void;
   eventId: string;
   notes: any[];
-  onNoteAdded: () => void;
+  onNoteAdded: (optimisticNote?: any) => void;
 }
 
 export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdded }: Props) {
   const { user } = useAuth();
   const [newNote, setNewNote] = useState('');
+  const [localNotes, setLocalNotes] = useState<any[]>([]);
+
+  // Merge notes from props with local optimistic notes
+  // Local notes appear at end for visibility; brief duplicate flash is acceptable
+  const displayNotes = [...(notes || []), ...localNotes];
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {
       return;
     }
 
-    // Optimistically update UI
-    const noteContent = newNote;
+    // Create optimistic note
+    const tempId = `temp_${Date.now()}`;
+    const optimisticNote = {
+      id: tempId,
+      event_id: eventId,
+      user_id: user?.id,
+      first_name: user?.firstName,
+      profile_photo: user?.profilePhoto,
+      content: newNote.trim(),
+      isPending: true,
+    };
+
+    // Add to local notes immediately
+    const noteContent = newNote.trim();
+    setLocalNotes(prev => [...prev, optimisticNote]);
     setNewNote('');
-    onNoteAdded();
 
     // Make API call in background
     try {
       await api.post(`/events/${eventId}/notes`, { content: noteContent });
+      // Remove only this specific pending note (not all) and trigger refresh
+      setLocalNotes(prev => prev.filter(n => n.id !== tempId));
+      onNoteAdded();
     } catch (error: any) {
+      // Remove only the failed note
+      setLocalNotes(prev => prev.filter(n => n.id !== tempId));
       Alert.alert('Error', error.message || 'Failed to add note');
     }
   };
@@ -75,10 +97,10 @@ export default function NotesModal({ visible, onClose, eventId, notes, onNoteAdd
           </View>
 
           <ScrollView style={styles.notesList}>
-            {notes?.length === 0 ? (
+            {displayNotes?.length === 0 ? (
               <Text style={styles.emptyText}>No notes yet</Text>
             ) : (
-              notes?.map((note) => (
+              displayNotes?.map((note) => (
                 <View key={note.id} style={styles.noteItem}>
                   <View style={styles.noteHeader}>
                     {note.profile_photo ? (

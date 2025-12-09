@@ -22,10 +22,11 @@ interface Props {
   onClose: () => void;
   eventId: string;
   attendees: any[];
-  onCreated: () => void;
+  onCreated: (optimisticRequest?: any) => void;
+  onError?: (tempId: string) => void;
 }
 
-export default function CreateMoneyModal({ visible, onClose, eventId, attendees, onCreated }: Props) {
+export default function CreateMoneyModal({ visible, onClose, eventId, attendees, onCreated, onError }: Props) {
   const { user } = useAuth();
   const [selectedOwer, setSelectedOwer] = useState('');
   const [amount, setAmount] = useState('');
@@ -43,11 +44,27 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
       return;
     }
 
-    // Optimistically close and update UI
+    // Create optimistic money request
+    const optimisticRequest = {
+      id: `temp_${Date.now()}`,
+      event_id: eventId,
+      requester_id: user?.id,
+      requester_first_name: user?.firstName || user?.first_name,
+      requester_photo: user?.profilePhoto || user?.profile_photo,
+      ower_id: selectedOwer,
+      ower_first_name: selectedAttendee?.first_name,
+      ower_photo: selectedAttendee?.profile_photo,
+      amount: parseFloat(amount),
+      description: description,
+      is_paid: false,
+      isPending: true,
+    };
+
+    // Reset form and close immediately  
     setSelectedOwer('');
     setAmount('');
     setDescription('');
-    onCreated();
+    onCreated(optimisticRequest);
     onClose();
 
     // Make API call in background
@@ -59,6 +76,7 @@ export default function CreateMoneyModal({ visible, onClose, eventId, attendees,
         description,
       });
     } catch (error: any) {
+      onError?.(optimisticRequest.id);
       Alert.alert('Error', error.message || 'Failed to create request');
     }
   };
