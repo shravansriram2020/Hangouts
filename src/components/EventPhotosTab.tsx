@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,12 +30,18 @@ export default function EventPhotosTab({ eventId }: Props) {
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const lastEventIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    fetchPhotos();
+    if (lastEventIdRef.current !== eventId) {
+      setLoading(true);
+      fetchPhotos();
+      lastEventIdRef.current = eventId;
+    }
   }, [eventId]);
 
-  const fetchPhotos = useCallback(async () => {
+  const fetchPhotos = useCallback(async (isRefresh = false) => {
     try {
       const data = await api.get(`/photos/event/${eventId}`);
       setPhotos(data);
@@ -42,8 +49,14 @@ export default function EventPhotosTab({ eventId }: Props) {
       console.error('Failed to fetch photos:', error);
     } finally {
       setLoading(false);
+      if (isRefresh) setRefreshing(false);
     }
   }, [eventId]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPhotos(true);
+  }, [fetchPhotos]);
 
   const handleAddPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -168,6 +181,14 @@ export default function EventPhotosTab({ eventId }: Props) {
           scrollEnabled={true}
           showsVerticalScrollIndicator={true}
           nestedScrollEnabled={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+            />
+          }
         />
       )}
 

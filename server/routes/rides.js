@@ -166,15 +166,13 @@ router.delete('/:rideId', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await pool.query(
-      'UPDATE rides SET is_cancelled = true WHERE id = $1',
-      [req.params.rideId]
-    );
+    await pool.query('DELETE FROM ride_passengers WHERE ride_id = $1', [req.params.rideId]);
+    await pool.query('DELETE FROM rides WHERE id = $1', [req.params.rideId]);
 
-    res.json({ message: 'Ride cancelled' });
+    res.json({ message: 'Ride deleted' });
   } catch (error) {
-    console.error('Cancel ride error:', error);
-    res.status(500).json({ error: 'Failed to cancel ride' });
+    console.error('Delete ride error:', error);
+    res.status(500).json({ error: 'Failed to delete ride' });
   }
 });
 

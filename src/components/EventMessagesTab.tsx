@@ -36,9 +36,16 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
   const lastMessageIdRef = useRef<string | null>(null);
+  const lastEventIdRef = useRef<string | null>(null);
+  const initialScrollDoneRef = useRef(false);
 
   useEffect(() => {
-    fetchMessages(true);
+    if (lastEventIdRef.current !== eventId) {
+      setLoading(true);
+      initialScrollDoneRef.current = false;
+      fetchMessages(true);
+      lastEventIdRef.current = eventId;
+    }
     const interval = setInterval(() => fetchNewMessages(), 3000);
     return () => clearInterval(interval);
   }, [eventId]);
@@ -49,6 +56,12 @@ export default function EventMessagesTab({ eventId, onConflictPress }: Props) {
       setMessages(data);
       if (data.length > 0) {
         lastMessageIdRef.current = data[data.length - 1].id;
+      }
+      if (initial && data.length > 0) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: false });
+          initialScrollDoneRef.current = true;
+        }, 100);
       }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
