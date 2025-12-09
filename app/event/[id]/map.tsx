@@ -355,7 +355,24 @@ export default function MapScreen() {
     }
     
     setLocationSharing(value);
-    saveLocationSharingState(value, isOnMyWay);
+    
+    // If turning off location sharing, also turn off "On My Way"
+    if (!value && isOnMyWay) {
+      setIsOnMyWay(false);
+      if (Platform.OS !== 'web' && event?.id) {
+        await setOnMyWayStatus(event.id, false);
+      }
+      try {
+        await api.put('/location/on-my-way', {
+          eventId: event?.id,
+          isOnMyWay: false,
+        });
+      } catch (error) {
+        console.error('Turn off on my way error:', error);
+      }
+    }
+    
+    saveLocationSharingState(value, value ? isOnMyWay : false);
     try {
       await api.put('/location/toggle-sharing', {
         eventId: event?.id,
@@ -391,6 +408,14 @@ export default function MapScreen() {
     if (!locationSharing && newValue) {
       setLocationSharing(true);
       saveLocationSharingState(true, newValue);
+      try {
+        await api.put('/location/toggle-sharing', {
+          eventId: event?.id,
+          sharing: true,
+        });
+      } catch (error) {
+        console.error('Toggle sharing on error:', error);
+      }
     }
     
     try {
