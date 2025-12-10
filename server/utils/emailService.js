@@ -83,16 +83,15 @@ const getEmailTemplate = (code) => {
 };
 
 async function getResendCredentials() {
-  // Use RESEND_API_KEY environment variable with verified domain
-  const apiKey = process.env.RESEND_API_KEY;
+  // Use VERIFIED_RESEND_KEY to avoid connector overwriting it
+  const apiKey = process.env.VERIFIED_RESEND_KEY || process.env.RESEND_API_KEY;
   if (apiKey) {
-    console.log('[Email] Using RESEND_API_KEY environment variable');
+    console.log('[Email] Using Resend API key, prefix:', apiKey.substring(0, 8));
     return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
   }
 
-  // If no API key, log helpful error
-  console.error('[Email] RESEND_API_KEY not found in environment variables');
-  throw new Error('Email service not configured - RESEND_API_KEY is required');
+  console.error('[Email] No Resend API key found');
+  throw new Error('Email service not configured - VERIFIED_RESEND_KEY is required');
 }
 
 async function isResendConfigured() {
