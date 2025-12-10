@@ -46,6 +46,8 @@ Preferred communication style: Simple, everyday language.
 - Configured DNS records (SPF, MX, DKIM) on root domain `@` in Squarespace for proper email deliverability
 - Updated email template with larger logo (400px width)
 - Sender address: `noreply@hangouts-app.com`
+- **Critical Fix**: Use `VERIFIED_RESEND_KEY` secret instead of `RESEND_API_KEY` to avoid Replit connector overwriting the key with an unverified account's API key
+- The verified domain `hangouts-app.com` is on the user's Resend account, not the Replit connector's account
 
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)

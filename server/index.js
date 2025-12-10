@@ -138,20 +138,6 @@ app.get('/api/health', async (req, res) => {
 const { sendPushNotification } = require('./services/pushNotifications');
 const { sendVerificationEmail, generateVerificationCode } = require('./utils/emailService');
 
-app.get('/api/debug-env', (req, res) => {
-  const verifiedKey = process.env.VERIFIED_RESEND_KEY;
-  const resendKey = process.env.RESEND_API_KEY;
-  const activeKey = verifiedKey || resendKey;
-  res.json({
-    hasVerifiedKey: !!verifiedKey,
-    hasResendApiKey: !!resendKey,
-    activeKeyPrefix: activeKey ? activeKey.substring(0, 8) : 'none',
-    activeKeyLength: activeKey ? activeKey.length : 0,
-    nodeEnv: process.env.NODE_ENV,
-    usingVerified: !!verifiedKey
-  });
-});
-
 app.post('/api/test-email', async (req, res) => {
   const { email } = req.body;
   
