@@ -118,23 +118,29 @@ async function handleInvalidToken(userId) {
 
 async function sendPushNotification(userId, title, body, data = {}) {
   try {
+    console.log(`[Push] Attempting to send notification to user ${userId}: "${title}"`);
+    
     const userResult = await pool.query(
       'SELECT push_token FROM users WHERE id = $1',
       [userId]
     );
 
     if (userResult.rows.length === 0 || !userResult.rows[0].push_token) {
-      console.log(`No push token for user ${userId}`);
+      console.log(`[Push] No push token for user ${userId}`);
       return false;
     }
 
     const pushToken = userResult.rows[0].push_token;
+    console.log(`[Push] Token found for user ${userId}, token prefix: ${pushToken.substring(0, 20)}...`);
+    
     const jwtToken = getAPNsJWT();
 
     if (!jwtToken) {
-      console.error('Could not generate APNs JWT');
+      console.error('[Push] Could not generate APNs JWT - check APNS_KEY_ID, APNS_TEAM_ID, APNS_AUTH_KEY');
       return false;
     }
+    
+    console.log(`[Push] JWT generated successfully, sending to APNs...`);
 
     const payload = {
       aps: {

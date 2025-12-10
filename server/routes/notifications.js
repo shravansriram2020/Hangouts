@@ -8,7 +8,11 @@ router.post('/push-token', authenticateToken, async (req, res) => {
   try {
     const { pushToken } = req.body;
 
+    console.log(`[Push Token] Registering token for user ${req.user.id}`);
+    console.log(`[Push Token] Token prefix: ${pushToken ? pushToken.substring(0, 30) + '...' : 'null'}`);
+
     if (!pushToken) {
+      console.log('[Push Token] Error: No push token provided');
       return res.status(400).json({ error: 'Push token is required' });
     }
 
@@ -17,9 +21,10 @@ router.post('/push-token', authenticateToken, async (req, res) => {
       [pushToken, req.user.id]
     );
 
+    console.log(`[Push Token] Successfully registered token for user ${req.user.id}`);
     res.json({ message: 'Push token registered successfully' });
   } catch (error) {
-    console.error('Register push token error:', error);
+    console.error('[Push Token] Register push token error:', error);
     res.status(500).json({ error: 'Failed to register push token' });
   }
 });
