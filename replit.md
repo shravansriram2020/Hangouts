@@ -32,3 +32,21 @@ Preferred communication style: Simple, everyday language.
 - **UI Libraries**: `@expo/vector-icons`, `expo-linear-gradient`, `expo-blur`, `@react-navigation`, `react-native-gesture-handler`, and `react-native-reanimated` for UI and animations.
 - **Development Tools**: TypeScript, ESLint, `dotenv` for environment variables (DATABASE_URL, JWT_SECRET, EXPO_PUBLIC_API_URL, EXPO_PUBLIC_TERMS_URL, EXPO_PUBLIC_PRIVACY_URL). TomTom API key is stored securely server-side.
 - **Security**: Rate limiting via `express-rate-limit`, JWT authentication with a strong secret, Helmet.js for security headers, password strength requirements, and CORS configured for trusted origins. Email verification utilizes Resend API for branded HTML emails.
+- **Push Notifications**: Native APNs (Apple Push Notification service) integration using JWT-based authentication. The backend sends push notifications directly to Apple's servers for iOS devices. Device tokens are stored in the `users` table.
+- **Email Service**: Resend API with verified domain `hangouts-app.com` for sending verification emails with branded HTML templates.
+
+## Recent Changes (December 2025)
+
+### Push Notifications Fix
+- Fixed APNs private key formatting issue - the key stored in environment variables was on a single line and needed to be properly reformatted with line breaks for JWT signing
+- Added test endpoint `/api/test-push` for debugging push notification delivery
+- Push notifications now successfully send to TestFlight devices
+
+### Email Verification Fix
+- Configured DNS records (SPF, MX, DKIM) on root domain `@` in Squarespace for proper email deliverability
+- Updated email template with larger logo (400px width)
+- Sender address: `noreply@hangouts-app.com`
+
+## Testing Endpoints
+- `GET /api/health` - Check service status (APNs, Resend, database connectivity)
+- `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)

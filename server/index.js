@@ -135,6 +135,34 @@ app.get('/api/health', async (req, res) => {
   res.json(checks);
 });
 
+const { sendPushNotification } = require('./services/pushNotifications');
+
+app.post('/api/test-push', async (req, res) => {
+  const { userId } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+  
+  try {
+    console.log('[Test Push] Sending test push to user:', userId);
+    const result = await sendPushNotification(
+      userId,
+      'Test Notification',
+      'This is a test push notification from Hangouts!',
+      { type: 'test' }
+    );
+    
+    res.json({ 
+      success: result, 
+      message: result ? 'Push notification sent successfully' : 'Failed to send push notification - check server logs'
+    });
+  } catch (error) {
+    console.error('[Test Push] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>

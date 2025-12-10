@@ -11,41 +11,42 @@ let cachedJWT = null;
 let jwtExpiry = 0;
 
 function formatPrivateKey(key) {
-  if (!key) return null;
+  if (!key) {
+    console.error('[APNs] No private key provided');
+    return null;
+  }
   
-  let formattedKey = key
+  let cleanKey = key
     .replace(/\\n/g, '\n')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .trim();
   
-  if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
-    formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}`;
-  }
-  if (!formattedKey.includes('-----END PRIVATE KEY-----')) {
-    formattedKey = `${formattedKey}\n-----END PRIVATE KEY-----`;
-  }
+  const beginMarker = '-----BEGIN PRIVATE KEY-----';
+  const endMarker = '-----END PRIVATE KEY-----';
   
-  const lines = formattedKey.split('\n');
-  const formattedLines = [];
-  let keyContent = '';
+  let keyContent = cleanKey;
   
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (trimmedLine === '-----BEGIN PRIVATE KEY-----') {
-      formattedLines.push(trimmedLine);
-    } else if (trimmedLine === '-----END PRIVATE KEY-----') {
-      if (keyContent) {
-        const chunks = keyContent.match(/.{1,64}/g) || [];
-        formattedLines.push(...chunks);
-      }
-      formattedLines.push(trimmedLine);
-    } else if (trimmedLine) {
-      keyContent += trimmedLine;
+  if (cleanKey.includes(beginMarker)) {
+    const afterBegin = cleanKey.split(beginMarker)[1] || '';
+    if (afterBegin.includes(endMarker)) {
+      keyContent = afterBegin.split(endMarker)[0];
+    } else {
+      keyContent = afterBegin;
     }
+  } else if (cleanKey.includes(endMarker)) {
+    keyContent = cleanKey.split(endMarker)[0];
   }
   
-  return formattedLines.join('\n');
+  keyContent = keyContent.replace(/[\s\n\r]/g, '');
+  
+  if (!keyContent || keyContent.length < 50) {
+    console.error('[APNs] Key content too short or empty');
+    return null;
+  }
+  
+  const chunks = keyContent.match(/.{1,64}/g) || [];
+  return [beginMarker, ...chunks, endMarker].join('\n');
 }
 
 function getAPNsJWT() {
@@ -60,14 +61,14 @@ function getAPNsJWT() {
   const authKey = process.env.APNS_AUTH_KEY;
 
   if (!keyId || !teamId || !authKey) {
-    console.error('Missing APNs credentials');
+    console.error('[APNs] Missing credentials');
     return null;
   }
 
   const privateKey = formatPrivateKey(authKey);
   
   if (!privateKey) {
-    console.error('Failed to format APNs private key');
+    console.error('[APNs] Failed to format private key');
     return null;
   }
 
