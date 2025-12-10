@@ -33,7 +33,7 @@ const getEmailTemplate = (code) => {
                 <tr>
                   <td align="center" style="padding-bottom: 10px;">
                     <a href="https://hangouts-app.com" style="text-decoration: none;">
-                      <img src="${logoUrl}" alt="Hangouts" width="200" style="display: block; margin: 0 auto;" />
+                      <img src="${logoUrl}" alt="Hangouts" width="400" style="display: block; margin: 0 auto; max-width: 100%;" />
                     </a>
                   </td>
                 </tr>
