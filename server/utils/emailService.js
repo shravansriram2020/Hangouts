@@ -83,6 +83,14 @@ const getEmailTemplate = (code) => {
 };
 
 async function getResendCredentials() {
+  // Prioritize RESEND_API_KEY environment variable (the old API key)
+  const apiKey = process.env.RESEND_API_KEY;
+  if (apiKey) {
+    console.log('[Email] Using RESEND_API_KEY environment variable');
+    return { apiKey, fromEmail: 'kermanjude@gmail.com' };
+  }
+
+  // Fall back to Replit connector if env var not available
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -121,12 +129,7 @@ async function getResendCredentials() {
     }
   }
 
-  console.log('[Email] Falling back to RESEND_API_KEY environment variable');
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error('Email service not configured - no API key found');
-  }
-  return { apiKey, fromEmail: 'kermanjude@gmail.com' };
+  throw new Error('Email service not configured - no API key found');
 }
 
 async function isResendConfigured() {
