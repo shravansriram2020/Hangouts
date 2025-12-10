@@ -138,6 +138,19 @@ app.get('/api/health', async (req, res) => {
 const { sendPushNotification } = require('./services/pushNotifications');
 const { sendVerificationEmail, generateVerificationCode } = require('./utils/emailService');
 
+app.get('/api/debug-env', (req, res) => {
+  const resendKey = process.env.RESEND_API_KEY;
+  res.json({
+    hasResendApiKey: !!resendKey,
+    keyPrefix: resendKey ? resendKey.substring(0, 8) : 'none',
+    keyLength: resendKey ? resendKey.length : 0,
+    nodeEnv: process.env.NODE_ENV,
+    hasConnectorHostname: !!process.env.REPLIT_CONNECTORS_HOSTNAME,
+    hasReplIdentity: !!process.env.REPL_IDENTITY,
+    hasWebReplRenewal: !!process.env.WEB_REPL_RENEWAL
+  });
+});
+
 app.post('/api/test-email', async (req, res) => {
   const { email } = req.body;
   
