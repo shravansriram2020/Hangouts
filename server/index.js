@@ -136,6 +136,32 @@ app.get('/api/health', async (req, res) => {
 });
 
 const { sendPushNotification } = require('./services/pushNotifications');
+const { sendVerificationEmail, generateVerificationCode } = require('./utils/emailService');
+
+app.post('/api/test-email', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'email is required' });
+  }
+  
+  try {
+    console.log('[Test Email] Testing email to:', email);
+    const code = generateVerificationCode();
+    const result = await sendVerificationEmail(email, code);
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully',
+      emailId: result?.id
+    });
+  } catch (error) {
+    console.error('[Test Email] Error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      details: error.toString()
+    });
+  }
+});
 
 app.post('/api/test-push', async (req, res) => {
   const { userId } = req.body;

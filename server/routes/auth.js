@@ -75,6 +75,7 @@ router.post('/send-code', async (req, res) => {
       res.json({ message: 'Verification code sent' });
     } catch (emailError) {
       console.error('Email sending failed:', emailError.message);
+      console.error('Email error details:', emailError);
       // In development, return the code if email fails (Resend test mode limitation)
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV MODE] Verification code for ${email}: ${code}`);
@@ -84,6 +85,11 @@ router.post('/send-code', async (req, res) => {
           devNote: 'Email service in test mode - use this code to verify'
         });
       } else {
+        // Include error hint for debugging (safe to expose)
+        const errorHint = emailError.message?.includes('domain') ? 'domain_issue' : 
+                          emailError.message?.includes('API') ? 'api_issue' : 
+                          emailError.message?.includes('configured') ? 'config_issue' : 'unknown';
+        console.error('[Auth] Email error hint:', errorHint, emailError.message);
         res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
       }
     }
