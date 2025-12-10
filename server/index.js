@@ -102,8 +102,34 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get('/api/health', async (req, res) => {
+  const checks = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    apns: {
+      keyId: process.env.APNS_KEY_ID ? 'configured' : 'missing',
+      teamId: process.env.APNS_TEAM_ID ? 'configured' : 'missing',
+      authKey: process.env.APNS_AUTH_KEY ? 'configured' : 'missing'
+    },
+    resend: {
+      apiKey: process.env.RESEND_API_KEY ? 'configured' : 'missing'
+    },
+    database: 'unknown'
+  };
+  
+  try {
+    const dbResult = await pool.query('SELECT COUNT(*) as user_count FROM users');
+    const tokenResult = await pool.query('SELECT COUNT(*) as token_count FROM users WHERE push_token IS NOT NULL');
+    checks.database = 'connected';
+    checks.userCount = parseInt(dbResult.rows[0].user_count);
+    checks.usersWithPushTokens = parseInt(tokenResult.rows[0].token_count);
+  } catch (error) {
+    checks.database = 'error: ' + error.message;
+  }
+  
+  console.log('[Health Check]', JSON.stringify(checks, null, 2));
+  res.json(checks);
 });
 
 app.get('/', (req, res) => {
@@ -161,7 +187,24 @@ app.get('/', (req, res) => {
 
 const startServer = async () => {
   try {
+    console.log('='.repeat(60));
+    console.log('HANGOUTS SERVER STARTING');
+    console.log('='.repeat(60));
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`APNs Key ID: ${process.env.APNS_KEY_ID ? 'configured' : 'MISSING'}`);
+    console.log(`APNs Team ID: ${process.env.APNS_TEAM_ID ? 'configured' : 'MISSING'}`);
+    console.log(`APNs Auth Key: ${process.env.APNS_AUTH_KEY ? 'configured (' + process.env.APNS_AUTH_KEY.length + ' chars)' : 'MISSING'}`);
+    console.log(`Resend API Key: ${process.env.RESEND_API_KEY ? 'configured' : 'MISSING'}`);
+    console.log(`Database URL: ${process.env.DATABASE_URL ? 'configured' : 'MISSING'}`);
+    console.log('='.repeat(60));
+    
     await initDb();
+    
+    const userCount = await pool.query('SELECT COUNT(*) FROM users');
+    const tokenCount = await pool.query('SELECT COUNT(*) FROM users WHERE push_token IS NOT NULL');
+    console.log(`Database connected - ${userCount.rows[0].count} users, ${tokenCount.rows[0].count} with push tokens`);
+    console.log('='.repeat(60));
+    
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
