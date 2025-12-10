@@ -117,6 +117,19 @@ async function handleInvalidToken(userId) {
   }
 }
 
+async function getUnreadCount(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
+      [userId]
+    );
+    return parseInt(result.rows[0].count) || 0;
+  } catch (error) {
+    console.error('[Push] Error getting unread count:', error);
+    return 1;
+  }
+}
+
 async function sendPushNotification(userId, title, body, data = {}) {
   try {
     console.log(`[Push] Attempting to send notification to user ${userId}: "${title}"`);
@@ -143,6 +156,8 @@ async function sendPushNotification(userId, title, body, data = {}) {
     
     console.log(`[Push] JWT generated successfully, sending to APNs...`);
 
+    const badgeCount = await getUnreadCount(userId);
+
     const payload = {
       aps: {
         alert: {
@@ -150,7 +165,7 @@ async function sendPushNotification(userId, title, body, data = {}) {
           body: body
         },
         sound: 'default',
-        badge: 1
+        badge: badgeCount + 1
       },
       data: data
     };
@@ -256,7 +271,87 @@ async function sendPushToEventAttendees(eventId, excludeUserId, title, body, dat
   }
 }
 
+async function clearBadge(userId) {
+  try {
+    console.log(`[Push] Clearing badge for user ${userId}`);
+    
+    const userResult = await pool.query(
+      'SELECT push_token FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0 || !userResult.rows[0].push_token) {
+      console.log(`[Push] No push token for user ${userId}, skipping badge clear`);
+      return false;
+    }
+
+    const pushToken = userResult.rows[0].push_token;
+    const jwtToken = getAPNsJWT();
+
+    if (!jwtToken) {
+      console.error('[Push] Could not generate APNs JWT for badge clear');
+      return false;
+    }
+
+    const payload = {
+      aps: {
+        'content-available': 1,
+        badge: 0
+      }
+    };
+
+    return new Promise((resolve) => {
+      const client = http2.connect(`https://${APNS_HOST}:${APNS_PORT}`);
+
+      client.on('error', (err) => {
+        console.error('[Push] Badge clear connection error:', err);
+        client.close();
+        resolve(false);
+      });
+
+      const headers = {
+        ':method': 'POST',
+        ':path': `/3/device/${pushToken}`,
+        'authorization': `bearer ${jwtToken}`,
+        'apns-topic': BUNDLE_ID,
+        'apns-push-type': 'background',
+        'apns-priority': '5',
+        'content-type': 'application/json'
+      };
+
+      const req = client.request(headers);
+
+      req.on('response', (headers) => {
+        const statusCode = headers[':status'];
+        if (statusCode === 200) {
+          console.log(`[Push] Badge cleared for user ${userId}`);
+          resolve(true);
+        } else {
+          console.log(`[Push] Badge clear failed with status ${statusCode}`);
+          resolve(false);
+        }
+      });
+
+      req.on('end', () => {
+        client.close();
+      });
+
+      req.on('error', (err) => {
+        console.error('[Push] Badge clear request error:', err);
+        resolve(false);
+      });
+
+      req.write(JSON.stringify(payload));
+      req.end();
+    });
+  } catch (error) {
+    console.error('[Push] Clear badge error:', error);
+    return false;
+  }
+}
+
 module.exports = {
   sendPushNotification,
-  sendPushToEventAttendees
+  sendPushToEventAttendees,
+  clearBadge
 };

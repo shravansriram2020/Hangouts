@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { clearBadge } = require('../services/pushNotifications');
 
 const router = express.Router();
 
@@ -81,6 +82,11 @@ router.put('/read-all', authenticateToken, async (req, res) => {
     await pool.query(
       'UPDATE notifications SET is_read = true WHERE user_id = $1',
       [req.user.id]
+    );
+
+    // Clear the iOS app badge
+    clearBadge(req.user.id).catch(err => 
+      console.error('[Notifications] Failed to clear badge:', err)
     );
 
     res.json({ message: 'All notifications marked as read' });
