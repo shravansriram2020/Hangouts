@@ -1,3 +1,5 @@
+const { Resend } = require('resend');
+
 const getLogoUrl = () => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
   if (apiUrl) {
@@ -88,53 +90,43 @@ async function getResendCredentials() {
     ? 'depl ' + process.env.WEB_REPL_RENEWAL 
     : null;
 
-  if (!hostname || !xReplitToken) {
-    console.log('[Email] Connector not available, falling back to env var');
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('Email service not configured');
-    }
-    return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
-  }
+  if (hostname && xReplitToken) {
+    console.log('[Email] Attempting to fetch Resend credentials from connector...');
+    
+    try {
+      const response = await fetch(
+        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+        {
+          headers: {
+            'Accept': 'application/json',
+            'X_REPLIT_TOKEN': xReplitToken
+          }
+        }
+      );
 
-  console.log('[Email] Fetching Resend credentials from connector...');
-  
-  try {
-    const response = await fetch(
-      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-      {
-        headers: {
-          'Accept': 'application/json',
-          'X_REPLIT_TOKEN': xReplitToken
+      if (response.ok) {
+        const data = await response.json();
+        const connectionSettings = data.items?.[0];
+
+        if (connectionSettings?.settings?.api_key) {
+          console.log('[Email] Successfully retrieved Resend credentials from connector');
+          return {
+            apiKey: connectionSettings.settings.api_key,
+            fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
+          };
         }
       }
-    );
-
-    const data = await response.json();
-    const connectionSettings = data.items?.[0];
-
-    if (!connectionSettings || !connectionSettings.settings?.api_key) {
-      console.log('[Email] Connector returned no settings, falling back to env var');
-      const apiKey = process.env.RESEND_API_KEY;
-      if (!apiKey) {
-        throw new Error('Email service not configured');
-      }
-      return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
+    } catch (error) {
+      console.log('[Email] Connector fetch failed:', error.message);
     }
-
-    console.log('[Email] Successfully retrieved Resend credentials from connector');
-    return {
-      apiKey: connectionSettings.settings.api_key,
-      fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
-    };
-  } catch (error) {
-    console.error('[Email] Connector error, falling back to env var:', error.message);
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('Email service not configured');
-    }
-    return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
   }
+
+  console.log('[Email] Falling back to RESEND_API_KEY environment variable');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('Email service not configured - no API key found');
+  }
+  return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
 }
 
 async function isResendConfigured() {
@@ -152,40 +144,32 @@ const sendVerificationEmail = async (email, code) => {
   let credentials;
   try {
     credentials = await getResendCredentials();
+    console.log(`[Email] Using from email: ${credentials.fromEmail}`);
   } catch (error) {
     console.error('[Email] Failed to get Resend credentials:', error.message);
     throw new Error('Email service not configured');
   }
-  
-  const fromAddress = `Hangouts <${credentials.fromEmail}>`;
+
+  const resend = new Resend(credentials.apiKey);
   
   const emailPayload = {
-    from: fromAddress,
+    from: `Hangouts <${credentials.fromEmail}>`,
     to: [email],
     subject: 'Verify your email - Hangouts',
     html: getEmailTemplate(code),
   };
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${credentials.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailPayload),
-    });
-
-    const responseData = await response.json();
+    console.log('[Email] Sending email via Resend SDK...');
+    const { data, error } = await resend.emails.send(emailPayload);
     
-    if (!response.ok) {
-      console.error('[Email] Resend API error:', JSON.stringify(responseData, null, 2));
-      console.error('[Email] Response status:', response.status);
-      throw new Error(`Failed to send verification email: ${responseData.message || response.status}`);
+    if (error) {
+      console.error('[Email] Resend API error:', JSON.stringify(error, null, 2));
+      throw new Error(`Failed to send verification email: ${error.message || JSON.stringify(error)}`);
     }
 
-    console.log('[Email] Successfully sent verification email, ID:', responseData.id);
-    return responseData;
+    console.log('[Email] Successfully sent verification email, ID:', data?.id);
+    return data;
   } catch (error) {
     console.error('[Email] Error sending email:', error.message);
     throw error;
