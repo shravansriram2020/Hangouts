@@ -112,7 +112,7 @@ async function getResendCredentials() {
           console.log('[Email] Successfully retrieved Resend credentials from connector');
           return {
             apiKey: connectionSettings.settings.api_key,
-            fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
+            fromEmail: connectionSettings.settings.from_email || 'kermanjude@gmail.com'
           };
         }
       }
@@ -126,7 +126,7 @@ async function getResendCredentials() {
   if (!apiKey) {
     throw new Error('Email service not configured - no API key found');
   }
-  return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
+  return { apiKey, fromEmail: 'kermanjude@gmail.com' };
 }
 
 async function isResendConfigured() {
