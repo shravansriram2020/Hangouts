@@ -165,6 +165,7 @@ EXPO_PUBLIC_API_URL = "https://dbb898f2-249b-4b2e-b351-918c5bf49456-00-1odvwsre5
 
 [userenv.production]
 EXPO_PUBLIC_API_URL = "https://api.hangouts-app.com/api"
+NODE_ENV = "production"
 
 [deployment]
 deploymentTarget = "autoscale"
