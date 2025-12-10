@@ -88,27 +88,39 @@ const sendVerificationEmail = async (email, code) => {
     throw new Error('Email service not configured');
   }
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'Hangouts <noreply@hangouts-app.com>',
-      to: [email],
-      subject: 'Verify your email - Hangouts',
-      html: getEmailTemplate(code),
-    }),
-  });
+  console.log(`[Email] Attempting to send verification email to: ${email}`);
+  
+  const emailPayload = {
+    from: 'Hangouts <noreply@hangouts-app.com>',
+    to: [email],
+    subject: 'Verify your email - Hangouts',
+    html: getEmailTemplate(code),
+  };
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Resend API error:', errorData);
-    throw new Error('Failed to send verification email');
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error('[Email] Resend API error:', JSON.stringify(responseData, null, 2));
+      console.error('[Email] Response status:', response.status);
+      throw new Error(`Failed to send verification email: ${responseData.message || response.status}`);
+    }
+
+    console.log('[Email] Successfully sent verification email, ID:', responseData.id);
+    return responseData;
+  } catch (error) {
+    console.error('[Email] Error sending email:', error.message);
+    throw error;
   }
-
-  return await response.json();
 };
 
 module.exports = {
