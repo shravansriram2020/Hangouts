@@ -16,6 +16,7 @@ const photosRoutes = require('./routes/photos');
 const notificationsRoutes = require('./routes/notifications');
 const conflictsRoutes = require('./routes/conflicts');
 const locationRoutes = require('./routes/location');
+const { isResendConfigured } = require('./utils/emailService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -103,6 +104,8 @@ app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
 
 app.get('/api/health', async (req, res) => {
+  const resendConfigured = await isResendConfigured();
+  
   const checks = {
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -113,7 +116,7 @@ app.get('/api/health', async (req, res) => {
       authKey: process.env.APNS_AUTH_KEY ? 'configured' : 'missing'
     },
     resend: {
-      apiKey: process.env.RESEND_API_KEY ? 'configured' : 'missing'
+      apiKey: resendConfigured ? 'configured' : 'missing'
     },
     database: 'unknown'
   };

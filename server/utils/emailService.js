@@ -1,5 +1,3 @@
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
 const getLogoUrl = () => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
   if (apiUrl) {
@@ -82,16 +80,87 @@ const getEmailTemplate = (code) => {
   `.trim();
 };
 
-const sendVerificationEmail = async (email, code) => {
-  if (!RESEND_API_KEY) {
-    console.error('RESEND_API_KEY is not configured');
-    throw new Error('Email service not configured');
+async function getResendCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!hostname || !xReplitToken) {
+    console.log('[Email] Connector not available, falling back to env var');
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('Email service not configured');
+    }
+    return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
   }
 
+  console.log('[Email] Fetching Resend credentials from connector...');
+  
+  try {
+    const response = await fetch(
+      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
+      }
+    );
+
+    const data = await response.json();
+    const connectionSettings = data.items?.[0];
+
+    if (!connectionSettings || !connectionSettings.settings?.api_key) {
+      console.log('[Email] Connector returned no settings, falling back to env var');
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey) {
+        throw new Error('Email service not configured');
+      }
+      return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
+    }
+
+    console.log('[Email] Successfully retrieved Resend credentials from connector');
+    return {
+      apiKey: connectionSettings.settings.api_key,
+      fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
+    };
+  } catch (error) {
+    console.error('[Email] Connector error, falling back to env var:', error.message);
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('Email service not configured');
+    }
+    return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
+  }
+}
+
+async function isResendConfigured() {
+  try {
+    await getResendCredentials();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const sendVerificationEmail = async (email, code) => {
   console.log(`[Email] Attempting to send verification email to: ${email}`);
   
+  let credentials;
+  try {
+    credentials = await getResendCredentials();
+  } catch (error) {
+    console.error('[Email] Failed to get Resend credentials:', error.message);
+    throw new Error('Email service not configured');
+  }
+  
+  const fromAddress = `Hangouts <${credentials.fromEmail}>`;
+  
   const emailPayload = {
-    from: 'Hangouts <noreply@hangouts-app.com>',
+    from: fromAddress,
     to: [email],
     subject: 'Verify your email - Hangouts',
     html: getEmailTemplate(code),
@@ -101,7 +170,7 @@ const sendVerificationEmail = async (email, code) => {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${credentials.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(emailPayload),
@@ -126,4 +195,5 @@ const sendVerificationEmail = async (email, code) => {
 module.exports = {
   generateVerificationCode,
   sendVerificationEmail,
+  isResendConfigured,
 };
