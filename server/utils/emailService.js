@@ -87,7 +87,7 @@ async function getResendCredentials() {
   const apiKey = process.env.RESEND_API_KEY;
   if (apiKey) {
     console.log('[Email] Using RESEND_API_KEY environment variable');
-    return { apiKey, fromEmail: 'hello@noreply.hangouts-app.com' };
+    return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
   }
 
   // Fall back to Replit connector if env var not available
@@ -120,7 +120,7 @@ async function getResendCredentials() {
           console.log('[Email] Successfully retrieved Resend credentials from connector');
           return {
             apiKey: connectionSettings.settings.api_key,
-            fromEmail: connectionSettings.settings.from_email || 'hello@noreply.hangouts-app.com'
+            fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
           };
         }
       }
