@@ -83,53 +83,16 @@ const getEmailTemplate = (code) => {
 };
 
 async function getResendCredentials() {
-  // Prioritize RESEND_API_KEY environment variable (the old API key)
+  // Use RESEND_API_KEY environment variable with verified domain
   const apiKey = process.env.RESEND_API_KEY;
   if (apiKey) {
     console.log('[Email] Using RESEND_API_KEY environment variable');
     return { apiKey, fromEmail: 'noreply@hangouts-app.com' };
   }
 
-  // Fall back to Replit connector if env var not available
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (hostname && xReplitToken) {
-    console.log('[Email] Attempting to fetch Resend credentials from connector...');
-    
-    try {
-      const response = await fetch(
-        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-        {
-          headers: {
-            'Accept': 'application/json',
-            'X_REPLIT_TOKEN': xReplitToken
-          }
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const connectionSettings = data.items?.[0];
-
-        if (connectionSettings?.settings?.api_key) {
-          console.log('[Email] Successfully retrieved Resend credentials from connector');
-          return {
-            apiKey: connectionSettings.settings.api_key,
-            fromEmail: connectionSettings.settings.from_email || 'noreply@hangouts-app.com'
-          };
-        }
-      }
-    } catch (error) {
-      console.log('[Email] Connector fetch failed:', error.message);
-    }
-  }
-
-  throw new Error('Email service not configured - no API key found');
+  // If no API key, log helpful error
+  console.error('[Email] RESEND_API_KEY not found in environment variables');
+  throw new Error('Email service not configured - RESEND_API_KEY is required');
 }
 
 async function isResendConfigured() {
