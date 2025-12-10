@@ -139,15 +139,16 @@ const { sendPushNotification } = require('./services/pushNotifications');
 const { sendVerificationEmail, generateVerificationCode } = require('./utils/emailService');
 
 app.get('/api/debug-env', (req, res) => {
+  const verifiedKey = process.env.VERIFIED_RESEND_KEY;
   const resendKey = process.env.RESEND_API_KEY;
+  const activeKey = verifiedKey || resendKey;
   res.json({
+    hasVerifiedKey: !!verifiedKey,
     hasResendApiKey: !!resendKey,
-    keyPrefix: resendKey ? resendKey.substring(0, 8) : 'none',
-    keyLength: resendKey ? resendKey.length : 0,
+    activeKeyPrefix: activeKey ? activeKey.substring(0, 8) : 'none',
+    activeKeyLength: activeKey ? activeKey.length : 0,
     nodeEnv: process.env.NODE_ENV,
-    hasConnectorHostname: !!process.env.REPLIT_CONNECTORS_HOSTNAME,
-    hasReplIdentity: !!process.env.REPL_IDENTITY,
-    hasWebReplRenewal: !!process.env.WEB_REPL_RENEWAL
+    usingVerified: !!verifiedKey
   });
 });
 
