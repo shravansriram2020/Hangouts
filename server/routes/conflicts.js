@@ -45,6 +45,15 @@ router.post('/', authenticateToken, async (req, res) => {
   const { eventId, conflictType, reason, suggestedTime, suggestedLocation, suggestedLat, suggestedLng } = req.body;
 
   try {
+    // Validate that suggested time is not in the past
+    if (conflictType === 'time' && suggestedTime) {
+      const suggestedDate = new Date(suggestedTime);
+      const now = new Date();
+      if (suggestedDate < now) {
+        return res.status(400).json({ error: 'Cannot schedule a conflict for a time in the past' });
+      }
+    }
+
     const attendeeCheck = await pool.query(
       `SELECT status FROM event_attendees 
        WHERE event_id = $1 AND user_id = $2 AND status IN ('accepted', 'maybe')`,

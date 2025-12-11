@@ -98,7 +98,7 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const messageWithUser = await pool.query(
-      `SELECT m.*, u.first_name as user_name, u.profile_photo as user_profile_image,
+      `SELECT m.*, u.first_name, u.profile_photo,
               UPPER(LEFT(u.first_name, 1)) as user_initial,
               reply.content as reply_to_content,
               reply_user.first_name as reply_to_user
