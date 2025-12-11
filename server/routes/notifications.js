@@ -56,6 +56,11 @@ router.get('/', authenticateToken, async (req, res) => {
       [req.user.id]
     );
 
+    // Clear badge when user opens notifications (they're viewing them)
+    clearBadge(req.user.id).catch(err => 
+      console.error('[Notifications] Failed to clear badge on view:', err)
+    );
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get notifications error:', error);
@@ -129,6 +134,11 @@ router.delete('/all', authenticateToken, async (req, res) => {
     await pool.query(
       'DELETE FROM notifications WHERE user_id = $1',
       [req.user.id]
+    );
+
+    // Clear the iOS app badge when dismissing all notifications
+    clearBadge(req.user.id).catch(err => 
+      console.error('[Notifications] Failed to clear badge on dismiss:', err)
     );
 
     res.json({ message: 'All notifications dismissed' });
