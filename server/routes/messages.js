@@ -15,13 +15,57 @@ const detectSuggestion = (content) => {
   return { hasTimeSuggestion, hasLocationSuggestion };
 };
 
+// Track which chat each user is currently viewing (in-memory for simplicity)
+const activeChats = new Map(); // userId -> { eventId, timestamp }
+
+// Clean up stale entries older than 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, data] of activeChats.entries()) {
+    if (now - data.timestamp > 5 * 60 * 1000) {
+      activeChats.delete(userId);
+    }
+  }
+}, 60 * 1000);
+
+// Endpoint to report user is viewing a specific chat
+router.post('/active-chat', authenticateToken, async (req, res) => {
+  const { eventId } = req.body;
+  
+  if (eventId) {
+    activeChats.set(req.user.id, { eventId, timestamp: Date.now() });
+  } else {
+    activeChats.delete(req.user.id);
+  }
+  
+  res.json({ success: true });
+});
+
+// Check if user is currently viewing a specific chat
+function isUserInChat(userId, eventId) {
+  const activeChat = activeChats.get(userId);
+  if (!activeChat) return false;
+  
+  // Consider stale if older than 30 seconds
+  if (Date.now() - activeChat.timestamp > 30 * 1000) {
+    activeChats.delete(userId);
+    return false;
+  }
+  
+  return activeChat.eventId === eventId;
+}
+
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
+    // Update active chat tracking when user fetches messages
+    activeChats.set(req.user.id, { eventId: req.params.eventId, timestamp: Date.now() });
+    
     const result = await pool.query(
       `SELECT 
         m.*, 
         u.first_name, 
         u.profile_photo,
+        UPPER(LEFT(u.first_name, 1)) as user_initial,
         reply.content as reply_to_content,
         reply_user.first_name as reply_to_user
        FROM messages m
@@ -55,6 +99,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const messageWithUser = await pool.query(
       `SELECT m.*, u.first_name as user_name, u.profile_photo as user_profile_image,
+              UPPER(LEFT(u.first_name, 1)) as user_initial,
               reply.content as reply_to_content,
               reply_user.first_name as reply_to_user
        FROM messages m
@@ -82,17 +127,24 @@ router.post('/', authenticateToken, async (req, res) => {
     // Truncate long messages for notification
     const previewContent = content.length > 50 ? content.substring(0, 47) + '...' : content;
     for (const attendee of attendees.rows) {
+      // Always create the in-app notification
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, message, event_id)
          VALUES ($1, 'message', 'New Message', $2, $3)`,
         [attendee.user_id, `${userResult.rows[0].first_name}: ${previewContent}`, eventId]
       );
-      sendPushNotification(
-        attendee.user_id,
-        'New Message',
-        `${userResult.rows[0].first_name}: ${previewContent}`,
-        { type: 'message', eventId }
-      ).catch(console.error);
+      
+      // Only send push notification if user is NOT currently viewing this chat
+      if (!isUserInChat(attendee.user_id, eventId)) {
+        sendPushNotification(
+          attendee.user_id,
+          'New Message',
+          `${userResult.rows[0].first_name}: ${previewContent}`,
+          { type: 'message', eventId }
+        ).catch(console.error);
+      } else {
+        console.log(`[Push] Skipping push for user ${attendee.user_id} - currently viewing chat ${eventId}`);
+      }
     }
 
     res.status(201).json(messageWithUser.rows[0]);
