@@ -854,6 +854,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                           setSuggestedTime(selectedTime);
                         }
                       }}
+                      minimumDate={suggestedDate && suggestedDate.toDateString() === new Date().toDateString() ? new Date() : undefined}
                       style={styles.iosDatePicker}
                       textColor={Colors.secondary}
                     />
@@ -889,6 +890,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                   setSuggestedTime(selectedTime);
                 }
               }}
+              minimumDate={suggestedDate && suggestedDate.toDateString() === new Date().toDateString() ? new Date() : undefined}
             />
           )}
     </GlassModal>

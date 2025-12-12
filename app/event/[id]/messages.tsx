@@ -42,8 +42,9 @@ const getGradientLuminance = (color1: string, color2: string) => {
 interface Message {
   id: string;
   user_id: string;
-  user_name: string;
-  user_profile_image?: string;
+  first_name: string;
+  profile_photo?: string;
+  user_initial?: string;
   content: string;
   created_at: string;
   has_time_suggestion: boolean;
@@ -63,6 +64,20 @@ export default function MessagesScreen() {
   const [showConflictsModal, setShowConflictsModal] = useState(false);
   const [conflictType, setConflictType] = useState<'time' | 'location' | undefined>(undefined);
   const flatListRef = useRef<FlatList>(null);
+  const messageIndexMap = useRef<Map<string, number>>(new Map());
+
+  const scrollToMessage = (messageId: string) => {
+    const index = messageIndexMap.current.get(messageId);
+    if (index !== undefined && flatListRef.current) {
+      flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+    }
+  };
+
+  useEffect(() => {
+    const map = new Map<string, number>();
+    messages.forEach((msg, idx) => map.set(msg.id, idx));
+    messageIndexMap.current = map;
+  }, [messages]);
   
   const isHost = event?.isHost === true;
 
@@ -146,12 +161,12 @@ export default function MessagesScreen() {
       <View style={[styles.messageRow, isOwnMessage && styles.messageRowOwn]}>
         {!isOwnMessage && (
           <View style={styles.avatarContainer}>
-            {item.user_profile_image ? (
-              <Image source={{ uri: item.user_profile_image }} style={styles.avatar} />
+            {item.profile_photo ? (
+              <Image source={{ uri: item.profile_photo }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarInitial}>
-                  {item.user_name?.charAt(0).toUpperCase() || '?'}
+                  {item.user_initial || item.first_name?.charAt(0).toUpperCase() || '?'}
                 </Text>
               </View>
             )}
@@ -159,12 +174,16 @@ export default function MessagesScreen() {
         )}
         <View style={[styles.messageContent, !isOwnMessage && styles.messageContentOther]}>
           {!isOwnMessage && (
-            <Text style={styles.messageSender}>{item.user_name}</Text>
+            <Text style={styles.messageSender}>{item.first_name}</Text>
           )}
           <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
           <View style={[styles.messageBubble, isOwnMessage ? styles.messageBubbleOwn : styles.messageBubbleOther]}>
             {item.reply_to_id && item.reply_to_content && (
-              <View style={[styles.replyQuote, isOwnMessage && styles.replyQuoteOwn]}>
+              <TouchableOpacity 
+                style={[styles.replyQuote, isOwnMessage && styles.replyQuoteOwn]}
+                onPress={() => scrollToMessage(item.reply_to_id!)}
+                activeOpacity={0.7}
+              >
                 <View style={[styles.replyQuoteBar, isOwnMessage && styles.replyQuoteBarOwn]} />
                 <View style={styles.replyQuoteContent}>
                   <Text style={[styles.replyQuoteName, isOwnMessage && styles.replyQuoteNameOwn]}>
@@ -177,7 +196,7 @@ export default function MessagesScreen() {
                     {item.reply_to_content}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
             <Text style={[styles.messageText, !isOwnMessage && styles.messageTextOther]}>{item.content}</Text>
             {(item.has_time_suggestion || item.has_location_suggestion) && (
@@ -199,12 +218,12 @@ export default function MessagesScreen() {
         </View>
         {isOwnMessage && (
           <View style={[styles.avatarContainer, styles.avatarContainerOwn]}>
-            {item.user_profile_image ? (
-              <Image source={{ uri: item.user_profile_image }} style={styles.avatar} />
+            {item.profile_photo ? (
+              <Image source={{ uri: item.profile_photo }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarInitial}>
-                  {item.user_name?.charAt(0).toUpperCase() || '?'}
+                  {item.user_initial || item.first_name?.charAt(0).toUpperCase() || '?'}
                 </Text>
               </View>
             )}
@@ -245,7 +264,7 @@ export default function MessagesScreen() {
         {replyingTo && (
           <View style={styles.replyPreview}>
             <View style={styles.replyPreviewContent}>
-              <Text style={styles.replyPreviewLabel}>Replying to {replyingTo.user_name}</Text>
+              <Text style={styles.replyPreviewLabel}>Replying to {replyingTo.first_name}</Text>
               <Text style={styles.replyPreviewText} numberOfLines={1}>{replyingTo.content}</Text>
             </View>
             <TouchableOpacity onPress={() => setReplyingTo(null)}>
