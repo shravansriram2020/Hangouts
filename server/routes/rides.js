@@ -35,6 +35,11 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   const { eventId, spotsAvailable, pickupLocation, pickupLat, pickupLng, canDriveTo, canDriveFrom } = req.body;
 
+  // Validate spots available
+  if (!spotsAvailable || spotsAvailable < 1) {
+    return res.status(400).json({ error: 'You must offer at least 1 spot' });
+  }
+
   try {
     const result = await pool.query(
       `INSERT INTO rides (event_id, driver_id, spots_available, pickup_location, pickup_lat, pickup_lng, can_drive_to, can_drive_from)

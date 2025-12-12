@@ -738,7 +738,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
                               style={styles.changeButton}
                               onPress={() => handleResolve(conflict.id)}
                             >
-                              <Text style={styles.changeButtonText}>Change</Text>
+                              <Text style={styles.changeButtonText}>Resolve</Text>
                             </TouchableOpacity>
                           )}
                           {(conflict.reporter_id === user?.id || conflict.created_by === user?.id) && !conflict.isPending && (
