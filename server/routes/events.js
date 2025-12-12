@@ -18,6 +18,12 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: getProfanityError('event title') });
   }
 
+  // Character limit for event names (40 chars fits nicely in the title box)
+  const MAX_TITLE_LENGTH = 40;
+  if (title && title.length > MAX_TITLE_LENGTH) {
+    return res.status(400).json({ error: `Event name must be ${MAX_TITLE_LENGTH} characters or less` });
+  }
+
   try {
     const result = await pool.query(
       `INSERT INTO events (
@@ -122,7 +128,7 @@ router.get('/archived', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT DISTINCT e.*, u.username as host_username, u.first_name as host_first_name, u.profile_photo as host_photo,
        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id AND status = 'accepted') as attendee_count,
-       (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id AND expires_at > NOW()) as photo_count
+       (SELECT COUNT(*) FROM event_photos WHERE event_id = e.id) as photo_count
        FROM events e
        JOIN users u ON e.host_id = u.id
        LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
@@ -195,6 +201,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
   if (title && containsProfanity(title)) {
     return res.status(400).json({ error: getProfanityError('event title') });
+  }
+
+  // Character limit for event names (40 chars fits nicely in the title box)
+  const MAX_TITLE_LENGTH = 40;
+  if (title && title.length > MAX_TITLE_LENGTH) {
+    return res.status(400).json({ error: `Event name must be ${MAX_TITLE_LENGTH} characters or less` });
   }
 
   try {
