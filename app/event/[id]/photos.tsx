@@ -21,6 +21,7 @@ import { Colors, Fonts } from '../../../constants/theme';
 import { useEvent } from '../../../context/EventContext';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+import LoadingDots from '../../../src/components/LoadingDots';
 
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -269,6 +270,20 @@ export default function PhotosScreen() {
         />
       )}
 
+      {/* Upload Loading Overlay */}
+      <Modal
+        visible={uploading}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.uploadOverlay}>
+          <View style={styles.uploadModal}>
+            <LoadingDots size={14} />
+            <Text style={styles.uploadText}>Uploading photos...</Text>
+          </View>
+        </View>
+      </Modal>
+
       <Modal
         visible={!!selectedPhoto}
         transparent
@@ -503,5 +518,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  uploadOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 40,
+    paddingVertical: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  uploadText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
   },
 });

@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import LoadingDots from './LoadingDots';
 
 interface Props {
   eventId: string;
@@ -186,6 +187,16 @@ export default function EventPhotosTab({ eventId }: Props) {
           }
         />
       )}
+
+      {/* Upload Loading Overlay */}
+      <Modal visible={uploading} transparent animationType="fade">
+        <View style={styles.uploadOverlay}>
+          <View style={styles.uploadModal}>
+            <LoadingDots size={14} />
+            <Text style={styles.uploadText}>Uploading photos...</Text>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={!!selectedPhoto} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
@@ -421,5 +432,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+  },
+  uploadOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 40,
+    paddingVertical: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  uploadText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.secondary,
+    fontFamily: 'Prompt-Medium',
   },
 });

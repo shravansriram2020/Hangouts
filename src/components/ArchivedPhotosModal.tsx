@@ -21,6 +21,7 @@ import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import GlassModal from './GlassModal';
+import LoadingDots from './LoadingDots';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -251,6 +252,16 @@ export default function ArchivedPhotosModal({ visible, onClose, eventId, eventTi
         )}
       </View>
 
+      {/* Upload Loading Overlay */}
+      <Modal visible={uploading} transparent animationType="fade">
+        <View style={styles.uploadOverlay}>
+          <View style={styles.uploadModal}>
+            <LoadingDots size={14} />
+            <Text style={styles.uploadText}>Uploading photos...</Text>
+          </View>
+        </View>
+      </Modal>
+
       <Modal
         visible={!!selectedPhoto}
         transparent
@@ -474,5 +485,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  uploadOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadModal: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 40,
+    paddingVertical: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  uploadText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.secondary,
   },
 });
