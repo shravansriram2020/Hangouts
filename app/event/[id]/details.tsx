@@ -344,7 +344,7 @@ export default function DetailsScreen() {
                     >
                       <Ionicons
                         name={friendIds.has(attendee.id) ? "heart" : "heart-outline"}
-                        size={14}
+                        size={16}
                         color={friendIds.has(attendee.id) ? Colors.red : Colors.grayMedium}
                       />
                     </TouchableOpacity>
@@ -795,17 +795,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   attendeePlaceholder: {
     width: '100%',
