@@ -174,7 +174,10 @@ export default function OptionsMenu({
                       styles.menuItem,
                       removableAttendees.length === 0 && styles.menuItemDisabled,
                     ]}
-                    onPress={() => setShowRemoveAttendee(true)}
+                    onPress={() => {
+                      onClose();
+                      setTimeout(() => setShowRemoveAttendee(true), 100);
+                    }}
                     disabled={removableAttendees.length === 0}
                   >
                     <Ionicons 
