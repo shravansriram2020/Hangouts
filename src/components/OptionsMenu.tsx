@@ -414,14 +414,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   removeAttendeeModal: {
-    flex: 1,
     backgroundColor: Colors.white,
     marginTop: 'auto',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 16,
-    maxHeight: '80%',
+    paddingBottom: 30,
   },
   removeAttendeeHeader: {
     flexDirection: 'row',
@@ -435,7 +434,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
   },
   removeAttendeeList: {
-    flex: 1,
+    maxHeight: 300,
   },
   attendeeItem: {
     flexDirection: 'row',

@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   uploadModal: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 40,
     paddingVertical: 30,
     borderRadius: 16,
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   uploadText: {
     marginTop: 16,
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.white,
     fontFamily: 'Prompt-Medium',
   },
 });
