@@ -174,9 +174,9 @@ export default function MessagesScreen() {
         )}
         <View style={[styles.messageContent, !isOwnMessage && styles.messageContentOther]}>
           {!isOwnMessage && (
-            <Text style={styles.messageSender}>{item.first_name}</Text>
+            <Text style={[styles.messageSender, isDarkGradient && styles.messageSenderDark]}>{item.first_name}</Text>
           )}
-          <Text style={styles.messageTime}>{formatTime(item.created_at)}</Text>
+          <Text style={[styles.messageTime, isDarkGradient && styles.messageTimeDark]}>{formatTime(item.created_at)}</Text>
           <View style={[styles.messageBubble, isOwnMessage ? styles.messageBubbleOwn : styles.messageBubbleOther]}>
             {item.reply_to_id && item.reply_to_content && (
               <TouchableOpacity 
@@ -213,7 +213,7 @@ export default function MessagesScreen() {
             style={styles.replyButton}
             onPress={() => setReplyingTo(item)}
           >
-            <Text style={styles.replyText}>← Reply</Text>
+            <Text style={[styles.replyText, isDarkGradient && styles.replyTextDark]}>← Reply</Text>
           </TouchableOpacity>
         </View>
         {isOwnMessage && (
@@ -250,7 +250,7 @@ export default function MessagesScreen() {
         renderItem={renderMessage}
         contentContainerStyle={styles.messagesList}
         showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+        onContentSizeChange={() => setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100)}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={48} color={mutedTextColor} />
@@ -362,11 +362,17 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     marginBottom: 2,
   },
+  messageSenderDark: {
+    color: Colors.white,
+  },
   messageTime: {
     fontSize: 11,
     fontFamily: Fonts.regular,
     color: Colors.gray,
     marginBottom: 4,
+  },
+  messageTimeDark: {
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   messageBubble: {
     backgroundColor: Colors.secondary,
@@ -426,6 +432,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.regular,
     color: Colors.gray,
+  },
+  replyTextDark: {
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   avatarContainer: {
     marginRight: 10,
