@@ -106,8 +106,8 @@ run = ["node", "server/index.js"]
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
+externalPort = 80
 
 [[ports]]
-localPort = 8080
-externalPort = 80
+localPort = 8081
+externalPort = 8081
