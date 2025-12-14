@@ -47,6 +47,7 @@ interface UserResult {
   username: string;
   firstName: string;
   profilePhoto: string | null;
+  isFriend?: boolean;
 }
 
 export default function CreateEventModal({ visible, onClose, onCreated }: Props) {
@@ -672,22 +673,46 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             {userResults.length > 0 && (
               <View style={styles.suggestionsList}>
                 {userResults.map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.userItem}
-                    onPress={() => inviteUser(user)}
-                  >
-                    {user.profilePhoto ? (
-                      <Image source={{ uri: user.profilePhoto }} style={styles.userAvatar} />
-                    ) : (
-                      <View style={styles.userAvatarPlaceholder}>
-                        <Text style={styles.userAvatarText}>
-                          {user.username.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.userName}>@{user.username}</Text>
-                  </TouchableOpacity>
+                  <View key={user.id} style={styles.userItem}>
+                    <TouchableOpacity
+                      style={styles.friendButton}
+                      onPress={async () => {
+                        try {
+                          if (user.isFriend) {
+                            await api.delete(`/users/friends/${user.id}`);
+                          } else {
+                            await api.post(`/users/friends/${user.id}`, {});
+                          }
+                          setUserResults(userResults.map(u => 
+                            u.id === user.id ? { ...u, isFriend: !u.isFriend } : u
+                          ));
+                        } catch (error) {
+                          console.error('Toggle friend failed:', error);
+                        }
+                      }}
+                    >
+                      <Ionicons 
+                        name={user.isFriend ? "heart" : "heart-outline"} 
+                        size={20} 
+                        color={user.isFriend ? Colors.red : Colors.grayMedium} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.userItemContent}
+                      onPress={() => inviteUser(user)}
+                    >
+                      {user.profilePhoto ? (
+                        <Image source={{ uri: user.profilePhoto }} style={styles.userAvatar} />
+                      ) : (
+                        <View style={styles.userAvatarPlaceholder}>
+                          <Text style={styles.userAvatarText}>
+                            {user.username.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.userName}>@{user.username}</Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             )}
@@ -1022,6 +1047,15 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
+  },
+  userItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  friendButton: {
+    padding: 6,
+    marginRight: 6,
   },
   userAvatar: {
     width: 36,
