@@ -59,14 +59,45 @@ export default function DetailsScreen() {
   const [cachedRides, setCachedRides] = useState<any[]>([]);
   const [cachedMoneyRequests, setCachedMoneyRequests] = useState<any[]>([]);
   const [pendingConflict, setPendingConflict] = useState<any | null>(null);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (event?.id) {
       fetchConflictCount();
       fetchUserStatus();
       fetchCachedData();
+      fetchFriends();
     }
   }, [event?.id]);
+
+  const fetchFriends = async () => {
+    try {
+      const friends = await api.get('/users/friends');
+      const ids = new Set(Array.isArray(friends) ? friends.map((f: any) => f.id) : []);
+      setFriendIds(ids);
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    }
+  };
+
+  const toggleFriend = async (userId: string) => {
+    const isFriend = friendIds.has(userId);
+    try {
+      if (isFriend) {
+        await api.delete(`/users/friends/${userId}`);
+        setFriendIds(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      } else {
+        await api.post(`/users/friends/${userId}`, {});
+        setFriendIds(prev => new Set(prev).add(userId));
+      }
+    } catch (error) {
+      console.error('Toggle friend failed:', error);
+    }
+  };
 
   const fetchCachedData = async () => {
     if (!event?.id) return;
@@ -305,6 +336,18 @@ export default function DetailsScreen() {
                     <View style={styles.attendeePlaceholder}>
                       <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
                     </View>
+                  )}
+                  {attendee.id !== user?.id && (
+                    <TouchableOpacity
+                      style={styles.attendeeHeartBadge}
+                      onPress={() => toggleFriend(attendee.id)}
+                    >
+                      <Ionicons
+                        name={friendIds.has(attendee.id) ? "heart" : "heart-outline"}
+                        size={14}
+                        color={friendIds.has(attendee.id) ? Colors.red : Colors.grayMedium}
+                      />
+                    </TouchableOpacity>
                   )}
                 </View>
                 <Text style={[styles.attendeeName, isDark && styles.textLight]} numberOfLines={1}>{attendee.first_name}</Text>
@@ -741,12 +784,28 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.8)',
-    overflow: 'hidden',
     marginBottom: 8,
   },
   attendeePhoto: {
     width: '100%',
     height: '100%',
+    borderRadius: 32,
+  },
+  attendeeHeartBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   attendeePlaceholder: {
     width: '100%',
@@ -754,6 +813,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.secondary,
+    borderRadius: 32,
   },
   attendeeInitial: {
     fontSize: 20,
