@@ -408,6 +408,52 @@ router.delete('/:eventId/notes/:noteId', authenticateToken, async (req, res) => 
   }
 });
 
+// Host removes an attendee from event
+router.delete('/:id/attendees/:attendeeId', authenticateToken, async (req, res) => {
+  try {
+    const { id: eventId, attendeeId } = req.params;
+    
+    // Verify requester is the host
+    const eventResult = await pool.query(
+      'SELECT host_id, title FROM events WHERE id = $1',
+      [eventId]
+    );
+    
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    if (eventResult.rows[0].host_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the host can remove attendees' });
+    }
+    
+    // Cannot remove yourself (host)
+    if (attendeeId === req.user.id) {
+      return res.status(400).json({ error: 'Host cannot remove themselves' });
+    }
+    
+    // Remove the attendee
+    await pool.query(
+      'DELETE FROM event_attendees WHERE event_id = $1 AND user_id = $2',
+      [eventId, attendeeId]
+    );
+    
+    // Notify the removed user
+    const attendeeName = await pool.query('SELECT first_name FROM users WHERE id = $1', [attendeeId]);
+    await pool.query(
+      `INSERT INTO notifications (user_id, type, title, message, event_id)
+       VALUES ($1, 'event_update', 'Removed from Event', $2, $3)`,
+      [attendeeId, `You have been removed from ${eventResult.rows[0].title}`, eventId]
+    );
+    
+    console.log(`[Remove Attendee] Host ${req.user.id} removed attendee ${attendeeId} from event ${eventId}`);
+    res.json({ message: 'Attendee removed' });
+  } catch (error) {
+    console.error('Remove attendee error:', error);
+    res.status(500).json({ error: 'Failed to remove attendee' });
+  }
+});
+
 router.post('/:id/rsvp', authenticateToken, async (req, res) => {
   const { status } = req.body;
   const validStatuses = ['going', 'maybe', 'not_going'];

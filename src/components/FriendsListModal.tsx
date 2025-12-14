@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Image,
   Alert,
 } from 'react-native';
@@ -72,30 +71,6 @@ export default function FriendsListModal({ visible, onClose }: Props) {
     );
   };
 
-  const renderFriend = ({ item }: { item: Friend }) => (
-    <View style={styles.friendItem}>
-      {item.profilePhoto ? (
-        <Image source={{ uri: item.profilePhoto }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarText}>
-            {item.firstName?.charAt(0).toUpperCase() || item.username.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-      )}
-      <View style={styles.friendInfo}>
-        <Text style={styles.friendName}>{item.firstName || item.username}</Text>
-        <Text style={styles.friendUsername}>@{item.username}</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => removeFriend(item.id, item.firstName || item.username)}
-      >
-        <Ionicons name="heart-dislike-outline" size={20} color={Colors.red} />
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <GlassModal visible={visible} onClose={onClose} title="Friends List" fullHeight>
       <View style={styles.container}>
@@ -115,13 +90,31 @@ export default function FriendsListModal({ visible, onClose }: Props) {
         ) : (
           <>
             <Text style={styles.countText}>{friends.length} friend{friends.length !== 1 ? 's' : ''}</Text>
-            <FlatList
-              data={friends}
-              keyExtractor={(item) => item.id}
-              renderItem={renderFriend}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-            />
+            <View style={styles.listContent}>
+              {friends.map((friend) => (
+                <View key={friend.id} style={styles.friendItem}>
+                  {friend.profilePhoto ? (
+                    <Image source={{ uri: friend.profilePhoto }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.avatarText}>
+                        {friend.firstName?.charAt(0).toUpperCase() || friend.username.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.friendInfo}>
+                    <Text style={styles.friendName}>{friend.firstName || friend.username}</Text>
+                    <Text style={styles.friendUsername}>@{friend.username}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeFriend(friend.id, friend.firstName || friend.username)}
+                  >
+                    <Ionicons name="heart-dislike-outline" size={20} color={Colors.red} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           </>
         )}
       </View>
@@ -171,18 +164,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.medium,
     color: Colors.grayMedium,
-    marginBottom: 12,
+    marginTop: 4,
+    marginBottom: 16,
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.grayLight,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+    padding: 14,
+    marginBottom: 12,
   },
   avatar: {
     width: 44,
