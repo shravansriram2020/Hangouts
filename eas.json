@@ -33,6 +33,10 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "shravan1109@icloud.com"
+      }
+    }
   }
 }
