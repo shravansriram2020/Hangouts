@@ -29,6 +29,7 @@ interface UserResult {
   username: string;
   firstName: string;
   profilePhoto: string | null;
+  isFriend?: boolean;
 }
 
 export default function ShareModal({ visible, onClose, eventId, eventTitle }: ShareModalProps) {
@@ -101,6 +102,21 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
     searchTimeout.current = setTimeout(() => {
       searchUsers(text);
     }, 300);
+  };
+
+  const toggleFriend = async (userId: string, isFriend: boolean) => {
+    try {
+      if (isFriend) {
+        await api.delete(`/users/friends/${userId}`);
+      } else {
+        await api.post(`/users/friends/${userId}`, {});
+      }
+      setUserResults(userResults.map(u => 
+        u.id === userId ? { ...u, isFriend: !isFriend } : u
+      ));
+    } catch (error) {
+      console.error('Toggle friend failed:', error);
+    }
   };
 
   const handleInviteUser = async (user: UserResult) => {
@@ -177,26 +193,37 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
             {userResults.length > 0 && (
               <View style={styles.suggestionsList}>
                 {userResults.slice(0, 5).map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.userItem}
-                    onPress={() => handleInviteUser(user)}
-                    disabled={invitingUser === user.id}
-                  >
-                    {user.profilePhoto ? (
-                      <Image source={{ uri: user.profilePhoto }} style={styles.userAvatar} />
-                    ) : (
-                      <View style={styles.userAvatarPlaceholder}>
-                        <Text style={styles.userAvatarText}>
-                          {user.username.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.userName}>@{user.username}</Text>
-                    {invitingUser === user.id && (
-                      <ActivityIndicator size="small" color={Colors.green} style={{ marginLeft: 'auto' }} />
-                    )}
-                  </TouchableOpacity>
+                  <View key={user.id} style={styles.userItem}>
+                    <TouchableOpacity
+                      style={styles.friendButton}
+                      onPress={() => toggleFriend(user.id, user.isFriend || false)}
+                    >
+                      <Ionicons 
+                        name={user.isFriend ? "heart" : "heart-outline"} 
+                        size={20} 
+                        color={user.isFriend ? Colors.red : Colors.grayMedium} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.userItemContent}
+                      onPress={() => handleInviteUser(user)}
+                      disabled={invitingUser === user.id}
+                    >
+                      {user.profilePhoto ? (
+                        <Image source={{ uri: user.profilePhoto }} style={styles.userAvatar} />
+                      ) : (
+                        <View style={styles.userAvatarPlaceholder}>
+                          <Text style={styles.userAvatarText}>
+                            {user.username.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.userName}>@{user.username}</Text>
+                      {invitingUser === user.id && (
+                        <ActivityIndicator size="small" color={Colors.green} style={{ marginLeft: 'auto' }} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             )}
@@ -234,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   tab: {
     flex: 1,
@@ -265,8 +292,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
-    marginBottom: 24,
+    paddingVertical: 14,
+    marginBottom: 28,
   },
   linkText: {
     flex: 1,
@@ -367,9 +394,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  userItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  friendButton: {
+    padding: 6,
+    marginRight: 8,
   },
   userAvatar: {
     width: 36,
