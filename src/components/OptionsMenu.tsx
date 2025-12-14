@@ -25,6 +25,7 @@ interface Props {
   onClose: () => void;
   eventId: string;
   isHost: boolean;
+  hostId?: string;
   attendees: any[];
   onEventDeleted: () => void;
   onAttendeeRemoved: () => void;
@@ -40,6 +41,7 @@ export default function OptionsMenu({
   onClose,
   eventId,
   isHost,
+  hostId,
   attendees,
   onEventDeleted,
   onAttendeeRemoved,
@@ -49,6 +51,8 @@ export default function OptionsMenu({
   allowAttendeeSharing = true,
   onAllowAttendeeSharingChange,
 }: Props) {
+  // Filter out the host from the removable attendees list
+  const removableAttendees = attendees.filter(a => a.id !== hostId);
   const [showRemoveAttendee, setShowRemoveAttendee] = useState(false);
   const [showGradientPicker, setShowGradientPicker] = useState(false);
   const [showTitleEdit, setShowTitleEdit] = useState(false);
@@ -168,20 +172,20 @@ export default function OptionsMenu({
                   <TouchableOpacity
                     style={[
                       styles.menuItem,
-                      attendees.length <= 1 && styles.menuItemDisabled,
+                      removableAttendees.length === 0 && styles.menuItemDisabled,
                     ]}
                     onPress={() => setShowRemoveAttendee(true)}
-                    disabled={attendees.length <= 1}
+                    disabled={removableAttendees.length === 0}
                   >
                     <Ionicons 
                       name="person-remove-outline" 
                       size={18} 
-                      color={attendees.length <= 1 ? Colors.grayMedium : Colors.secondary} 
+                      color={removableAttendees.length === 0 ? Colors.grayMedium : Colors.secondary} 
                     />
                     <Text 
                       style={[
                         styles.menuItemText,
-                        attendees.length <= 1 && styles.menuItemTextDisabled,
+                        removableAttendees.length === 0 && styles.menuItemTextDisabled,
                       ]}
                     >
                       Remove Attendees
@@ -263,7 +267,7 @@ export default function OptionsMenu({
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.removeAttendeeList} showsVerticalScrollIndicator={false}>
-              {attendees.map((attendee) => (
+              {removableAttendees.map((attendee) => (
                 <TouchableOpacity
                   key={attendee.id}
                   style={styles.attendeeItem}

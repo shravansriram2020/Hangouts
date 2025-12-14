@@ -579,6 +579,7 @@ export default function DetailsScreen() {
         onClose={() => setShowOptions(false)}
         eventId={event.id}
         isHost={isHost}
+        hostId={event.host_id}
         attendees={event.attendees || []}
         onEventDeleted={() => router.dismissAll()}
         onAttendeeRemoved={refreshEvent}
