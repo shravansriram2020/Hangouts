@@ -27,6 +27,7 @@ interface UserResult {
   id: string;
   username: string;
   profilePhoto: string | null;
+  isFriend: boolean;
 }
 
 export default function ShareEventModal({ visible, onClose, eventId, userStatus, isHost }: Props) {
@@ -69,6 +70,22 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
       setUserResults(userResults.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Invite failed:', error);
+    }
+  };
+
+  const toggleFriend = async (userId: string, isFriend: boolean) => {
+    try {
+      if (isFriend) {
+        await api.delete(`/users/friends/${userId}`);
+      } else {
+        await api.post(`/users/friends/${userId}`, {});
+      }
+      // Update local state
+      setUserResults(userResults.map(u => 
+        u.id === userId ? { ...u, isFriend: !isFriend } : u
+      ));
+    } catch (error) {
+      console.error('Toggle friend failed:', error);
     }
   };
 
@@ -134,23 +151,38 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
                   style={styles.userList}
                   scrollEnabled={false}
                   renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.userItem}
-                      onPress={() => inviteUser(item.id)}
-                    >
-                      {item.profilePhoto ? (
-                        <Image source={{ uri: item.profilePhoto }} style={styles.userAvatar} />
-                      ) : (
-                        <View style={styles.userAvatarPlaceholder}>
-                          <Text style={styles.userAvatarText}>
-                            {item.username.charAt(0).toUpperCase()}
-                          </Text>
+                    <View style={styles.userItem}>
+                      <TouchableOpacity
+                        style={styles.friendButton}
+                        onPress={() => toggleFriend(item.id, item.isFriend)}
+                      >
+                        <Ionicons 
+                          name={item.isFriend ? "heart" : "heart-outline"} 
+                          size={22} 
+                          color={item.isFriend ? Colors.red : Colors.grayMedium} 
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.userItemContent}
+                        onPress={() => inviteUser(item.id)}
+                      >
+                        {item.profilePhoto ? (
+                          <Image source={{ uri: item.profilePhoto }} style={styles.userAvatar} />
+                        ) : (
+                          <View style={styles.userAvatarPlaceholder}>
+                            <Text style={styles.userAvatarText}>
+                              {item.username.charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.userInfo}>
+                          <Text style={styles.userName}>@{item.username}</Text>
+                          {item.isFriend && (
+                            <Text style={styles.friendLabel}>Friend</Text>
+                          )}
                         </View>
-                      )}
-                      <View style={styles.userInfo}>
-                        <Text style={styles.userName}>@{item.username}</Text>
-                      </View>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 />
               </View>
@@ -258,6 +290,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
+  },
+  userItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  friendButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+  friendLabel: {
+    fontSize: 11,
+    color: Colors.grayMedium,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 2,
   },
   userAvatar: {
     width: 40,

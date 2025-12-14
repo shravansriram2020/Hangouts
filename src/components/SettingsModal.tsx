@@ -20,6 +20,7 @@ import { Colors, Fonts } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
+import FriendsListModal from './FriendsListModal';
 
 const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing';
 const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing';
@@ -136,6 +137,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [currentView, setCurrentView] = useState<'settings' | 'credits'>('settings');
+  const [showFriendsList, setShowFriendsList] = useState(false);
   
   const creditsAnimValue = useRef(new Animated.Value(0)).current;
   const creditsSlideValue = useRef(new Animated.Value(30)).current;
@@ -398,6 +400,12 @@ export default function SettingsModal({ visible, onClose }: Props) {
               />
             </View>
 
+            <TouchableOpacity style={styles.friendsButton} onPress={() => setShowFriendsList(true)}>
+              <Ionicons name="heart-outline" size={16} color={Colors.grayDark} />
+              <Text style={styles.friendsButtonText}>Friends List</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
+            </TouchableOpacity>
+
             <Text style={styles.sectionTitle}>Security</Text>
 
             <View style={styles.inputGroup}>
@@ -484,6 +492,11 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.version}>Version 1.0</Text>
           </ScrollView>
+
+      <FriendsListModal
+        visible={showFriendsList}
+        onClose={() => setShowFriendsList(false)}
+      />
     </GlassModal>
   );
 }
@@ -697,6 +710,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   creditsButtonText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.grayDark,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 8,
+  },
+  friendsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  friendsButtonText: {
     flex: 1,
     fontSize: 13,
     color: Colors.grayDark,

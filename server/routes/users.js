@@ -14,21 +14,105 @@ router.get('/search', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Get user's friends first
+    const friendsResult = await pool.query(
+      `SELECT friend_id FROM friends WHERE user_id = $1`,
+      [req.user.id]
+    );
+    const friendIds = friendsResult.rows.map(f => f.friend_id);
+
+    // Search users with friend status
     const result = await pool.query(
       `SELECT id, username, profile_photo FROM users 
        WHERE username ILIKE $1 AND id != $2
+       ORDER BY 
+         CASE WHEN id = ANY($3::uuid[]) THEN 0 ELSE 1 END,
+         username ASC
        LIMIT 20`,
-      [`%${q}%`, req.user.id]
+      [`%${q}%`, req.user.id, friendIds]
     );
 
     res.json(result.rows.map(u => ({
       id: u.id,
       username: u.username,
-      profilePhoto: u.profile_photo
+      profilePhoto: u.profile_photo,
+      isFriend: friendIds.includes(u.id)
     })));
   } catch (error) {
     console.error('Search users error:', error);
     res.status(500).json({ error: 'Failed to search users' });
+  }
+});
+
+// Get friends list
+router.get('/friends', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.first_name, u.profile_photo, f.created_at as friended_at
+       FROM friends f
+       JOIN users u ON f.friend_id = u.id
+       WHERE f.user_id = $1
+       ORDER BY u.first_name ASC, u.username ASC`,
+      [req.user.id]
+    );
+
+    res.json(result.rows.map(u => ({
+      id: u.id,
+      username: u.username,
+      firstName: u.first_name,
+      profilePhoto: u.profile_photo,
+      friendedAt: u.friended_at
+    })));
+  } catch (error) {
+    console.error('Get friends error:', error);
+    res.status(500).json({ error: 'Failed to get friends' });
+  }
+});
+
+// Add friend
+router.post('/friends/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+
+  if (userId === req.user.id) {
+    return res.status(400).json({ error: 'Cannot add yourself as friend' });
+  }
+
+  try {
+    // Check if user exists
+    const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Add friend (ignore if already exists)
+    await pool.query(
+      `INSERT INTO friends (user_id, friend_id) 
+       VALUES ($1, $2) 
+       ON CONFLICT (user_id, friend_id) DO NOTHING`,
+      [req.user.id, userId]
+    );
+
+    res.json({ message: 'Friend added successfully' });
+  } catch (error) {
+    console.error('Add friend error:', error);
+    res.status(500).json({ error: 'Failed to add friend' });
+  }
+});
+
+// Remove friend
+router.delete('/friends/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    await pool.query(
+      'DELETE FROM friends WHERE user_id = $1 AND friend_id = $2',
+      [req.user.id, userId]
+    );
+
+    res.json({ message: 'Friend removed successfully' });
+  } catch (error) {
+    console.error('Remove friend error:', error);
+    res.status(500).json({ error: 'Failed to remove friend' });
   }
 });
 
