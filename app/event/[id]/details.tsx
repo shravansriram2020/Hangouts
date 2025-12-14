@@ -585,6 +585,8 @@ export default function DetailsScreen() {
         onGradientChange={(color1, color2) => updateGradient(color1, color2)}
         onTitleChange={() => refreshEvent()}
         currentTitle={event.title}
+        allowAttendeeSharing={event.allow_attendee_sharing !== false}
+        onAllowAttendeeSharingChange={() => refreshEvent()}
       />
       </ScrollView>
     </LinearGradient>

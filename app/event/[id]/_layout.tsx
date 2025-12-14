@@ -51,6 +51,8 @@ function EventLayoutContent() {
   const attendeesLoaded = event?.attendees !== undefined && event.attendees.length >= 0;
   const isHost = event?.isHost === true;
   const isAttending = isHost || userAttendee?.status === 'accepted';
+  const hasRSVPd = userAttendee?.status === 'accepted' || userAttendee?.status === 'maybe';
+  const canShare = isHost || (hasRSVPd && event?.allow_attendee_sharing !== false);
   const restrictedTabs = ['messages', 'map', 'photos'];
 
   useEffect(() => {
@@ -180,9 +182,13 @@ function EventLayoutContent() {
           })}
         </View>
 
-        <TouchableOpacity style={styles.sideButton} onPress={handleShare}>
-          <Ionicons name="share-outline" size={22} color={Colors.secondary} />
-        </TouchableOpacity>
+        {canShare ? (
+          <TouchableOpacity style={styles.sideButton} onPress={handleShare}>
+            <Ionicons name="share-outline" size={22} color={Colors.secondary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.sideButton, { opacity: 0 }]} />
+        )}
       </View>
 
       <ShareModal

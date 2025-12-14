@@ -12,6 +12,7 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +31,8 @@ interface Props {
   onGradientChange?: (color1: string, color2: string) => void;
   onTitleChange?: (newTitle: string) => void;
   currentTitle?: string;
+  allowAttendeeSharing?: boolean;
+  onAllowAttendeeSharingChange?: (value: boolean) => void;
 }
 
 export default function OptionsMenu({
@@ -43,6 +46,8 @@ export default function OptionsMenu({
   onGradientChange,
   onTitleChange,
   currentTitle,
+  allowAttendeeSharing = true,
+  onAllowAttendeeSharingChange,
 }: Props) {
   const [showRemoveAttendee, setShowRemoveAttendee] = useState(false);
   const [showGradientPicker, setShowGradientPicker] = useState(false);
@@ -50,6 +55,7 @@ export default function OptionsMenu({
   const [newTitle, setNewTitle] = useState('');
   const [removing, setRemoving] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sharingEnabled, setSharingEnabled] = useState(allowAttendeeSharing);
   const slideAnim = useRef(new Animated.Value(400)).current;
   const titleSlideAnim = useRef(new Animated.Value(400)).current;
 
@@ -203,6 +209,28 @@ export default function OptionsMenu({
                     <Ionicons name="color-palette-outline" size={18} color={Colors.secondary} />
                     <Text style={styles.menuItemText}>Change Background</Text>
                   </TouchableOpacity>
+
+                  <View style={styles.switchMenuItem}>
+                    <View style={styles.switchMenuInfo}>
+                      <Ionicons name="share-social-outline" size={18} color={Colors.secondary} />
+                      <Text style={styles.menuItemText}>Allow Attendees To Share</Text>
+                    </View>
+                    <Switch
+                      value={sharingEnabled}
+                      onValueChange={async (value) => {
+                        setSharingEnabled(value);
+                        try {
+                          await api.put(`/events/${eventId}`, { allowAttendeeSharing: value });
+                          onAllowAttendeeSharingChange?.(value);
+                        } catch (error) {
+                          setSharingEnabled(!value);
+                          Alert.alert('Error', 'Failed to update sharing setting');
+                        }
+                      }}
+                      trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
+                      thumbColor={sharingEnabled ? Colors.green : Colors.grayMedium}
+                    />
+                  </View>
 
                   <TouchableOpacity
                     style={[styles.menuItem, styles.menuItemDanger]}
@@ -362,6 +390,21 @@ const styles = StyleSheet.create({
   },
   menuItemTextDisabled: {
     color: Colors.grayMedium,
+  },
+  switchMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: 'rgba(30, 58, 95, 0.05)',
+  },
+  switchMenuInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   removeAttendeeModal: {
     flex: 1,

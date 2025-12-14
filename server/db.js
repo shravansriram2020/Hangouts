@@ -40,6 +40,7 @@ const initDb = async () => {
         gradient_color1 VARCHAR(20),
         gradient_color2 VARCHAR(20),
         notes TEXT,
+        allow_attendee_sharing BOOLEAN DEFAULT true,
         is_archived BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()

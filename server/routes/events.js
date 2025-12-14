@@ -197,7 +197,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 router.put('/:id', authenticateToken, async (req, res) => {
-  const { title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2 } = req.body;
+  const { title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2, allowAttendeeSharing } = req.body;
 
   if (title && containsProfanity(title)) {
     return res.status(400).json({ error: getProfanityError('event title') });
@@ -230,10 +230,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
         location_lng = COALESCE($7, location_lng),
         gradient_color1 = COALESCE($8, gradient_color1),
         gradient_color2 = COALESCE($9, gradient_color2),
+        allow_attendee_sharing = COALESCE($10, allow_attendee_sharing),
         updated_at = NOW()
-       WHERE id = $10
+       WHERE id = $11
        RETURNING *`,
-      [title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2, req.params.id]
+      [title, eventDate, eventTime, locationName, locationAddress, locationLat, locationLng, gradientColor1, gradientColor2, allowAttendeeSharing, req.params.id]
     );
 
     res.json(result.rows[0]);
