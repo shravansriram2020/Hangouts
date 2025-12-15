@@ -213,23 +213,25 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     // Update event based on conflict type
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Convert Date object to ISO string to extract date/time components
-      // PostgreSQL returns timestamps as Date objects, so we need toISOString()
-      const isoString = conflict.suggested_time instanceof Date 
-        ? conflict.suggested_time.toISOString() 
-        : String(conflict.suggested_time);
-      const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      // Use local time methods to preserve user's intended time (not UTC conversion)
+      const suggestedDate = conflict.suggested_time instanceof Date 
+        ? conflict.suggested_time 
+        : new Date(conflict.suggested_time);
       
-      if (dateMatch) {
-        const [, year, month, day, hours, minutes] = dateMatch;
-        const eventDate = `${year}-${month}-${day}`;
-        const eventTime = `${hours}:${minutes}`;
-        
-        await pool.query(
-          'UPDATE events SET event_date = $1, event_time = $2, updated_at = NOW() WHERE id = $3',
-          [eventDate, eventTime, conflict.event_id]
-        );
-      }
+      // Extract components using local time (not UTC)
+      const year = suggestedDate.getFullYear();
+      const month = String(suggestedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(suggestedDate.getDate()).padStart(2, '0');
+      const hours = String(suggestedDate.getHours()).padStart(2, '0');
+      const minutes = String(suggestedDate.getMinutes()).padStart(2, '0');
+      
+      const eventDate = `${year}-${month}-${day}`;
+      const eventTime = `${hours}:${minutes}`;
+      
+      await pool.query(
+        'UPDATE events SET event_date = $1, event_time = $2, updated_at = NOW() WHERE id = $3',
+        [eventDate, eventTime, conflict.event_id]
+      );
     } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
       // Update event location - use location_name and location_address columns
       if (conflict.suggested_lat != null && conflict.suggested_lng != null) {
@@ -270,22 +272,19 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     let resolutionMessage = '';
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Convert Date object to ISO string to extract date/time components
-      const isoString = conflict.suggested_time instanceof Date 
-        ? conflict.suggested_time.toISOString() 
-        : String(conflict.suggested_time);
-      const dateMatch = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-      if (dateMatch) {
-        const [, year, month, day, hour, minute] = dateMatch;
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthName = monthNames[parseInt(month) - 1];
-        const hourNum = parseInt(hour);
-        const ampm = hourNum >= 12 ? 'PM' : 'AM';
-        const hour12 = hourNum % 12 || 12;
-        resolutionMessage = `Time changed to ${monthName} ${parseInt(day)} at ${hour12}:${minute} ${ampm}`;
-      } else {
-        resolutionMessage = `Time updated for ${eventResult.rows[0].title}`;
-      }
+      // Use local time methods to preserve user's intended time
+      const suggestedDate = conflict.suggested_time instanceof Date 
+        ? conflict.suggested_time 
+        : new Date(conflict.suggested_time);
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = monthNames[suggestedDate.getMonth()];
+      const day = suggestedDate.getDate();
+      const hourNum = suggestedDate.getHours();
+      const minute = String(suggestedDate.getMinutes()).padStart(2, '0');
+      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+      const hour12 = hourNum % 12 || 12;
+      resolutionMessage = `Time changed to ${monthName} ${day} at ${hour12}:${minute} ${ampm}`;
     } else if (conflict.conflict_type === 'location' && conflict.suggested_location) {
       resolutionMessage = `Location changed to ${conflict.suggested_location}`;
     } else if (conflict.conflict_type === 'other') {
