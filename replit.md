@@ -85,6 +85,15 @@ Preferred communication style: Simple, everyday language.
 - Fallback HTML page at `/share/:id` for users without the app (shows "Open in App" and "Download" buttons)
 - Works with iOS associated domains for seamless app deep linking
 
+### Friend System Rework (December 2025)
+- Users can only search and invite friends (not strangers)
+- `/users/search` endpoint now only returns users who are already friends
+- "Share by Username" renamed to "Search for Friends" in share modals
+- "Invite People" renamed to "Invite Friends" in event creation
+- Heart icon added to attendee profiles in event details for friending
+- Users can add friends by tapping the heart on attendees who joined via shared link
+- Existing friends are preserved; no data loss
+
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
 - `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)

@@ -14,29 +14,22 @@ router.get('/search', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Get user's friends first
-    const friendsResult = await pool.query(
-      `SELECT friend_id FROM friends WHERE user_id = $1`,
-      [req.user.id]
-    );
-    const friendIds = friendsResult.rows.map(f => f.friend_id);
-
-    // Search users with friend status
+    // Only search among friends - users can only invite/search friends
     const result = await pool.query(
-      `SELECT id, username, profile_photo FROM users 
-       WHERE username ILIKE $1 AND id != $2
-       ORDER BY 
-         CASE WHEN id = ANY($3::uuid[]) THEN 0 ELSE 1 END,
-         username ASC
+      `SELECT u.id, u.username, u.profile_photo 
+       FROM friends f
+       JOIN users u ON f.friend_id = u.id
+       WHERE f.user_id = $1 AND u.username ILIKE $2
+       ORDER BY u.username ASC
        LIMIT 20`,
-      [`%${q}%`, req.user.id, friendIds]
+      [req.user.id, `%${q}%`]
     );
 
     res.json(result.rows.map(u => ({
       id: u.id,
       username: u.username,
       profilePhoto: u.profile_photo,
-      isFriend: friendIds.includes(u.id)
+      isFriend: true
     })));
   } catch (error) {
     console.error('Search users error:', error);

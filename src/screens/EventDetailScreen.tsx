@@ -42,10 +42,36 @@ export default function EventDetailScreen({ route, navigation }: any) {
   const [showCreateMoney, setShowCreateMoney] = useState(false);
   const [ridesKey, setRidesKey] = useState(0);
   const [moneyKey, setMoneyKey] = useState(0);
+  const [friendIds, setFriendIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchEvent();
+    fetchFriends();
   }, [eventId]);
+
+  const fetchFriends = async () => {
+    try {
+      const friends = await api.get('/users/friends');
+      setFriendIds(friends.map((f: any) => f.id));
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    }
+  };
+
+  const handleToggleFriend = async (userId: string, isFriend: boolean) => {
+    try {
+      if (isFriend) {
+        await api.delete(`/users/friends/${userId}`);
+        setFriendIds(friendIds.filter(id => id !== userId));
+      } else {
+        await api.post(`/users/friends/${userId}`, {});
+        setFriendIds([...friendIds, userId]);
+      }
+    } catch (error) {
+      console.error('Failed to toggle friend:', error);
+      Alert.alert('Error', 'Failed to update friend status');
+    }
+  };
 
   const fetchEvent = async () => {
     setLoading(true);
@@ -119,6 +145,9 @@ export default function EventDetailScreen({ route, navigation }: any) {
             onOpenMoney={() => setShowMoney(true)}
             onOpenConflicts={() => setShowConflicts(true)}
             onOpenNotes={() => setShowNotes(true)}
+            friendIds={friendIds}
+            onToggleFriend={handleToggleFriend}
+            currentUserId={user?.id}
           />
         );
       case 1:

@@ -16,9 +16,12 @@ interface Props {
   onOpenMoney: () => void;
   onOpenConflicts: () => void;
   onOpenNotes: () => void;
+  friendIds?: string[];
+  onToggleFriend?: (userId: string, isFriend: boolean) => void;
+  currentUserId?: string;
 }
 
-export default function EventDetailsTab({ event, onOpenRides, onOpenMoney, onOpenConflicts, onOpenNotes }: Props) {
+export default function EventDetailsTab({ event, onOpenRides, onOpenMoney, onOpenConflicts, onOpenNotes, friendIds = [], onToggleFriend, currentUserId }: Props) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <TouchableOpacity style={styles.conflictsButton} onPress={onOpenConflicts}>
@@ -100,19 +103,36 @@ export default function EventDetailsTab({ event, onOpenRides, onOpenMoney, onOpe
           <Text style={styles.sectionTitle}>Attendees ({event?.attendees?.length || 0})</Text>
         </View>
         <View style={styles.attendeesGrid}>
-          {event?.attendees?.map((attendee: any) => (
-            <View key={attendee.id} style={styles.attendeeItem}>
-              {attendee.profile_photo ? (
-                <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
-              ) : (
-                <View style={styles.attendeePlaceholder}>
-                  <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
-                </View>
-              )}
-              <Text style={styles.attendeeName}>{attendee.first_name}</Text>
-              <Text style={styles.attendeeStatus}>{attendee.invitation_status}</Text>
-            </View>
-          ))}
+          {event?.attendees?.map((attendee: any) => {
+            const isFriend = friendIds.includes(attendee.user_id);
+            const isCurrentUser = attendee.user_id === currentUserId;
+            
+            return (
+              <View key={attendee.id} style={styles.attendeeItem}>
+                {attendee.profile_photo ? (
+                  <Image source={{ uri: attendee.profile_photo }} style={styles.attendeePhoto} />
+                ) : (
+                  <View style={styles.attendeePlaceholder}>
+                    <Text style={styles.attendeeInitial}>{attendee.first_name?.charAt(0)}</Text>
+                  </View>
+                )}
+                <Text style={styles.attendeeName}>{attendee.first_name}</Text>
+                <Text style={styles.attendeeStatus}>{attendee.invitation_status}</Text>
+                {!isCurrentUser && onToggleFriend && (
+                  <TouchableOpacity
+                    style={styles.friendToggle}
+                    onPress={() => onToggleFriend(attendee.user_id, isFriend)}
+                  >
+                    <Ionicons 
+                      name={isFriend ? "heart" : "heart-outline"} 
+                      size={18} 
+                      color={isFriend ? Colors.red : Colors.grayMedium} 
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })}
         </View>
       </View>
     </ScrollView>
@@ -188,7 +208,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   stickyNote: {
-    backgroundColor: Colors.stickyNote,
+    backgroundColor: Colors.stickyYellow,
     padding: 12,
     borderRadius: 4,
     marginRight: 12,
@@ -320,5 +340,9 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
+  },
+  friendToggle: {
+    marginTop: 4,
+    padding: 4,
   },
 });

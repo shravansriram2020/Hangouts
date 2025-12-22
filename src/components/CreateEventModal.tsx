@@ -658,7 +658,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               </Text>
             )}
 
-            <Text style={styles.sectionTitle}>Invite People</Text>
+            <Text style={styles.sectionTitle}>Invite Friends</Text>
             <TextInput
               style={styles.input}
               value={userSearchQuery}
@@ -666,7 +666,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
                 setUserSearchQuery(text);
                 searchUsers(text);
               }}
-              placeholder="Search by username..."
+              placeholder="Search friends..."
               placeholderTextColor={Colors.grayMedium}
             />
 
@@ -731,7 +731,7 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
             )}
 
             <Text style={styles.helperText}>
-              Start typing a username to search for people to invite
+              Search for friends to invite to this hangout
             </Text>
 
             <Text style={styles.sectionTitle}>Hangout Notes</Text>

@@ -155,7 +155,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
             onPress={() => setActiveTab('username')}
           >
             <Text style={[styles.tabText, activeTab === 'username' && styles.tabTextActive]}>
-              Share by Username
+              Search for Friends
             </Text>
           </TouchableOpacity>
         </View>
@@ -181,7 +181,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
               style={styles.usernameSearchInput}
               value={username}
               onChangeText={handleUsernameChange}
-              placeholder="Search by username..."
+              placeholder="Search friends..."
               placeholderTextColor={Colors.grayMedium}
               autoCapitalize="none"
               autoCorrect={false}
@@ -229,7 +229,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
             )}
             
             <Text style={styles.helperText}>
-              Start typing a username to search and invite
+              Search for friends to invite
             </Text>
             <View style={styles.separator} />
           </>

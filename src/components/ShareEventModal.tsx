@@ -111,7 +111,7 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
               onPress={() => setActiveTab('username')}
             >
               <Text style={[styles.tabText, activeTab === 'username' && styles.activeTabText]}>
-                Add by Username
+                Search for Friends
               </Text>
             </TouchableOpacity>
           </View>
@@ -133,7 +133,7 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
               </View>
             ) : (
               <View style={styles.usernameSection}>
-                <Text style={styles.label}>Search by Username</Text>
+                <Text style={styles.label}>Search for friends to invite</Text>
                 <TextInput
                   style={styles.input}
                   value={searchQuery}
