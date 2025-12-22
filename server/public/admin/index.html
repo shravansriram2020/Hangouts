@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hangouts Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #667eea;
+      --primary-dark: #5a67d8;
+      --danger: #e53e3e;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --bg: #f7fafc;
+      --card: #ffffff;
+      --text: #1a202c;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+    
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    
+    .login-card h1 {
+      text-align: center;
+      margin-bottom: 32px;
+      color: var(--text);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-small {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    
+    .error-message {
+      background: #fed7d7;
+      color: var(--danger);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .success-message {
+      background: #c6f6d5;
+      color: var(--success);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    /* Dashboard Styles */
+    .dashboard { display: none; }
+    .dashboard.active { display: block; }
+    .login-container.hidden { display: none; }
+    
+    .header {
+      background: white;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 { font-size: 20px; }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .admin-name {
+      color: var(--text-light);
+    }
+    
+    .main-content {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card h3 {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+    
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+    }
+    
+    .tab {
+      padding: 12px 24px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-light);
+      border-radius: 8px 8px 0 0;
+      transition: all 0.2s;
+    }
+    
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+    
+    .card h2 {
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .search-bar input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .search-bar input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+    
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge-danger {
+      background: #fed7d7;
+      color: var(--danger);
+    }
+    
+    .badge-success {
+      background: #c6f6d5;
+      color: var(--success);
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    
+    .pagination button {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .pagination button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 500px;
+      margin: 20px;
+    }
+    
+    .modal h2 {
+      margin-bottom: 20px;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .modal-actions button {
+      flex: 1;
+    }
+    
+    .broadcast-preview {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    
+    .broadcast-preview h4 {
+      margin-bottom: 8px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="login-container" id="loginContainer">
+    <div class="login-card">
+      <h1>Hangouts Admin</h1>
+      
+      <div id="loginError" class="error-message" style="display: none;"></div>
+      <div id="loginSuccess" class="success-message" style="display: none;"></div>
+      
+      <!-- Email Form -->
+      <form id="emailForm">
+        <div class="form-group">
+          <label for="email">Admin Email</label>
+          <input type="email" id="email" name="email" required placeholder="admin@hangouts-app.com">
+        </div>
+        <button type="submit" class="btn btn-primary">Send Verification Code</button>
+      </form>
+      
+      <!-- Code Form (hidden initially) -->
+      <form id="codeForm" style="display: none;">
+        <div class="form-group">
+          <label for="code">Verification Code</label>
+          <input type="text" id="code" name="code" required placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}">
+        </div>
+        <button type="submit" class="btn btn-primary">Verify & Login</button>
+        <button type="button" class="btn" style="margin-top: 12px; background: transparent; color: var(--text-light);" onclick="resetLogin()">Use different email</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <header class="header">
+      <h1>Hangouts Admin</h1>
+      <div class="header-actions">
+        <span class="admin-name" id="adminName"></span>
+        <button class="btn btn-small" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    
+    <main class="main-content">
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <h3>Total Users</h3>
+          <div class="value" id="statUsers">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total Events</h3>
+          <div class="value" id="statEvents">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Banned Users</h3>
+          <div class="value" id="statBanned">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>New This Week</h3>
+          <div class="value" id="statNewUsers">-</div>
+        </div>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="users">Users</button>
+        <button class="tab" data-tab="broadcast">Broadcast</button>
+        <button class="tab" data-tab="audit">Audit Log</button>
+      </div>
+      
+      <!-- Users Tab -->
+      <div class="tab-content active" id="tab-users">
+        <div class="card">
+          <h2>All Users</h2>
+          <div class="search-bar">
+            <input type="text" id="userSearch" placeholder="Search by name, email, or username...">
+            <button class="btn btn-primary btn-small" onclick="searchUsers()">Search</button>
+          </div>
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Events</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="6" class="loading">Loading users...</td></tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="usersPagination"></div>
+        </div>
+      </div>
+      
+      <!-- Broadcast Tab -->
+      <div class="tab-content" id="tab-broadcast">
+        <div class="card">
+          <h2>Send Push Notification to All Users</h2>
+          <form id="broadcastForm">
+            <div class="form-group">
+              <label for="broadcastTitle">Title</label>
+              <input type="text" id="broadcastTitle" required placeholder="Notification title">
+            </div>
+            <div class="form-group">
+              <label for="broadcastMessage">Message</label>
+              <textarea id="broadcastMessage" required placeholder="Notification message"></textarea>
+            </div>
+            <div class="broadcast-preview">
+              <h4>Preview</h4>
+              <p><strong id="previewTitle">-</strong></p>
+              <p id="previewMessage">-</p>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Send to All Users</button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Audit Log Tab -->
+      <div class="tab-content" id="tab-audit">
+        <div class="card">
+          <h2>Audit Log</h2>
+          <table id="auditTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Admin</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <tr><td colspan="5" class="loading">Loading audit log...</td></tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="auditPagination"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Ban Modal -->
+  <div class="modal-overlay" id="banModal">
+    <div class="modal">
+      <h2>Ban User</h2>
+      <p id="banUserName"></p>
+      <form id="banForm">
+        <input type="hidden" id="banUserId">
+        <div class="form-group">
+          <label for="banReason">Reason</label>
+          <textarea id="banReason" placeholder="Reason for ban (optional)"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="banDuration">Duration</label>
+          <select id="banDuration" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px;">
+            <option value="">Permanent</option>
+            <option value="1">1 hour</option>
+            <option value="24">24 hours</option>
+            <option value="168">1 week</option>
+            <option value="720">30 days</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" onclick="closeBanModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger">Ban User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE = '/api/admin';
+    let token = localStorage.getItem('adminToken');
+    let currentUserPage = 1;
+    let currentAuditPage = 1;
+    let pendingEmail = '';
+    
+    // Check if already logged in
+    if (token) {
+      checkAuth();
+    }
+    
+    async function checkAuth() {
+      try {
+        const res = await fetch(`${API_BASE}/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const admin = await res.json();
+          showDashboard(admin);
+        } else {
+          localStorage.removeItem('adminToken');
+          token = null;
+        }
+      } catch (e) {
+        console.error('Auth check failed:', e);
+      }
+    }
+    
+    // Login Forms
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      
+      try {
+        const res = await fetch(`${API_BASE}/login/request-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        
+        if (res.ok) {
+          pendingEmail = email;
+          document.getElementById('emailForm').style.display = 'none';
+          document.getElementById('codeForm').style.display = 'block';
+          showSuccess('Verification code sent to your email');
+        } else {
+          const data = await res.json();
+          showError(data.error || 'Failed to send code');
+        }
+      } catch (e) {
+        showError('Network error');
+      }
+    });
+    
+    document.getElementById('codeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('code').value;
+      
+      try {
+        const res = await fetch(`${API_BASE}/login/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: pendingEmail, code })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          showDashboard(data.admin);
+        } else {
+          showError(data.error || 'Invalid code');
+        }
+      } catch (e) {
+        showError('Network error');
+      }
+    });
+    
+    function resetLogin() {
+      document.getElementById('emailForm').style.display = 'block';
+      document.getElementById('codeForm').style.display = 'none';
+      document.getElementById('code').value = '';
+      pendingEmail = '';
+      hideMessages();
+    }
+    
+    function showError(msg) {
+      const el = document.getElementById('loginError');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('loginSuccess').style.display = 'none';
+    }
+    
+    function showSuccess(msg) {
+      const el = document.getElementById('loginSuccess');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('loginError').style.display = 'none';
+    }
+    
+    function hideMessages() {
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('loginSuccess').style.display = 'none';
+    }
+    
+    function showDashboard(admin) {
+      document.getElementById('loginContainer').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('active');
+      document.getElementById('adminName').textContent = admin.name;
+      
+      loadStats();
+      loadUsers();
+      loadAuditLog();
+    }
+    
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (e) {}
+      
+      localStorage.removeItem('adminToken');
+      token = null;
+      location.reload();
+    }
+    
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+    
+    // Load Stats
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        document.getElementById('statUsers').textContent = data.totalUsers;
+        document.getElementById('statEvents').textContent = data.totalEvents;
+        document.getElementById('statBanned').textContent = data.bannedUsers;
+        document.getElementById('statNewUsers').textContent = data.newUsersThisWeek;
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+    
+    // Load Users
+    async function loadUsers(page = 1, search = '') {
+      currentUserPage = page;
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="loading">Loading...</td></tr>';
+      
+      try {
+        const params = new URLSearchParams({ page, limit: 20 });
+        if (search) params.append('search', search);
+        
+        const res = await fetch(`${API_BASE}/users?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="loading">No users found</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = data.users.map(user => `
+          <tr>
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">
+                  ${user.profile_photo 
+                    ? `<img src="${user.profile_photo}" alt="">` 
+                    : user.first_name[0].toUpperCase()}
+                </div>
+                <div>
+                  <strong>${user.first_name} ${user.last_name}</strong>
+                  <br><small style="color: var(--text-light)">@${user.username}</small>
+                </div>
+              </div>
+            </td>
+            <td>${user.email}</td>
+            <td>${user.events_hosted} hosted / ${user.events_attended} attended</td>
+            <td>
+              ${user.is_banned 
+                ? `<span class="badge badge-danger">Banned${user.ban_expires_at ? ' (until ' + new Date(user.ban_expires_at).toLocaleDateString() + ')' : ''}</span>` 
+                : '<span class="badge badge-success">Active</span>'}
+            </td>
+            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+            <td>
+              ${user.is_banned 
+                ? `<button class="btn btn-success btn-small" onclick="unbanUser('${user.id}')">Unban</button>`
+                : `<button class="btn btn-danger btn-small" onclick="openBanModal('${user.id}', '${user.first_name} ${user.last_name}')">Ban</button>`}
+            </td>
+          </tr>
+        `).join('');
+        
+        // Pagination
+        const pagination = document.getElementById('usersPagination');
+        pagination.innerHTML = '';
+        
+        if (data.totalPages > 1) {
+          for (let i = 1; i <= data.totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = i === page ? 'active' : '';
+            btn.onclick = () => loadUsers(i, document.getElementById('userSearch').value);
+            pagination.appendChild(btn);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load users:', e);
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">Failed to load users</td></tr>';
+      }
+    }
+    
+    function searchUsers() {
+      const search = document.getElementById('userSearch').value;
+      loadUsers(1, search);
+    }
+    
+    document.getElementById('userSearch').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchUsers();
+    });
+    
+    // Ban Modal
+    function openBanModal(userId, userName) {
+      document.getElementById('banUserId').value = userId;
+      document.getElementById('banUserName').textContent = `Banning: ${userName}`;
+      document.getElementById('banModal').classList.add('active');
+    }
+    
+    function closeBanModal() {
+      document.getElementById('banModal').classList.remove('active');
+      document.getElementById('banForm').reset();
+    }
+    
+    document.getElementById('banForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('banUserId').value;
+      const reason = document.getElementById('banReason').value;
+      const duration = document.getElementById('banDuration').value;
+      
+      try {
+        const res = await fetch(`${API_BASE}/users/${userId}/ban`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reason, duration: duration ? parseInt(duration) : null })
+        });
+        
+        if (res.ok) {
+          closeBanModal();
+          loadUsers(currentUserPage, document.getElementById('userSearch').value);
+          loadStats();
+          alert('User banned successfully');
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to ban user');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    });
+    
+    async function unbanUser(userId) {
+      if (!confirm('Are you sure you want to unban this user?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/users/${userId}/unban`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          loadUsers(currentUserPage, document.getElementById('userSearch').value);
+          loadStats();
+          alert('User unbanned successfully');
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to unban user');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    }
+    
+    // Broadcast
+    document.getElementById('broadcastTitle').addEventListener('input', updatePreview);
+    document.getElementById('broadcastMessage').addEventListener('input', updatePreview);
+    
+    function updatePreview() {
+      document.getElementById('previewTitle').textContent = document.getElementById('broadcastTitle').value || '-';
+      document.getElementById('previewMessage').textContent = document.getElementById('broadcastMessage').value || '-';
+    }
+    
+    document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!confirm('This will send a push notification to ALL users. Continue?')) return;
+      
+      const title = document.getElementById('broadcastTitle').value;
+      const message = document.getElementById('broadcastMessage').value;
+      
+      try {
+        const res = await fetch(`${API_BASE}/broadcast`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ title, message })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          alert(`Broadcast sent successfully!\n\nSuccess: ${data.successCount}\nFailed: ${data.failCount}\nTotal: ${data.totalUsers}`);
+          document.getElementById('broadcastForm').reset();
+          updatePreview();
+          loadAuditLog();
+        } else {
+          alert(data.error || 'Failed to send broadcast');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    });
+    
+    // Audit Log
+    async function loadAuditLog(page = 1) {
+      currentAuditPage = page;
+      const tbody = document.getElementById('auditTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+      
+      try {
+        const res = await fetch(`${API_BASE}/audit-log?page=${page}&limit=20`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="loading">No audit logs</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = data.logs.map(log => `
+          <tr>
+            <td>${new Date(log.created_at).toLocaleString()}</td>
+            <td>${log.admin_name || '-'}</td>
+            <td><code>${log.action}</code></td>
+            <td>${log.target_first_name ? `${log.target_first_name} ${log.target_last_name}` : '-'}</td>
+            <td><small>${log.details ? JSON.stringify(log.details).substring(0, 50) : '-'}</small></td>
+          </tr>
+        `).join('');
+        
+        // Pagination
+        const pagination = document.getElementById('auditPagination');
+        pagination.innerHTML = '';
+        
+        if (data.totalPages > 1) {
+          for (let i = 1; i <= data.totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = i === page ? 'active' : '';
+            btn.onclick = () => loadAuditLog(i);
+            pagination.appendChild(btn);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load audit log:', e);
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">Failed to load audit log</td></tr>';
+      }
+    }
+  </script>
+</body>
+</html>

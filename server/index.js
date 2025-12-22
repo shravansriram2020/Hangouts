@@ -16,6 +16,7 @@ const photosRoutes = require('./routes/photos');
 const notificationsRoutes = require('./routes/notifications');
 const conflictsRoutes = require('./routes/conflicts');
 const locationRoutes = require('./routes/location');
+const adminRoutes = require('./routes/admin');
 const { isResendConfigured } = require('./utils/emailService');
 
 const app = express();
@@ -85,6 +86,9 @@ app.use(helmet({
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Serve admin portal
+app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 
 // Apple App Site Association file for Universal Links
 app.get('/.well-known/apple-app-site-association', (req, res) => {
@@ -216,6 +220,7 @@ app.use('/api/messages', messageLimiter, messagesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', async (req, res) => {
   const resendConfigured = await isResendConfigured();

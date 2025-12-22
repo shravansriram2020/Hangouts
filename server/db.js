@@ -171,6 +171,47 @@ const initDb = async () => {
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, friend_id)
       );
+
+      -- Admin portal tables
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_id UUID REFERENCES admin_users(id) ON DELETE CASCADE,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS admin_verification_codes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        code VARCHAR(6) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS admin_audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+        action VARCHAR(100) NOT NULL,
+        target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        details JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      -- Add ban fields to users table if not exists
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_expires_at TIMESTAMP;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_by UUID;
     `);
     console.log('Database tables created successfully');
   } catch (error) {
