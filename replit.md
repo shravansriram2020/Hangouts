@@ -67,6 +67,20 @@ Preferred communication style: Simple, everyday language.
 - **Critical Fix**: Use `VERIFIED_RESEND_KEY` secret instead of `RESEND_API_KEY` to avoid Replit connector overwriting the key with an unverified account's API key
 - The verified domain `hangouts-app.com` is on the user's Resend account, not the Replit connector's account
 
+### Font Scaling Fix (December 2025)
+- Text size is locked and does NOT change based on user's phone accessibility settings
+- Uses `allowFontScaling=false` and `maxFontSizeMultiplier=1` globally on Text and TextInput components
+- This is intentional per product requirements to maintain consistent layout
+
+### Time Conflict Timezone Fix (December 2025)
+- Server formats timestamps with `to_char()` to return plain local datetime strings without timezone suffix
+- Client parses datetime strings directly via regex to avoid JavaScript Date timezone conversion
+- Ensures conflict times display exactly as users entered them regardless of timezone
+
+### Share URL Universal Links (December 2025)
+- Share links now use `https://hangouts-app.com/event/{id}` format for Universal Links
+- Works with iOS associated domains for seamless app deep linking
+
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
 - `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)
