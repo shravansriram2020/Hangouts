@@ -63,18 +63,30 @@ export default function EventPhotosTab({ eventId }: Props) {
     });
 
     if (!result.canceled && result.assets) {
+      const photoUrls = result.assets
+        .filter(asset => asset.base64)
+        .map(asset => `data:image/jpeg;base64,${asset.base64}`);
+      
+      if (photoUrls.length === 0) {
+        Alert.alert('Error', 'No valid photos selected');
+        return;
+      }
+
       setUploading(true);
       try {
-        for (const asset of result.assets) {
-          if (asset.base64) {
-            const photoData = `data:image/jpeg;base64,${asset.base64}`;
-            await api.post('/photos', {
-              eventId,
-              photoUrl: photoData,
-            });
-          }
-        }
+        const response = await api.post('/photos/batch', {
+          eventId,
+          photoUrls,
+        });
+        
         fetchPhotos();
+        
+        if (response.failedCount > 0) {
+          Alert.alert(
+            'Partial Upload', 
+            `${response.uploadedCount} photo(s) uploaded successfully. ${response.failedCount} photo(s) could not be uploaded.`
+          );
+        }
       } catch (error) {
         console.error('Upload failed:', error);
         Alert.alert('Error', 'Failed to upload photos');

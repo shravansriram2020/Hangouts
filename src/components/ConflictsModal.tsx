@@ -362,22 +362,24 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
       return;
     }
 
-    // Combine date and time into ISO format for database storage
-    let isoDateTime: string | null = null;
+    // Combine date and time into a format that preserves user's local time
+    // Don't use toISOString() as it converts to UTC and loses timezone info
+    let localDateTime: string | null = null;
     if (selectedType === 'time' && suggestedDate && suggestedTime) {
-      const combined = new Date(suggestedDate);
-      combined.setHours(suggestedTime.getHours());
-      combined.setMinutes(suggestedTime.getMinutes());
-      combined.setSeconds(0);
-      combined.setMilliseconds(0);
-      isoDateTime = combined.toISOString();
+      const year = suggestedDate.getFullYear();
+      const month = String(suggestedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(suggestedDate.getDate()).padStart(2, '0');
+      const hours = String(suggestedTime.getHours()).padStart(2, '0');
+      const minutes = String(suggestedTime.getMinutes()).padStart(2, '0');
+      // Format as ISO-like string but without timezone conversion
+      localDateTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
     }
 
     const conflictData = {
       eventId,
       conflictType: selectedType,
       reason,
-      suggestedTime: isoDateTime,
+      suggestedTime: localDateTime,
       suggestedLocation: selectedType === 'location' ? suggestedLocation : null,
       suggestedLat: selectedType === 'location' ? suggestedLat : null,
       suggestedLng: selectedType === 'location' ? suggestedLng : null,
@@ -392,7 +394,7 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
       creator_photo: user?.profilePhoto,
       conflict_type: selectedType,
       reason: reason,
-      suggested_time: isoDateTime,
+      suggested_time: localDateTime,
       suggested_location: selectedType === 'location' ? suggestedLocation : null,
       suggested_lat: selectedType === 'location' ? suggestedLat : null,
       suggested_lng: selectedType === 'location' ? suggestedLng : null,

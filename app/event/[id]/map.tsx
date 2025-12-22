@@ -734,9 +734,9 @@ export default function MapScreen() {
             <Ionicons 
               name="car" 
               size={20} 
-              color={isOnMyWay ? "white" : textColor} 
+              color={isOnMyWay ? "white" : Colors.secondary} 
             />
-            <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive, !isOnMyWay && { color: textColor }]}>
+            <Text style={[styles.onMyWayButtonText, isOnMyWay && styles.onMyWayButtonTextActive]}>
               {isOnMyWay ? "I'm On My Way!" : "Mark as On My Way"}
             </Text>
           </TouchableOpacity>
@@ -1122,11 +1122,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   onMyWayButtonActive: {
     backgroundColor: '#10B981',

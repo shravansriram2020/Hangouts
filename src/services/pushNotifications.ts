@@ -77,5 +77,9 @@ export function addNotificationResponseReceivedListener(
 }
 
 export async function setBadgeCount(count: number): Promise<void> {
-  await Notifications.setBadgeCountAsync(count);
+  try {
+    await Notifications.setBadgeCountAsync(count);
+  } catch (error) {
+    // Silently fail on platforms that don't support badge counts (e.g., some Android devices)
+  }
 }

@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { setBadgeCount } from '../services/pushNotifications';
 import SettingsModal from '../components/SettingsModal';
 import NotificationsModal from '../components/NotificationsModal';
 import CreateEventModal from '../components/CreateEventModal';
@@ -56,7 +57,9 @@ export default function HomeScreen({
       ]);
       setEvents(eventsData);
       setArchivedEvents(archivedData);
-      setUnreadCount(unreadData.count);
+      const count = unreadData.count || 0;
+      setUnreadCount(count);
+      setBadgeCount(count).catch(() => {});
     } catch (error) {
       console.error('Failed to fetch events:', error);
     }
@@ -251,6 +254,7 @@ export default function HomeScreen({
         onClose={() => {
           setShowNotifications(false);
           setUnreadCount(0);
+          setBadgeCount(0).catch(() => {});
         }}
       />
 

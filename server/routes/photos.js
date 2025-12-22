@@ -96,6 +96,91 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+router.post('/batch', authenticateToken, async (req, res) => {
+  const { eventId, photoUrls } = req.body;
+
+  if (!photoUrls || !Array.isArray(photoUrls) || photoUrls.length === 0) {
+    return res.status(400).json({ error: 'No photos provided' });
+  }
+
+  try {
+    const uploadedPhotos = [];
+    const failedCount = [];
+    
+    for (let i = 0; i < photoUrls.length; i++) {
+      const photoUrl = photoUrls[i];
+      const validation = validateImageUpload(photoUrl);
+      if (!validation.valid) {
+        console.log('[Photos] Batch upload validation failed for photo', i, ':', validation.error);
+        failedCount.push({ index: i, error: validation.error });
+        continue;
+      }
+
+      const result = await pool.query(
+        `INSERT INTO event_photos (event_id, uploader_id, photo_url)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [eventId, req.user.id, photoUrl]
+      );
+
+      const photoWithUser = await pool.query(
+        `SELECT ep.*, u.first_name, u.profile_photo
+         FROM event_photos ep
+         JOIN users u ON ep.uploader_id = u.id
+         WHERE ep.id = $1`,
+        [result.rows[0].id]
+      );
+
+      uploadedPhotos.push(photoWithUser.rows[0]);
+    }
+
+    if (uploadedPhotos.length === 0) {
+      return res.status(400).json({ error: 'No valid photos uploaded', failed: failedCount });
+    }
+
+    const userResult = await pool.query(
+      'SELECT first_name FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const eventResult = await pool.query(
+      'SELECT title FROM events WHERE id = $1',
+      [eventId]
+    );
+    const attendees = await pool.query(
+      'SELECT user_id FROM event_attendees WHERE event_id = $1 AND user_id != $2',
+      [eventId, req.user.id]
+    );
+
+    const photoCount = uploadedPhotos.length;
+    const photoText = photoCount === 1 ? 'photo' : 'photos';
+    const message = `${userResult.rows[0].first_name} added ${photoCount} ${photoText} to ${eventResult.rows[0].title}`;
+
+    for (const attendee of attendees.rows) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, message, event_id)
+         VALUES ($1, 'photo', 'New Photos Added', $2, $3)`,
+        [attendee.user_id, message, eventId]
+      );
+      sendPushNotification(
+        attendee.user_id,
+        'New Photos Added',
+        message,
+        { type: 'photo', eventId }
+      ).catch(console.error);
+    }
+
+    res.status(201).json({ 
+      uploaded: uploadedPhotos, 
+      uploadedCount: uploadedPhotos.length,
+      failed: failedCount,
+      failedCount: failedCount.length 
+    });
+  } catch (error) {
+    console.error('Batch upload photo error:', error);
+    res.status(500).json({ error: 'Failed to upload photos' });
+  }
+});
+
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     await pool.query(

@@ -47,10 +47,15 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     // Validate that suggested time is not in the past
     if (conflictType === 'time' && suggestedTime) {
-      const suggestedDate = new Date(suggestedTime);
-      const now = new Date();
-      if (suggestedDate < now) {
-        return res.status(400).json({ error: 'Cannot schedule a conflict for a time in the past' });
+      // Parse the string directly to avoid UTC interpretation
+      const match = suggestedTime.match(/(\d{4})-(\d{2})-(\d{2})(?:T|\s)(\d{2}):(\d{2})/);
+      if (match) {
+        const [, year, month, day, hours, minutes] = match;
+        const suggestedDate = new Date(year, month - 1, day, hours, minutes);
+        const now = new Date();
+        if (suggestedDate < now) {
+          return res.status(400).json({ error: 'Cannot schedule a conflict for a time in the past' });
+        }
       }
     }
 
@@ -213,20 +218,22 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     // Update event based on conflict type
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Use local time methods to preserve user's intended time (not UTC conversion)
-      const suggestedDate = conflict.suggested_time instanceof Date 
-        ? conflict.suggested_time 
-        : new Date(conflict.suggested_time);
+      // Parse the timestamp string directly to avoid timezone conversion
+      // The timestamp is stored as-is (user's local time) without timezone info
+      const timeStr = conflict.suggested_time.toString();
+      const match = timeStr.match(/(\d{4})-(\d{2})-(\d{2})(?:T|\s)(\d{2}):(\d{2})/);
       
-      // Extract components using local time (not UTC)
-      const year = suggestedDate.getFullYear();
-      const month = String(suggestedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(suggestedDate.getDate()).padStart(2, '0');
-      const hours = String(suggestedDate.getHours()).padStart(2, '0');
-      const minutes = String(suggestedDate.getMinutes()).padStart(2, '0');
-      
-      const eventDate = `${year}-${month}-${day}`;
-      const eventTime = `${hours}:${minutes}`;
+      let eventDate, eventTime;
+      if (match) {
+        const [, year, month, day, hours, minutes] = match;
+        eventDate = `${year}-${month}-${day}`;
+        eventTime = `${hours}:${minutes}`;
+      } else {
+        // Fallback for unexpected format
+        const suggestedDate = new Date(conflict.suggested_time);
+        eventDate = `${suggestedDate.getFullYear()}-${String(suggestedDate.getMonth() + 1).padStart(2, '0')}-${String(suggestedDate.getDate()).padStart(2, '0')}`;
+        eventTime = `${String(suggestedDate.getHours()).padStart(2, '0')}:${String(suggestedDate.getMinutes()).padStart(2, '0')}`;
+      }
       
       await pool.query(
         'UPDATE events SET event_date = $1, event_time = $2, updated_at = NOW() WHERE id = $3',
@@ -272,16 +279,28 @@ router.put('/:id/resolve', authenticateToken, async (req, res) => {
 
     let resolutionMessage = '';
     if (conflict.conflict_type === 'time' && conflict.suggested_time) {
-      // Use local time methods to preserve user's intended time
-      const suggestedDate = conflict.suggested_time instanceof Date 
-        ? conflict.suggested_time 
-        : new Date(conflict.suggested_time);
+      // Parse the timestamp string directly to avoid timezone conversion
+      const timeStr = conflict.suggested_time.toString();
+      const match = timeStr.match(/(\d{4})-(\d{2})-(\d{2})(?:T|\s)(\d{2}):(\d{2})/);
       
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthName = monthNames[suggestedDate.getMonth()];
-      const day = suggestedDate.getDate();
-      const hourNum = suggestedDate.getHours();
-      const minute = String(suggestedDate.getMinutes()).padStart(2, '0');
+      let monthName, day, hourNum, minute;
+      
+      if (match) {
+        const [, , monthStr, dayStr, hoursStr, minutesStr] = match;
+        monthName = monthNames[parseInt(monthStr) - 1];
+        day = parseInt(dayStr);
+        hourNum = parseInt(hoursStr);
+        minute = minutesStr;
+      } else {
+        // Fallback for unexpected format
+        const suggestedDate = new Date(conflict.suggested_time);
+        monthName = monthNames[suggestedDate.getMonth()];
+        day = suggestedDate.getDate();
+        hourNum = suggestedDate.getHours();
+        minute = String(suggestedDate.getMinutes()).padStart(2, '0');
+      }
+      
       const ampm = hourNum >= 12 ? 'PM' : 'AM';
       const hour12 = hourNum % 12 || 12;
       resolutionMessage = `Time changed to ${monthName} ${day} at ${hour12}:${minute} ${ampm}`;
