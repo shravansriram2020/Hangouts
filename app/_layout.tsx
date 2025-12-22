@@ -10,15 +10,18 @@ import { Stack, useRouter } from 'expo-router';
 SplashScreen.preventAutoHideAsync();
 
 // Disable font scaling globally to ensure consistent text size regardless of device settings
+// This prevents users' accessibility text size settings from affecting the app's layout
 if ((Text as any).defaultProps == null) {
   (Text as any).defaultProps = {};
 }
 (Text as any).defaultProps.allowFontScaling = false;
+(Text as any).defaultProps.maxFontSizeMultiplier = 1;
 
 if ((TextInput as any).defaultProps == null) {
   (TextInput as any).defaultProps = {};
 }
 (TextInput as any).defaultProps.allowFontScaling = false;
+(TextInput as any).defaultProps.maxFontSizeMultiplier = 1;
 
 function RootLayoutNav() {
   const router = useRouter();

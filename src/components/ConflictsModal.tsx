@@ -187,15 +187,26 @@ export default function ConflictsModal({ visible, onClose, eventId, eventTitle, 
 
   const formatConflictSuggestedTime = (isoString: string) => {
     if (!isoString) return '';
+    // Parse the ISO string directly to avoid timezone conversion issues
+    // The time was stored as user's local time, so we extract components directly
+    const match = isoString.match(/(\d{4})-(\d{2})-(\d{2})(?:T|\s)(\d{2}):(\d{2})/);
+    if (match) {
+      const [, year, month, day, hoursStr, minutes] = match;
+      const hours = parseInt(hoursStr, 10);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHour = hours % 12 || 12;
+      return `${month}/${day}/${year} at ${displayHour}:${minutes} ${ampm}`;
+    }
+    // Fallback to Date parsing if regex doesn't match
     const date = new Date(isoString);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear();
     const hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const minutesStr = date.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHour = hours % 12 || 12;
-    return `${month}/${day}/${year} at ${displayHour}:${minutes} ${ampm}`;
+    return `${month}/${day}/${year} at ${displayHour}:${minutesStr} ${ampm}`;
   };
 
   useEffect(() => {

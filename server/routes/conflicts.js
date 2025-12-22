@@ -18,7 +18,10 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT c.*, u.first_name, u.profile_photo,
+      `SELECT c.id, c.event_id, c.reporter_id, c.conflict_type, c.reason,
+       to_char(c.suggested_time, 'YYYY-MM-DD"T"HH24:MI:SS') as suggested_time,
+       c.suggested_location, c.suggested_lat, c.suggested_lng, c.is_resolved, c.created_at,
+       u.first_name, u.profile_photo,
        (SELECT json_agg(json_build_object(
          'id', cv.id,
          'userId', cv.user_id,
@@ -72,7 +75,9 @@ router.post('/', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO conflicts (event_id, reporter_id, conflict_type, reason, suggested_time, suggested_location, suggested_lat, suggested_lng)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+       RETURNING id, event_id, reporter_id, conflict_type, reason,
+         to_char(suggested_time, 'YYYY-MM-DD"T"HH24:MI:SS') as suggested_time,
+         suggested_location, suggested_lat, suggested_lng, is_resolved, created_at`,
       [eventId, req.user.id, conflictType, reason, suggestedTime, suggestedLocation, suggestedLat, suggestedLng]
     );
 

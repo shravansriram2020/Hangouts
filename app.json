@@ -17,7 +17,8 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "UIViewControllerBasedStatusBarAppearance": false
       },
       "config": {
         "usesNonExemptEncryption": false

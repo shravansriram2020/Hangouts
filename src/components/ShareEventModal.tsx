@@ -37,7 +37,7 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
 
   const canShare = isHost || userStatus === 'accepted' || userStatus === 'maybe';
 
-  const shareLink = `hangouts://event/${eventId}`;
+  const shareLink = `https://hangouts-app.com/event/${eventId}`;
 
   const handleShare = async () => {
     try {
