@@ -43,7 +43,9 @@ Preferred communication style: Simple, everyday language.
 - Pre-approved admin emails: kermanjude@gmail.com, shravan.sriram2020@gmail.com, deva.avk@gmail.com
 - User management: view all users, search, ban/suspend (temporary or permanent), unban
 - Ban durations: 1 hour, 24 hours, 1 week, 30 days, or permanent
-- Broadcast push notifications to all users with push tokens
+- **Ban notification emails**: When a user is banned, they receive an email explaining the reason and duration
+- **Push Notifications tab**: Broadcast push notifications to all users with push tokens
+- **Email tab**: Send custom HTML emails to all users with rich text editor (bold, italic, links, images, styled buttons) and live preview
 - Audit logging for all admin actions in `admin_audit_log` table
 - Statistics dashboard with:
   - Retention metrics (Day 1, 7, 30)
