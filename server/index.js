@@ -86,6 +86,120 @@ app.use(helmet({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+// Apple App Site Association file for Universal Links
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  const aasa = {
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: '694Y4SHTTZ.com.sdj.hangouts',
+          paths: ['/event/*', '/invite/*']
+        }
+      ]
+    }
+  };
+  res.setHeader('Content-Type', 'application/json');
+  res.json(aasa);
+});
+
+// App Store ID - update this with your actual App Store ID
+const APP_STORE_ID = process.env.APP_STORE_ID || 'YOUR_APP_STORE_ID';
+
+// Universal Link fallback pages for users without the app
+const generateFallbackPage = (eventId, type = 'event') => {
+  const deepLink = `hangouts://event/${eventId}`;
+  const appStoreUrl = `https://apps.apple.com/app/id${APP_STORE_ID}`;
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-itunes-app" content="app-id=${APP_STORE_ID}, app-argument=hangouts://event/${eventId}">
+  <title>Hangouts - View Event</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    h1 { font-size: 28px; color: #1a1a2e; margin-bottom: 12px; }
+    p { color: #666; margin-bottom: 32px; line-height: 1.5; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 12px;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: scale(1.02); }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-secondary {
+      background: #f0f0f5;
+      color: #1a1a2e;
+    }
+    .footer { margin-top: 24px; font-size: 12px; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">H</div>
+    <h1>You've been invited!</h1>
+    <p>Someone shared a hangout with you. Open the Hangouts app to view the details.</p>
+    <a href="${deepLink}" class="btn btn-primary">Open in App</a>
+    <a href="${appStoreUrl}" class="btn btn-secondary">Download Hangouts</a>
+    <p class="footer">Don't have the app? Download it free from the App Store.</p>
+  </div>
+  <script>
+    // Try to open the app automatically
+    setTimeout(() => {
+      window.location.href = '${deepLink}';
+    }, 100);
+  </script>
+</body>
+</html>`;
+};
+
+app.get('/event/:id', (req, res) => {
+  res.send(generateFallbackPage(req.params.id, 'event'));
+});
+
+app.get('/invite/:id', (req, res) => {
+  res.send(generateFallbackPage(req.params.id, 'invite'));
+});
+
 app.use(globalLimiter);
 
 app.use('/api/photos', express.json({ limit: '15mb' }), express.urlencoded({ extended: true, limit: '15mb' }), photosRoutes);

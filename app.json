@@ -22,8 +22,16 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "associatedDomains": [
+        "applinks:hangouts-app.com",
+        "applinks:api.hangouts-app.com"
+      ],
       "entitlements": {
-        "aps-environment": "production"
+        "aps-environment": "production",
+        "com.apple.developer.associated-domains": [
+          "applinks:hangouts-app.com",
+          "applinks:api.hangouts-app.com"
+        ]
       }
     },
     "android": {
