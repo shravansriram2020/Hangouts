@@ -41,6 +41,104 @@ const sendAdminVerificationEmail = async (email, code) => {
   });
 };
 
+// Send ban notification email
+const sendBanNotificationEmail = async (email, firstName, reason, banExpiresAt) => {
+  const Resend = require('resend').Resend;
+  const resendApiKey = process.env.VERIFIED_RESEND_KEY || process.env.RESEND_API_KEY;
+  
+  if (!resendApiKey) {
+    throw new Error('Resend API key not configured');
+  }
+  
+  const resend = new Resend(resendApiKey);
+  
+  const expirationText = banExpiresAt 
+    ? `Your suspension will be lifted on <strong>${new Date(banExpiresAt).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      })}</strong>.`
+    : 'This suspension is <strong>permanent</strong>.';
+  
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <img src="https://hangouts-app.com/logo.png" alt="Hangouts" style="width: 120px; height: auto;">
+      </div>
+      <div style="background: #fff3f3; border: 1px solid #ffcdd2; border-radius: 12px; padding: 32px;">
+        <h2 style="color: #c62828; margin: 0 0 16px;">Account Suspended</h2>
+        <p style="color: #333; line-height: 1.6;">
+          Hi ${firstName || 'there'},
+        </p>
+        <p style="color: #333; line-height: 1.6;">
+          Your Hangouts account has been suspended due to a violation of our community guidelines.
+        </p>
+        <div style="background: #fff; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="color: #666; margin: 0 0 8px; font-size: 14px;"><strong>Reason:</strong></p>
+          <p style="color: #333; margin: 0;">${reason || 'Violation of community guidelines'}</p>
+        </div>
+        <p style="color: #333; line-height: 1.6;">
+          ${expirationText}
+        </p>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">
+          If you believe this was a mistake, please contact our support team.
+        </p>
+      </div>
+      <p style="color: #999; font-size: 12px; text-align: center; margin-top: 32px;">
+        &copy; ${new Date().getFullYear()} Hangouts. All rights reserved.
+      </p>
+    </div>
+  `;
+  
+  return await resend.emails.send({
+    from: 'Hangouts <noreply@hangouts-app.com>',
+    to: email,
+    subject: 'Your Hangouts Account Has Been Suspended',
+    html
+  });
+};
+
+// Send broadcast email to users
+const sendBroadcastEmail = async (email, firstName, subject, htmlContent) => {
+  const Resend = require('resend').Resend;
+  const resendApiKey = process.env.VERIFIED_RESEND_KEY || process.env.RESEND_API_KEY;
+  
+  if (!resendApiKey) {
+    throw new Error('Resend API key not configured');
+  }
+  
+  const resend = new Resend(resendApiKey);
+  
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <img src="https://hangouts-app.com/logo.png" alt="Hangouts" style="width: 120px; height: auto;">
+      </div>
+      <div style="background: #ffffff; border-radius: 12px; padding: 32px;">
+        <p style="color: #333; line-height: 1.6;">
+          Hi ${firstName || 'there'},
+        </p>
+        <div style="color: #333; line-height: 1.8;">
+          ${htmlContent}
+        </div>
+      </div>
+      <p style="color: #999; font-size: 12px; text-align: center; margin-top: 32px;">
+        &copy; ${new Date().getFullYear()} Hangouts. All rights reserved.
+      </p>
+    </div>
+  `;
+  
+  return await resend.emails.send({
+    from: 'Hangouts <noreply@hangouts-app.com>',
+    to: email,
+    subject,
+    html
+  });
+};
+
 // Generate verification code
 const generateCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -304,11 +402,31 @@ router.post('/users/:id/ban', authenticateAdmin, async (req, res) => {
   try {
     const banExpiresAt = duration ? new Date(Date.now() + duration * 60 * 60 * 1000) : null;
     
+    // Get user details for email
+    const userResult = await pool.query(
+      'SELECT email, first_name FROM users WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
     await pool.query(
       `UPDATE users SET is_banned = true, ban_reason = $1, ban_expires_at = $2, banned_by = $3
        WHERE id = $4`,
       [reason || 'Violation of terms', banExpiresAt, req.admin.id, req.params.id]
     );
+    
+    // Send ban notification email
+    try {
+      await sendBanNotificationEmail(user.email, user.first_name, reason || 'Violation of community guidelines', banExpiresAt);
+      console.log('[Admin] Ban notification email sent to:', user.email);
+    } catch (emailError) {
+      console.error('[Admin] Failed to send ban notification email:', emailError);
+    }
     
     await logAction(req.admin.id, 'ban_user', req.params.id, { reason, duration });
     
@@ -383,6 +501,68 @@ router.post('/broadcast', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Broadcast error:', error);
     res.status(500).json({ error: 'Failed to send broadcast' });
+  }
+});
+
+// Send email to all users
+router.post('/broadcast-email', authenticateAdmin, async (req, res) => {
+  const { subject, htmlContent } = req.body;
+  
+  if (!subject || !htmlContent) {
+    return res.status(400).json({ error: 'Subject and content are required' });
+  }
+  
+  try {
+    // Get all users with email addresses (exclude banned users)
+    const usersResult = await pool.query(
+      `SELECT id, email, first_name FROM users 
+       WHERE email IS NOT NULL AND email != '' 
+       AND (is_banned = false OR is_banned IS NULL)`
+    );
+    
+    let successCount = 0;
+    let failCount = 0;
+    const errors = [];
+    
+    // Send emails in batches to avoid rate limiting
+    const batchSize = 10;
+    const delayMs = 1000; // 1 second between batches
+    
+    for (let i = 0; i < usersResult.rows.length; i += batchSize) {
+      const batch = usersResult.rows.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (user) => {
+        try {
+          await sendBroadcastEmail(user.email, user.first_name, subject, htmlContent);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          errors.push({ email: user.email, error: error.message });
+        }
+      }));
+      
+      // Wait between batches if not the last batch
+      if (i + batchSize < usersResult.rows.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    
+    await logAction(req.admin.id, 'broadcast_email', null, { 
+      subject, 
+      successCount, 
+      failCount 
+    });
+    
+    console.log('[Admin] Email broadcast sent by', req.admin.email, '- success:', successCount, 'fail:', failCount);
+    res.json({ 
+      message: 'Email broadcast sent',
+      successCount,
+      failCount,
+      totalUsers: usersResult.rows.length
+    });
+  } catch (error) {
+    console.error('Email broadcast error:', error);
+    res.status(500).json({ error: 'Failed to send email broadcast' });
   }
 });
 

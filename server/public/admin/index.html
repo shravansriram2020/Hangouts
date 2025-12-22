@@ -481,7 +481,8 @@
       <div class="tabs">
         <button class="tab active" data-tab="users">Users</button>
         <button class="tab" data-tab="stats">Statistics</button>
-        <button class="tab" data-tab="broadcast">Broadcast</button>
+        <button class="tab" data-tab="broadcast">Push Notifications</button>
+        <button class="tab" data-tab="email">Email</button>
         <button class="tab" data-tab="audit">Audit Log</button>
       </div>
       
@@ -588,6 +589,39 @@
               <p id="previewMessage">-</p>
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Send to All Users</button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Email Tab -->
+      <div class="tab-content" id="tab-email">
+        <div class="card">
+          <h2>Send Email to All Users</h2>
+          <p style="color: var(--text-light); margin-bottom: 24px;">Compose a custom email to send to all active users. You can include images by providing URLs.</p>
+          <form id="emailForm">
+            <div class="form-group">
+              <label for="emailSubject">Subject</label>
+              <input type="text" id="emailSubject" required placeholder="Email subject line">
+            </div>
+            <div class="form-group">
+              <label for="emailContent">Content (HTML supported)</label>
+              <div style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-small" onclick="insertEmailTag('b')">Bold</button>
+                <button type="button" class="btn btn-small" onclick="insertEmailTag('i')">Italic</button>
+                <button type="button" class="btn btn-small" onclick="insertEmailTag('u')">Underline</button>
+                <button type="button" class="btn btn-small" onclick="insertEmailLink()">Link</button>
+                <button type="button" class="btn btn-small" onclick="insertEmailImage()">Insert Image</button>
+                <button type="button" class="btn btn-small" onclick="insertEmailButton()">Button</button>
+              </div>
+              <textarea id="emailContent" required placeholder="Write your email content here... HTML tags are supported." style="min-height: 200px; font-family: monospace;"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Preview</label>
+              <div id="emailPreview" style="background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 24px; min-height: 150px;">
+                <p style="color: var(--text-light);">Start typing to see preview...</p>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Send Email to All Users</button>
           </form>
         </div>
       </div>
@@ -1035,6 +1069,118 @@
         }
       } catch (e) {
         alert('Network error');
+      }
+    });
+    
+    // Email Form
+    const emailContent = document.getElementById('emailContent');
+    const emailPreview = document.getElementById('emailPreview');
+    
+    emailContent.addEventListener('input', updateEmailPreview);
+    
+    function updateEmailPreview() {
+      const content = emailContent.value;
+      if (content.trim()) {
+        emailPreview.innerHTML = content;
+      } else {
+        emailPreview.innerHTML = '<p style="color: var(--text-light);">Start typing to see preview...</p>';
+      }
+    }
+    
+    function insertEmailTag(tag) {
+      const start = emailContent.selectionStart;
+      const end = emailContent.selectionEnd;
+      const text = emailContent.value;
+      const selectedText = text.substring(start, end) || 'text';
+      
+      const newText = text.substring(0, start) + `<${tag}>${selectedText}</${tag}>` + text.substring(end);
+      emailContent.value = newText;
+      emailContent.focus();
+      emailContent.setSelectionRange(start + tag.length + 2, start + tag.length + 2 + selectedText.length);
+      updateEmailPreview();
+    }
+    
+    function insertEmailLink() {
+      const url = prompt('Enter the URL:');
+      if (!url) return;
+      
+      const linkText = prompt('Enter link text:', 'Click here');
+      if (!linkText) return;
+      
+      const start = emailContent.selectionStart;
+      const text = emailContent.value;
+      const linkHtml = `<a href="${url}" style="color: #667eea; text-decoration: underline;">${linkText}</a>`;
+      
+      emailContent.value = text.substring(0, start) + linkHtml + text.substring(start);
+      updateEmailPreview();
+    }
+    
+    function insertEmailImage() {
+      const url = prompt('Enter the image URL:');
+      if (!url) return;
+      
+      const width = prompt('Image width (e.g., 300px or 100%):', '100%');
+      
+      const start = emailContent.selectionStart;
+      const text = emailContent.value;
+      const imgHtml = `<img src="${url}" alt="Image" style="max-width: ${width}; height: auto; border-radius: 8px; margin: 16px 0;">`;
+      
+      emailContent.value = text.substring(0, start) + imgHtml + text.substring(start);
+      updateEmailPreview();
+    }
+    
+    function insertEmailButton() {
+      const url = prompt('Enter the button link URL:');
+      if (!url) return;
+      
+      const buttonText = prompt('Enter button text:', 'Learn More');
+      if (!buttonText) return;
+      
+      const start = emailContent.selectionStart;
+      const text = emailContent.value;
+      const buttonHtml = `<a href="${url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 16px 0;">${buttonText}</a>`;
+      
+      emailContent.value = text.substring(0, start) + buttonHtml + text.substring(start);
+      updateEmailPreview();
+    }
+    
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!confirm('This will send an email to ALL active users. Continue?')) return;
+      
+      const subject = document.getElementById('emailSubject').value;
+      const htmlContent = document.getElementById('emailContent').value;
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      
+      try {
+        const res = await fetch(`${API_BASE}/broadcast-email`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ subject, htmlContent })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          alert(`Email broadcast sent successfully!\n\nSuccess: ${data.successCount}\nFailed: ${data.failCount}\nTotal: ${data.totalUsers}`);
+          document.getElementById('emailForm').reset();
+          updateEmailPreview();
+          loadAuditLog();
+        } else {
+          alert(data.error || 'Failed to send email broadcast');
+        }
+      } catch (e) {
+        alert('Network error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Email to All Users';
       }
     });
     
