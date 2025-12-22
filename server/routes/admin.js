@@ -421,18 +421,129 @@ router.get('/audit-log', authenticateAdmin, async (req, res) => {
 // Get dashboard stats
 router.get('/stats', authenticateAdmin, async (req, res) => {
   try {
-    const [usersResult, eventsResult, bannedResult, activeResult] = await Promise.all([
+    const [
+      usersResult, 
+      eventsResult, 
+      bannedResult, 
+      newUsersWeekResult,
+      newUsersMonthResult,
+      activeEventsResult,
+      messagesResult,
+      photosResult,
+      usersWithPushResult,
+      // Retention metrics
+      day1Retention,
+      day7Retention,
+      day30Retention,
+      // Growth over time
+      userGrowth,
+      eventGrowth
+    ] = await Promise.all([
       pool.query('SELECT COUNT(*) FROM users'),
       pool.query('SELECT COUNT(*) FROM events'),
       pool.query('SELECT COUNT(*) FROM users WHERE is_banned = true'),
-      pool.query(`SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days'`)
+      pool.query(`SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days'`),
+      pool.query(`SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '30 days'`),
+      pool.query(`SELECT COUNT(*) FROM events WHERE is_archived = false`),
+      pool.query('SELECT COUNT(*) FROM messages'),
+      pool.query('SELECT COUNT(*) FROM event_photos'),
+      pool.query('SELECT COUNT(*) FROM users WHERE push_token IS NOT NULL'),
+      // Day 1 retention: users who created an event or attended one within 1 day of signup
+      pool.query(`
+        SELECT COUNT(DISTINCT u.id) FROM users u
+        WHERE u.created_at > NOW() - INTERVAL '30 days'
+        AND (
+          EXISTS (SELECT 1 FROM events e WHERE e.host_id = u.id AND e.created_at <= u.created_at + INTERVAL '1 day')
+          OR EXISTS (SELECT 1 FROM event_attendees ea WHERE ea.user_id = u.id AND ea.joined_at <= u.created_at + INTERVAL '1 day')
+        )
+      `),
+      // Day 7 retention
+      pool.query(`
+        SELECT COUNT(DISTINCT u.id) FROM users u
+        WHERE u.created_at > NOW() - INTERVAL '60 days' AND u.created_at < NOW() - INTERVAL '7 days'
+        AND (
+          EXISTS (SELECT 1 FROM events e WHERE e.host_id = u.id AND e.created_at > u.created_at + INTERVAL '7 days')
+          OR EXISTS (SELECT 1 FROM event_attendees ea WHERE ea.user_id = u.id AND ea.joined_at > u.created_at + INTERVAL '7 days')
+          OR EXISTS (SELECT 1 FROM messages m WHERE m.user_id = u.id AND m.created_at > u.created_at + INTERVAL '7 days')
+        )
+      `),
+      // Day 30 retention
+      pool.query(`
+        SELECT COUNT(DISTINCT u.id) FROM users u
+        WHERE u.created_at > NOW() - INTERVAL '90 days' AND u.created_at < NOW() - INTERVAL '30 days'
+        AND (
+          EXISTS (SELECT 1 FROM events e WHERE e.host_id = u.id AND e.created_at > u.created_at + INTERVAL '30 days')
+          OR EXISTS (SELECT 1 FROM event_attendees ea WHERE ea.user_id = u.id AND ea.joined_at > u.created_at + INTERVAL '30 days')
+          OR EXISTS (SELECT 1 FROM messages m WHERE m.user_id = u.id AND m.created_at > u.created_at + INTERVAL '30 days')
+        )
+      `),
+      // User growth by week (last 8 weeks)
+      pool.query(`
+        SELECT 
+          DATE_TRUNC('week', created_at) as week,
+          COUNT(*) as count
+        FROM users
+        WHERE created_at > NOW() - INTERVAL '8 weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY week
+      `),
+      // Event growth by week (last 8 weeks)
+      pool.query(`
+        SELECT 
+          DATE_TRUNC('week', created_at) as week,
+          COUNT(*) as count
+        FROM events
+        WHERE created_at > NOW() - INTERVAL '8 weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY week
+      `)
     ]);
     
+    // Calculate retention percentages
+    const totalUsersLast30Days = parseInt(newUsersMonthResult.rows[0].count) || 1;
+    const eligibleFor7Day = await pool.query(`SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '7 days'`);
+    const eligibleFor30Day = await pool.query(`SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '90 days' AND created_at < NOW() - INTERVAL '30 days'`);
+    
+    const day1RetentionRate = totalUsersLast30Days > 0 
+      ? Math.round((parseInt(day1Retention.rows[0].count) / totalUsersLast30Days) * 100) 
+      : 0;
+    const day7RetentionRate = parseInt(eligibleFor7Day.rows[0].count) > 0 
+      ? Math.round((parseInt(day7Retention.rows[0].count) / parseInt(eligibleFor7Day.rows[0].count)) * 100) 
+      : 0;
+    const day30RetentionRate = parseInt(eligibleFor30Day.rows[0].count) > 0 
+      ? Math.round((parseInt(day30Retention.rows[0].count) / parseInt(eligibleFor30Day.rows[0].count)) * 100) 
+      : 0;
+    
     res.json({
+      // Basic stats
       totalUsers: parseInt(usersResult.rows[0].count),
       totalEvents: parseInt(eventsResult.rows[0].count),
+      activeEvents: parseInt(activeEventsResult.rows[0].count),
       bannedUsers: parseInt(bannedResult.rows[0].count),
-      newUsersThisWeek: parseInt(activeResult.rows[0].count)
+      totalMessages: parseInt(messagesResult.rows[0].count),
+      totalPhotos: parseInt(photosResult.rows[0].count),
+      usersWithPush: parseInt(usersWithPushResult.rows[0].count),
+      
+      // Growth
+      newUsersThisWeek: parseInt(newUsersWeekResult.rows[0].count),
+      newUsersThisMonth: parseInt(newUsersMonthResult.rows[0].count),
+      
+      // Retention
+      retention: {
+        day1: day1RetentionRate,
+        day7: day7RetentionRate,
+        day30: day30RetentionRate
+      },
+      
+      // Growth charts
+      userGrowth: userGrowth.rows.map(r => ({
+        week: r.week,
+        count: parseInt(r.count)
+      })),
+      eventGrowth: eventGrowth.rows.map(r => ({
+        week: r.week,
+        count: parseInt(r.count)
+      }))
     });
   } catch (error) {
     console.error('Get stats error:', error);

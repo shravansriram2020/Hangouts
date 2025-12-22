@@ -460,18 +460,27 @@
           <div class="value" id="statEvents">-</div>
         </div>
         <div class="stat-card">
-          <h3>Banned Users</h3>
-          <div class="value" id="statBanned">-</div>
+          <h3>Active Events</h3>
+          <div class="value" id="statActiveEvents">-</div>
         </div>
         <div class="stat-card">
           <h3>New This Week</h3>
           <div class="value" id="statNewUsers">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Push Enabled</h3>
+          <div class="value" id="statPushUsers">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Banned Users</h3>
+          <div class="value" id="statBanned">-</div>
         </div>
       </div>
       
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="users">Users</button>
+        <button class="tab" data-tab="stats">Statistics</button>
         <button class="tab" data-tab="broadcast">Broadcast</button>
         <button class="tab" data-tab="audit">Audit Log</button>
       </div>
@@ -500,6 +509,63 @@
             </tbody>
           </table>
           <div class="pagination" id="usersPagination"></div>
+        </div>
+      </div>
+      
+      <!-- Statistics Tab -->
+      <div class="tab-content" id="tab-stats">
+        <div class="card">
+          <h2>Retention Metrics</h2>
+          <p style="color: var(--text-light); margin-bottom: 24px;">User retention based on activity after signup</p>
+          <div class="stats-grid" style="margin-bottom: 0;">
+            <div class="stat-card" style="text-align: center;">
+              <h3>Day 1 Retention</h3>
+              <div class="value" id="retentionDay1">-%</div>
+              <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">Created/joined event within 24h</p>
+            </div>
+            <div class="stat-card" style="text-align: center;">
+              <h3>Day 7 Retention</h3>
+              <div class="value" id="retentionDay7">-%</div>
+              <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">Active after 7 days</p>
+            </div>
+            <div class="stat-card" style="text-align: center;">
+              <h3>Day 30 Retention</h3>
+              <div class="value" id="retentionDay30">-%</div>
+              <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">Active after 30 days</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h2>Engagement Metrics</h2>
+          <div class="stats-grid" style="margin-bottom: 0;">
+            <div class="stat-card">
+              <h3>Total Messages</h3>
+              <div class="value" id="statMessages">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Photos</h3>
+              <div class="value" id="statPhotos">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>New This Month</h3>
+              <div class="value" id="statNewMonth">-</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h2>User Growth (Last 8 Weeks)</h2>
+          <div id="userGrowthChart" style="display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 20px 0;">
+            <p style="color: var(--text-light);">Loading chart...</p>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h2>Event Growth (Last 8 Weeks)</h2>
+          <div id="eventGrowthChart" style="display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 20px 0;">
+            <p style="color: var(--text-light);">Loading chart...</p>
+          </div>
         </div>
       </div>
       
@@ -727,13 +793,64 @@
         });
         const data = await res.json();
         
+        // Main stats
         document.getElementById('statUsers').textContent = data.totalUsers;
         document.getElementById('statEvents').textContent = data.totalEvents;
+        document.getElementById('statActiveEvents').textContent = data.activeEvents || 0;
         document.getElementById('statBanned').textContent = data.bannedUsers;
         document.getElementById('statNewUsers').textContent = data.newUsersThisWeek;
+        document.getElementById('statPushUsers').textContent = data.usersWithPush || 0;
+        
+        // Retention metrics
+        if (data.retention) {
+          document.getElementById('retentionDay1').textContent = data.retention.day1 + '%';
+          document.getElementById('retentionDay7').textContent = data.retention.day7 + '%';
+          document.getElementById('retentionDay30').textContent = data.retention.day30 + '%';
+        }
+        
+        // Engagement metrics
+        document.getElementById('statMessages').textContent = data.totalMessages || 0;
+        document.getElementById('statPhotos').textContent = data.totalPhotos || 0;
+        document.getElementById('statNewMonth').textContent = data.newUsersThisMonth || 0;
+        
+        // Growth charts
+        if (data.userGrowth && data.userGrowth.length > 0) {
+          renderChart('userGrowthChart', data.userGrowth);
+        } else {
+          document.getElementById('userGrowthChart').innerHTML = '<p style="color: var(--text-light);">No data available</p>';
+        }
+        
+        if (data.eventGrowth && data.eventGrowth.length > 0) {
+          renderChart('eventGrowthChart', data.eventGrowth);
+        } else {
+          document.getElementById('eventGrowthChart').innerHTML = '<p style="color: var(--text-light);">No data available</p>';
+        }
       } catch (e) {
         console.error('Failed to load stats:', e);
       }
+    }
+    
+    function renderChart(containerId, data) {
+      const container = document.getElementById(containerId);
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-light);">No data available</p>';
+        return;
+      }
+      
+      const maxCount = Math.max(...data.map(d => d.count), 1);
+      
+      container.innerHTML = data.map(d => {
+        const height = Math.max((d.count / maxCount) * 100, 5);
+        const date = new Date(d.week);
+        const label = `${date.getMonth() + 1}/${date.getDate()}`;
+        return `
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">${d.count}</div>
+            <div style="width: 100%; height: ${height}%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px 4px 0 0; min-height: 5px;"></div>
+            <div style="font-size: 10px; color: var(--text-light); margin-top: 4px;">${label}</div>
+          </div>
+        `;
+      }).join('');
     }
     
     // Load Users
