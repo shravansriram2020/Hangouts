@@ -470,37 +470,59 @@ router.post('/broadcast', authenticateAdmin, async (req, res) => {
   }
   
   try {
-    // Get all users with push tokens
-    const usersResult = await pool.query(
+    // Get ALL active users (not just those with push tokens)
+    const allUsersResult = await pool.query(
+      `SELECT id FROM users WHERE (is_banned = false OR is_banned IS NULL)`
+    );
+    
+    // Create in-app notifications for ALL users so they can view/dismiss in the app
+    let inAppCount = 0;
+    for (const user of allUsersResult.rows) {
+      try {
+        await pool.query(
+          `INSERT INTO notifications (user_id, type, title, message)
+           VALUES ($1, 'admin_broadcast', $2, $3)`,
+          [user.id, title, message]
+        );
+        inAppCount++;
+      } catch (error) {
+        console.error('Failed to create in-app notification for user:', user.id, error.message);
+      }
+    }
+    
+    // Get users with push tokens for push notifications
+    const pushUsersResult = await pool.query(
       `SELECT id, push_token FROM users 
        WHERE push_token IS NOT NULL AND (is_banned = false OR is_banned IS NULL)`
     );
     
-    let successCount = 0;
-    let failCount = 0;
+    let pushSuccessCount = 0;
+    let pushFailCount = 0;
     
-    for (const user of usersResult.rows) {
+    for (const user of pushUsersResult.rows) {
       try {
         await sendPushNotification(user.id, title, message, { type: 'admin_broadcast' });
-        successCount++;
+        pushSuccessCount++;
       } catch (error) {
-        failCount++;
+        pushFailCount++;
       }
     }
     
     await logAction(req.admin.id, 'broadcast_notification', null, { 
       title, 
       message, 
-      successCount, 
-      failCount 
+      inAppCount,
+      pushSuccessCount, 
+      pushFailCount 
     });
     
-    console.log('[Admin] Broadcast sent by', req.admin.email, '- success:', successCount, 'fail:', failCount);
+    console.log('[Admin] Broadcast sent by', req.admin.email, '- in-app:', inAppCount, '- push success:', pushSuccessCount, 'fail:', pushFailCount);
     res.json({ 
       message: 'Broadcast sent',
-      successCount,
-      failCount,
-      totalUsers: usersResult.rows.length
+      inAppNotifications: inAppCount,
+      pushSuccessCount,
+      pushFailCount,
+      totalUsers: allUsersResult.rows.length
     });
   } catch (error) {
     console.error('Broadcast error:', error);
