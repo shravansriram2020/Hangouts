@@ -199,6 +199,13 @@ const logAction = async (adminId, action, targetUserId = null, details = null) =
   }
 };
 
+// Hardcoded whitelist of allowed admin emails - NEVER remove this check
+const ALLOWED_ADMIN_EMAILS = [
+  'kermanjude@gmail.com',
+  'shravan.sriram2020@gmail.com',
+  'deva.avk@gmail.com'
+];
+
 // Request login code
 router.post('/login/request-code', async (req, res) => {
   const { email } = req.body;
@@ -207,8 +214,14 @@ router.post('/login/request-code', async (req, res) => {
     return res.status(400).json({ error: 'Email is required' });
   }
   
+  // SECURITY: Check hardcoded whitelist first
+  if (!ALLOWED_ADMIN_EMAILS.includes(email.toLowerCase())) {
+    // Don't reveal if email is not whitelisted
+    return res.json({ message: 'If this email is registered, a code has been sent' });
+  }
+  
   try {
-    // Check if admin exists
+    // Check if admin exists in database
     const adminResult = await pool.query(
       'SELECT * FROM admin_users WHERE email = $1 AND is_active = true',
       [email.toLowerCase()]
