@@ -191,7 +191,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
                 style={styles.helpButton}
                 onPress={() => Alert.alert('How to Add Friends', 'Add friends by sharing a link and adding a user as a friend on a Hangout page.')}
               >
-                <Ionicons name="help-circle-outline" size={24} color={Colors.grayMedium} />
+                <Ionicons name="help-circle" size={24} color={Colors.secondary} />
               </TouchableOpacity>
             </View>
             {searchingUsers && (
