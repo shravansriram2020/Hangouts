@@ -37,6 +37,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (December 2025)
 
+### Admin Portal System
+- Web-based admin dashboard at `/admin` path for user moderation
+- Secure 2FA authentication using email codes via Resend (no passwords)
+- Pre-approved admin emails: kermanjude@gmail.com, shravan.sriram2020@gmail.com, deva.avk@gmail.com
+- User management: view all users, search, ban/suspend (temporary or permanent), unban
+- Ban durations: 1 hour, 24 hours, 1 week, 30 days, or permanent
+- Broadcast push notifications to all users with push tokens
+- Audit logging for all admin actions in `admin_audit_log` table
+- Statistics dashboard with:
+  - Retention metrics (Day 1, 7, 30)
+  - Engagement metrics (messages, photos)
+  - User and event growth charts (8-week trends)
+  - Active events, push-enabled users count
+- Banned users are automatically blocked on login and during authenticated requests
+- Temporary bans auto-expire when `ban_expires_at` timestamp passes
+
 ### Push Notifications Fix
 - Fixed APNs private key formatting issue - the key stored in environment variables was on a single line and needed to be properly reformatted with line breaks for JWT signing
 - Added test endpoint `/api/test-push` for debugging push notification delivery
