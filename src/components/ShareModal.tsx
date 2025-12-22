@@ -42,7 +42,7 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const eventLink = `https://hangouts-app.com/event/${eventId}`;
+  const eventLink = `https://api.hangouts-app.com/share/${eventId}`;
 
   const handleCopyLink = async () => {
     try {

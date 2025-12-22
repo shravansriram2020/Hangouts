@@ -80,7 +80,9 @@ Preferred communication style: Simple, everyday language.
 - Ensures conflict times display exactly as users entered them regardless of timezone
 
 ### Share URL Universal Links (December 2025)
-- Share links now use `https://hangouts-app.com/event/{id}` format for Universal Links
+- Share links now use `https://api.hangouts-app.com/share/{id}` format for Universal Links
+- Server serves AASA file at `/.well-known/apple-app-site-association` with paths: `/share/*`, `/event/*`, `/invite/*`
+- Fallback HTML page at `/share/:id` for users without the app (shows "Open in App" and "Download" buttons)
 - Works with iOS associated domains for seamless app deep linking
 
 ## Testing Endpoints

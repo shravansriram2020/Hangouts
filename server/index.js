@@ -98,7 +98,7 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
       details: [
         {
           appID: '694Y4SHTTZ.com.sdj.hangouts',
-          paths: ['/event/*', '/invite/*']
+          paths: ['/share/*', '/event/*', '/invite/*']
         }
       ]
     }
@@ -195,6 +195,10 @@ const generateFallbackPage = (eventId, type = 'event') => {
 </body>
 </html>`;
 };
+
+app.get('/share/:id', (req, res) => {
+  res.send(generateFallbackPage(req.params.id, 'share'));
+});
 
 app.get('/event/:id', (req, res) => {
   res.send(generateFallbackPage(req.params.id, 'event'));
