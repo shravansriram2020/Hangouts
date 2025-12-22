@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Text, TextInput } from 'react-native';
 import { useFonts, Prompt_400Regular, Prompt_500Medium, Prompt_600SemiBold, Prompt_700Bold } from '@expo-google-fonts/prompt';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
@@ -9,19 +8,8 @@ import { Stack, useRouter } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
-// Disable font scaling globally to ensure consistent text size regardless of device settings
-// This prevents users' accessibility text size settings from affecting the app's layout
-if ((Text as any).defaultProps == null) {
-  (Text as any).defaultProps = {};
-}
-(Text as any).defaultProps.allowFontScaling = false;
-(Text as any).defaultProps.maxFontSizeMultiplier = 1;
-
-if ((TextInput as any).defaultProps == null) {
-  (TextInput as any).defaultProps = {};
-}
-(TextInput as any).defaultProps.allowFontScaling = false;
-(TextInput as any).defaultProps.maxFontSizeMultiplier = 1;
+// Font scaling is disabled globally in index.js before any components render
+// This ensures text size is locked regardless of device accessibility settings
 
 function RootLayoutNav() {
   const router = useRouter();

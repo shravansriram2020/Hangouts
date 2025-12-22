@@ -69,8 +69,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Font Scaling Fix (December 2025)
 - Text size is locked and does NOT change based on user's phone accessibility settings
-- Uses `allowFontScaling=false` and `maxFontSizeMultiplier=1` globally on Text and TextInput components
-- This is intentional per product requirements to maintain consistent layout
+- Custom entry point (`index.js`) disables font scaling BEFORE any components render
+- Sets `allowFontScaling=false` and `maxFontSizeMultiplier=1` globally on Text and TextInput
+- This runs before expo-router loads, ensuring all components inherit these defaults
+- **Requires new native build** (eas build) to take effect on iOS/Android devices
 
 ### Time Conflict Timezone Fix (December 2025)
 - Server formats timestamps with `to_char()` to return plain local datetime strings without timezone suffix
