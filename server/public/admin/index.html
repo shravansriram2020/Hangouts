@@ -598,7 +598,7 @@
         <div class="card">
           <h2>Send Email to All Users</h2>
           <p style="color: var(--text-light); margin-bottom: 24px;">Compose a custom email to send to all active users. You can include images by providing URLs.</p>
-          <form id="emailForm">
+          <form id="broadcastEmailForm">
             <div class="form-group">
               <label for="emailSubject">Subject</label>
               <input type="text" id="emailSubject" required placeholder="Email subject line">
@@ -1144,7 +1144,7 @@
       updateEmailPreview();
     }
     
-    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    document.getElementById('broadcastEmailForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
       if (!confirm('This will send an email to ALL active users. Continue?')) return;
@@ -1170,7 +1170,7 @@
         
         if (res.ok) {
           alert(`Email broadcast sent successfully!\n\nSuccess: ${data.successCount}\nFailed: ${data.failCount}\nTotal: ${data.totalUsers}`);
-          document.getElementById('emailForm').reset();
+          document.getElementById('broadcastEmailForm').reset();
           updateEmailPreview();
           loadAuditLog();
         } else {

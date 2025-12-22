@@ -420,12 +420,16 @@ router.post('/users/:id/ban', authenticateAdmin, async (req, res) => {
       [reason || 'Violation of terms', banExpiresAt, req.admin.id, req.params.id]
     );
     
-    // Send ban notification email
-    try {
-      await sendBanNotificationEmail(user.email, user.first_name, reason || 'Violation of community guidelines', banExpiresAt);
-      console.log('[Admin] Ban notification email sent to:', user.email);
-    } catch (emailError) {
-      console.error('[Admin] Failed to send ban notification email:', emailError);
+    // Send ban notification email if user has valid email
+    if (user.email && user.email.includes('@')) {
+      try {
+        await sendBanNotificationEmail(user.email, user.first_name, reason || 'Violation of community guidelines', banExpiresAt);
+        console.log('[Admin] Ban notification email sent to:', user.email);
+      } catch (emailError) {
+        console.error('[Admin] Failed to send ban notification email:', emailError);
+      }
+    } else {
+      console.log('[Admin] User has no valid email, skipping ban notification');
     }
     
     await logAction(req.admin.id, 'ban_user', req.params.id, { reason, duration });
@@ -513,23 +517,28 @@ router.post('/broadcast-email', authenticateAdmin, async (req, res) => {
   }
   
   try {
-    // Get all users with email addresses (exclude banned users)
+    // Get all users with valid email addresses (exclude banned users)
     const usersResult = await pool.query(
       `SELECT id, email, first_name FROM users 
-       WHERE email IS NOT NULL AND email != '' 
+       WHERE email IS NOT NULL AND email != '' AND email LIKE '%@%'
        AND (is_banned = false OR is_banned IS NULL)`
     );
     
     let successCount = 0;
     let failCount = 0;
+    let skippedCount = 0;
     const errors = [];
+    
+    // Filter to only valid emails
+    const validUsers = usersResult.rows.filter(user => user.email && user.email.includes('@'));
+    skippedCount = usersResult.rows.length - validUsers.length;
     
     // Send emails in batches to avoid rate limiting
     const batchSize = 10;
     const delayMs = 1000; // 1 second between batches
     
-    for (let i = 0; i < usersResult.rows.length; i += batchSize) {
-      const batch = usersResult.rows.slice(i, i + batchSize);
+    for (let i = 0; i < validUsers.length; i += batchSize) {
+      const batch = validUsers.slice(i, i + batchSize);
       
       await Promise.all(batch.map(async (user) => {
         try {
@@ -542,7 +551,7 @@ router.post('/broadcast-email', authenticateAdmin, async (req, res) => {
       }));
       
       // Wait between batches if not the last batch
-      if (i + batchSize < usersResult.rows.length) {
+      if (i + batchSize < validUsers.length) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
@@ -558,7 +567,8 @@ router.post('/broadcast-email', authenticateAdmin, async (req, res) => {
       message: 'Email broadcast sent',
       successCount,
       failCount,
-      totalUsers: usersResult.rows.length
+      totalUsers: validUsers.length,
+      errors: failCount > 0 ? errors.slice(0, 10) : []
     });
   } catch (error) {
     console.error('Email broadcast error:', error);
