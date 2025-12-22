@@ -658,7 +658,15 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
               </Text>
             )}
 
-            <Text style={styles.sectionTitle}>Invite Friends</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>Invite Friends</Text>
+              <TouchableOpacity 
+                style={styles.helpButton}
+                onPress={() => Alert.alert('How to Add Friends', 'Add friends by sharing a link and adding a user as a friend on a Hangout page.')}
+              >
+                <Ionicons name="help-circle-outline" size={20} color={Colors.grayMedium} />
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               value={userSearchQuery}
@@ -850,6 +858,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-SemiBold',
     marginTop: 16,
     marginBottom: 8,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  helpButton: {
+    padding: 4,
+    marginLeft: 4,
   },
   imageUploadContainer: {
     alignItems: 'center',

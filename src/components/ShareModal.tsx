@@ -177,15 +177,23 @@ export default function ShareModal({ visible, onClose, eventId, eventTitle }: Sh
           </>
         ) : (
           <>
-            <TextInput
-              style={styles.usernameSearchInput}
-              value={username}
-              onChangeText={handleUsernameChange}
-              placeholder="Search friends..."
-              placeholderTextColor={Colors.grayMedium}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View style={styles.searchInputRow}>
+              <TextInput
+                style={styles.usernameSearchInputFlex}
+                value={username}
+                onChangeText={handleUsernameChange}
+                placeholder="Search friends..."
+                placeholderTextColor={Colors.grayMedium}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity 
+                style={styles.helpButton}
+                onPress={() => Alert.alert('How to Add Friends', 'Add friends by sharing a link and adding a user as a friend on a Hangout page.')}
+              >
+                <Ionicons name="help-circle-outline" size={24} color={Colors.grayMedium} />
+              </TouchableOpacity>
+            </View>
             {searchingUsers && (
               <ActivityIndicator size="small" color={Colors.primary} style={styles.searchLoader} />
             )}
@@ -383,6 +391,25 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     color: Colors.secondary,
     marginBottom: 12,
+  },
+  searchInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  usernameSearchInputFlex: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
+  },
+  helpButton: {
+    padding: 8,
+    marginLeft: 4,
   },
   suggestionsList: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',

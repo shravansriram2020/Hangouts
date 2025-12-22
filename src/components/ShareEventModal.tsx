@@ -9,6 +9,7 @@ import {
   Image,
   FlatList,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
@@ -133,7 +134,15 @@ export default function ShareEventModal({ visible, onClose, eventId, userStatus,
               </View>
             ) : (
               <View style={styles.usernameSection}>
-                <Text style={styles.label}>Search for friends to invite</Text>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Search for friends to invite</Text>
+                  <TouchableOpacity 
+                    style={styles.helpButton}
+                    onPress={() => Alert.alert('How to Add Friends', 'Add friends by sharing a link and adding a user as a friend on a Hangout page.')}
+                  >
+                    <Ionicons name="help-circle-outline" size={20} color={Colors.grayMedium} />
+                  </TouchableOpacity>
+                </View>
                 <TextInput
                   style={styles.input}
                   value={searchQuery}
@@ -239,6 +248,15 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     fontFamily: 'Prompt-Regular',
     marginBottom: 8,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  helpButton: {
+    padding: 4,
+    marginLeft: 4,
   },
   linkRow: {
     flexDirection: 'row',
