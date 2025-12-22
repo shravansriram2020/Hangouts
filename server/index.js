@@ -122,38 +122,49 @@ const generateFallbackPage = (eventId, type = 'event') => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-itunes-app" content="app-id=${APP_STORE_ID}, app-argument=hangouts://event/${eventId}">
   <title>Hangouts - View Event</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(180deg, #D4EDFC 0%, #A8D8F0 100%);
       padding: 20px;
     }
     .container {
-      background: white;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
       border-radius: 24px;
       padding: 48px 32px;
       text-align: center;
       max-width: 400px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(30, 58, 95, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.5);
     }
     .logo {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 20px;
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
       margin: 0 auto 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
+      object-fit: cover;
     }
-    h1 { font-size: 28px; color: #1a1a2e; margin-bottom: 12px; }
-    p { color: #666; margin-bottom: 32px; line-height: 1.5; }
+    h1 { 
+      font-size: 28px; 
+      color: #1E3A5F; 
+      margin-bottom: 12px; 
+      font-weight: 600;
+    }
+    p { 
+      color: #4B5563; 
+      margin-bottom: 32px; 
+      line-height: 1.6;
+      font-weight: 400;
+    }
     .btn {
       display: block;
       width: 100%;
@@ -163,23 +174,32 @@ const generateFallbackPage = (eventId, type = 'event') => {
       font-weight: 600;
       text-decoration: none;
       margin-bottom: 12px;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: 'Prompt', sans-serif;
     }
-    .btn:hover { transform: scale(1.02); }
+    .btn:hover { 
+      transform: scale(1.02); 
+      box-shadow: 0 8px 24px rgba(30, 58, 95, 0.2);
+    }
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1E3A5F;
       color: white;
     }
     .btn-secondary {
-      background: #f0f0f5;
-      color: #1a1a2e;
+      background: rgba(30, 58, 95, 0.1);
+      color: #1E3A5F;
     }
-    .footer { margin-top: 24px; font-size: 12px; color: #999; }
+    .footer { 
+      margin-top: 24px; 
+      font-size: 12px; 
+      color: #6B7280; 
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">H</div>
+    <img src="/public/logo.png" alt="Hangouts" class="logo">
     <h1>You've been invited!</h1>
     <p>Someone shared a hangout with you. Open the Hangouts app to view the details.</p>
     <a href="${deepLink}" class="btn btn-primary">Open in App</a>
