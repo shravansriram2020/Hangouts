@@ -17,7 +17,11 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
         "UIViewControllerBasedStatusBarAppearance": false
       },
       "config": {
@@ -33,7 +37,8 @@
           "applinks:hangouts-app.com",
           "applinks:api.hangouts-app.com"
         ]
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.sdj.hangouts",
