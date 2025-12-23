@@ -38,7 +38,7 @@
           "applinks:api.hangouts-app.com"
         ]
       },
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
     "android": {
       "package": "com.sdj.hangouts",
