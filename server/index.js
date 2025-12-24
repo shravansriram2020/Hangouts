@@ -274,7 +274,6 @@ app.get('/api/health', async (req, res) => {
     checks.database = 'error: ' + error.message;
   }
   
-  console.log('[Health Check]', JSON.stringify(checks, null, 2));
   res.json(checks);
 });
 
