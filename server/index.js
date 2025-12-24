@@ -392,7 +392,6 @@ const startServer = async () => {
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`APNs Key ID: ${process.env.APNS_KEY_ID ? 'configured' : 'MISSING'}`);
     console.log(`APNs Team ID: ${process.env.APNS_TEAM_ID ? 'configured' : 'MISSING'}`);
-    console.log(`APNs Auth Key: ${process.env.APNS_AUTH_KEY ? 'configured' : 'MISSING'}`);
     console.log(`Database URL: ${process.env.DATABASE_URL ? 'configured' : 'MISSING'}`);
     console.log('='.repeat(60));
     
