@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Ban notification emails**: When a user is banned, they receive an email explaining the reason and duration
 - **Push Notifications tab**: Broadcast push notifications to all users with push tokens
 - **Email tab**: Send custom HTML emails to all users with rich text editor (bold, italic, links, images, styled buttons) and live preview
+- **Direct image uploads**: News and Email tabs support direct file uploads (JPEG, PNG, GIF, WebP, max 5MB) stored in `/uploads/admin/` with crypto-random filenames
 - Audit logging for all admin actions in `admin_audit_log` table
 - Statistics dashboard with:
   - Retention metrics (Day 1, 7, 30)
