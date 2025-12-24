@@ -94,6 +94,19 @@ Preferred communication style: Simple, everyday language.
 - Users can add friends by tapping the heart on attendees who joined via shared link
 - Existing friends are preserved; no data loss
 
+### News Announcement System (December 2025)
+- Admin-created announcements that display as popups when users open the app
+- Database tables: `news_items` (id, title, caption, image_url, is_published, etc.) and `news_dismissals` (tracks which users dismissed which news)
+- Admin portal "News" tab with:
+  - Create news with optional title, required caption, optional image URL
+  - Live preview of announcement appearance
+  - Publish/unpublish toggle for each news item
+  - Delete functionality with audit logging
+- Mobile NewsPopup component uses glass panel styling consistent with app design
+- News fetches on every Home screen focus; server tracks dismissals per-user
+- Rate limiting applied to all admin routes (200 requests/15 min)
+- User endpoints: `GET /api/users/news/latest`, `POST /api/users/news/:id/dismiss`
+
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
 - `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)
