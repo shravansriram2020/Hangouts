@@ -940,7 +940,9 @@ router.post('/upload/news', authenticateAdmin, (req, res, next) => {
     }
     
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    // Remove /api suffix from EXPO_PUBLIC_API_URL if present
+    let baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    baseUrl = baseUrl.replace(/\/api$/, '');
     const imageUrl = `${baseUrl}/uploads/admin/news/${req.file.filename}`;
     
     await logAction(req.admin.id, 'upload_news_image', null, { filename: req.file.filename });
@@ -964,7 +966,9 @@ router.post('/upload/email', authenticateAdmin, (req, res, next) => {
     }
     
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    // Remove /api suffix from EXPO_PUBLIC_API_URL if present
+    let baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    baseUrl = baseUrl.replace(/\/api$/, '');
     const imageUrl = `${baseUrl}/uploads/admin/email/${req.file.filename}`;
     
     await logAction(req.admin.id, 'upload_email_image', null, { filename: req.file.filename });
