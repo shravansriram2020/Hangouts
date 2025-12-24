@@ -37,15 +37,6 @@ function RootLayoutNav() {
           router.push(`/event/${eventId}`);
         }
       }
-      
-      // Handle /share/:id links (same as event for now)
-      if (parsed.path?.startsWith('share/')) {
-        const eventId = parsed.path.replace('share/', '').split('/')[0];
-        if (eventId) {
-          console.log('[Universal Link] Navigating to share:', eventId);
-          router.push(`/event/${eventId}`);
-        }
-      }
     }
   }, [url, router]);
 

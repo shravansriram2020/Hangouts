@@ -98,7 +98,7 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
       details: [
         {
           appID: '694Y4SHTTZ.com.sdj.hangouts',
-          paths: ['/share/*', '/event/*', '/invite/*']
+          paths: ['/event/*', '/invite/*']
         }
       ]
     }
@@ -112,7 +112,7 @@ const APP_STORE_ID = process.env.APP_STORE_ID || 'YOUR_APP_STORE_ID';
 
 // Universal Link fallback pages for users without the app
 const generateFallbackPage = (eventId, type = 'event') => {
-  const deepLink = `hangouts://${type}/${eventId}`;
+  const deepLink = `hangouts://event/${eventId}`;
   const appStoreUrl = `https://apps.apple.com/app/id${APP_STORE_ID}`;
   
   return `<!DOCTYPE html>
@@ -120,7 +120,7 @@ const generateFallbackPage = (eventId, type = 'event') => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="apple-itunes-app" content="app-id=${APP_STORE_ID}, app-argument=hangouts://${type}/${eventId}">
+  <meta name="apple-itunes-app" content="app-id=${APP_STORE_ID}, app-argument=hangouts://event/${eventId}">
   <title>Hangouts - View Event</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
