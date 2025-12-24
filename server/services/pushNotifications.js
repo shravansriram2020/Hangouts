@@ -328,7 +328,6 @@ async function clearBadge(userId) {
           console.log(`[Push] Badge cleared for user ${userId}`);
           resolve(true);
         } else {
-          console.log(`[Push] Badge clear failed with status ${statusCode}`);
           resolve(false);
         }
       });
