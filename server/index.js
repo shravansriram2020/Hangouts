@@ -217,7 +217,7 @@ const generateFallbackPage = (eventId, type = 'event') => {
 };
 
 app.get('/share/:id', (req, res) => {
-  res.send(generateFallbackPage(req.params.id, 'share'));
+  res.redirect(301, `/event/${req.params.id}`);
 });
 
 app.get('/event/:id', (req, res) => {
