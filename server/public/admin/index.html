@@ -586,8 +586,19 @@
               <textarea id="newsCaption" required placeholder="Write your announcement message here..."></textarea>
             </div>
             <div class="form-group">
-              <label for="newsImageUrl">Image URL (optional)</label>
-              <input type="url" id="newsImageUrl" placeholder="https://example.com/image.jpg">
+              <label>Image (optional)</label>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="newsImageFile" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+                <button type="button" class="btn btn-small" onclick="document.getElementById('newsImageFile').click()">
+                  Upload Image
+                </button>
+                <span id="newsImageStatus" style="color: var(--text-light); font-size: 14px;">No image selected</span>
+              </div>
+              <input type="hidden" id="newsImageUrl">
+              <div id="newsImagePreviewContainer" style="margin-top: 12px; display: none;">
+                <img id="newsUploadedPreview" src="" style="max-width: 200px; border-radius: 8px;">
+                <button type="button" class="btn btn-small" style="margin-left: 12px; background: var(--danger); color: white;" onclick="clearNewsImage()">Remove</button>
+              </div>
             </div>
             <div class="broadcast-preview" id="newsPreview" style="display: none;">
               <h4>Preview</h4>
@@ -647,7 +658,8 @@
       <div class="tab-content" id="tab-email">
         <div class="card">
           <h2>Send Email to All Users</h2>
-          <p style="color: var(--text-light); margin-bottom: 24px;">Compose a custom email to send to all active users. You can include images by providing URLs.</p>
+          <p style="color: var(--text-light); margin-bottom: 24px;">Compose a custom email to send to all active users. You can upload images directly.</p>
+          <input type="file" id="emailImageFile" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
           <form id="broadcastEmailForm">
             <div class="form-group">
               <label for="emailSubject">Subject</label>
@@ -660,7 +672,7 @@
                 <button type="button" class="btn btn-small" onclick="insertEmailTag('i')">Italic</button>
                 <button type="button" class="btn btn-small" onclick="insertEmailTag('u')">Underline</button>
                 <button type="button" class="btn btn-small" onclick="insertEmailLink()">Link</button>
-                <button type="button" class="btn btn-small" onclick="insertEmailImage()">Insert Image</button>
+                <button type="button" class="btn btn-small" onclick="triggerEmailImageUpload()" id="emailImageBtn">Upload Image</button>
                 <button type="button" class="btn btn-small" onclick="insertEmailButton()">Button</button>
               </div>
               <textarea id="emailContent" required placeholder="Write your email content here... HTML tags are supported." style="min-height: 200px; font-family: monospace;"></textarea>
@@ -1166,18 +1178,51 @@
       updateEmailPreview();
     }
     
+    function triggerEmailImageUpload() {
+      document.getElementById('emailImageFile').click();
+    }
+    
+    document.getElementById('emailImageFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const btn = document.getElementById('emailImageBtn');
+      btn.textContent = 'Uploading...';
+      btn.disabled = true;
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const res = await fetch(`${API_BASE}/upload/email`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          const width = prompt('Image width (e.g., 300px or 100%):', '100%') || '100%';
+          const start = emailContent.selectionStart;
+          const text = emailContent.value;
+          const imgHtml = `<img src="${data.url}" alt="Image" style="max-width: ${width}; height: auto; border-radius: 8px; margin: 16px 0;">`;
+          emailContent.value = text.substring(0, start) + imgHtml + text.substring(start);
+          updateEmailPreview();
+        } else {
+          alert(data.error || 'Failed to upload image');
+        }
+      } catch (err) {
+        alert('Network error uploading image');
+      } finally {
+        btn.textContent = 'Upload Image';
+        btn.disabled = false;
+        e.target.value = '';
+      }
+    });
+    
     function insertEmailImage() {
-      const url = prompt('Enter the image URL:');
-      if (!url) return;
-      
-      const width = prompt('Image width (e.g., 300px or 100%):', '100%');
-      
-      const start = emailContent.selectionStart;
-      const text = emailContent.value;
-      const imgHtml = `<img src="${url}" alt="Image" style="max-width: ${width}; height: auto; border-radius: 8px; margin: 16px 0;">`;
-      
-      emailContent.value = text.substring(0, start) + imgHtml + text.substring(start);
-      updateEmailPreview();
+      triggerEmailImageUpload();
     }
     
     function insertEmailButton() {
@@ -1286,10 +1331,58 @@
     const newsTitle = document.getElementById('newsTitle');
     const newsCaption = document.getElementById('newsCaption');
     const newsImageUrl = document.getElementById('newsImageUrl');
+    const newsImageFile = document.getElementById('newsImageFile');
+    const newsImageStatus = document.getElementById('newsImageStatus');
+    const newsImagePreviewContainer = document.getElementById('newsImagePreviewContainer');
+    const newsUploadedPreview = document.getElementById('newsUploadedPreview');
     const newsPreview = document.getElementById('newsPreview');
     const newsPreviewImage = document.getElementById('newsPreviewImage');
     const newsPreviewTitle = document.getElementById('newsPreviewTitle');
     const newsPreviewCaption = document.getElementById('newsPreviewCaption');
+    
+    newsImageFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      newsImageStatus.textContent = 'Uploading...';
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const res = await fetch(`${API_BASE}/upload/news`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          newsImageUrl.value = data.url;
+          newsUploadedPreview.src = data.url;
+          newsImagePreviewContainer.style.display = 'flex';
+          newsImageStatus.textContent = 'Image uploaded';
+          updateNewsPreview();
+        } else {
+          alert(data.error || 'Failed to upload image');
+          newsImageStatus.textContent = 'Upload failed';
+        }
+      } catch (e) {
+        alert('Network error uploading image');
+        newsImageStatus.textContent = 'Upload failed';
+      }
+      
+      e.target.value = '';
+    });
+    
+    function clearNewsImage() {
+      newsImageUrl.value = '';
+      newsUploadedPreview.src = '';
+      newsImagePreviewContainer.style.display = 'none';
+      newsImageStatus.textContent = 'No image selected';
+      updateNewsPreview();
+    }
     
     function updateNewsPreview() {
       const title = newsTitle.value;
@@ -1314,7 +1407,6 @@
     
     newsTitle.addEventListener('input', updateNewsPreview);
     newsCaption.addEventListener('input', updateNewsPreview);
-    newsImageUrl.addEventListener('input', updateNewsPreview);
     
     document.getElementById('newsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1342,6 +1434,7 @@
         if (res.ok) {
           alert('News item created successfully!');
           document.getElementById('newsForm').reset();
+          clearNewsImage();
           newsPreview.style.display = 'none';
           loadNews();
         } else {

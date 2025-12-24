@@ -1,8 +1,49 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { pool } = require('../db');
 const { sendPushNotification } = require('../services/pushNotifications');
+
+// Create admin uploads directories
+const adminUploadsDir = path.join(__dirname, '../uploads/admin');
+const newsUploadsDir = path.join(adminUploadsDir, 'news');
+const emailUploadsDir = path.join(adminUploadsDir, 'email');
+
+[adminUploadsDir, newsUploadsDir, emailUploadsDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Multer storage configuration for admin uploads
+const adminStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const type = req.uploadType || 'news';
+    const dir = type === 'email' ? emailUploadsDir : newsUploadsDir;
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = crypto.randomBytes(8).toString('hex');
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${Date.now()}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const adminUpload = multer({
+  storage: adminStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'), false);
+    }
+  }
+});
 
 // Email service for 2FA codes
 const sendAdminVerificationEmail = async (email, code) => {
@@ -886,6 +927,68 @@ router.delete('/news/:id', authenticateAdmin, async (req, res) => {
     console.error('Delete news error:', error);
     res.status(500).json({ error: 'Failed to delete news item' });
   }
+});
+
+// Upload image for news
+router.post('/upload/news', authenticateAdmin, (req, res, next) => {
+  req.uploadType = 'news';
+  next();
+}, adminUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    const imageUrl = `${baseUrl}/uploads/admin/news/${req.file.filename}`;
+    
+    await logAction(req.admin.id, 'upload_news_image', null, { filename: req.file.filename });
+    
+    console.log('[Admin] News image uploaded by', req.admin.email);
+    res.json({ url: imageUrl, filename: req.file.filename });
+  } catch (error) {
+    console.error('Upload news image error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Upload image for email
+router.post('/upload/email', authenticateAdmin, (req, res, next) => {
+  req.uploadType = 'email';
+  next();
+}, adminUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || `${protocol}://${req.get('host')}`;
+    const imageUrl = `${baseUrl}/uploads/admin/email/${req.file.filename}`;
+    
+    await logAction(req.admin.id, 'upload_email_image', null, { filename: req.file.filename });
+    
+    console.log('[Admin] Email image uploaded by', req.admin.email);
+    res.json({ url: imageUrl, filename: req.file.filename });
+  } catch (error) {
+    console.error('Upload email image error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Error handler for multer
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+    }
+    return res.status(400).json({ error: error.message });
+  }
+  if (error.message && error.message.includes('Invalid file type')) {
+    return res.status(400).json({ error: error.message });
+  }
+  next(error);
 });
 
 module.exports = router;
