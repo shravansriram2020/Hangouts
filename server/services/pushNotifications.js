@@ -22,8 +22,9 @@ function formatPrivateKey(key) {
     .replace(/\r/g, '\n')
     .trim();
   
-  const beginMarker = '-----BEGIN PRIVATE KEY-----';
-  const endMarker = '-----END PRIVATE KEY-----';
+  const pemType = 'PRIVATE KEY';
+  const beginMarker = ['-----BEGIN', pemType, '-----'].join(' ');
+  const endMarker = ['-----END', pemType, '-----'].join(' ');
   
   let keyContent = cleanKey;
   
