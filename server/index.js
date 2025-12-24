@@ -98,12 +98,13 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
       details: [
         {
           appID: '694Y4SHTTZ.com.sdj.hangouts',
-          paths: ['/event/*', '/invite/*']
+          paths: ['NOT /share/*', '/event/*', '/invite/*']
         }
       ]
     }
   };
   res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.json(aasa);
 });
 
