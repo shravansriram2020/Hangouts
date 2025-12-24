@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hangouts",
     "slug": "hangouts",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hangouts",
@@ -38,7 +38,7 @@
           "applinks:api.hangouts-app.com"
         ]
       },
-      "buildNumber": "4"
+      "buildNumber": "5"
     },
     "android": {
       "package": "com.sdj.hangouts",
