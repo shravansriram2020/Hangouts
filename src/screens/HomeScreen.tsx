@@ -23,6 +23,7 @@ import NotificationsModal from '../components/NotificationsModal';
 import CreateEventModal from '../components/CreateEventModal';
 import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
+import NewsPopup from '../components/NewsPopup';
 
 interface HomeScreenProps {
   navigation: any;
@@ -47,6 +48,8 @@ export default function HomeScreen({
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount || 0);
   const [activeTab, setActiveTab] = useState<'current' | 'archived'>('current');
   const hasInitialData = useRef(!!initialEvents);
+  const [newsItem, setNewsItem] = useState<any>(null);
+  const [showNewsPopup, setShowNewsPopup] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -91,6 +94,35 @@ export default function HomeScreen({
       fetchEvents();
     }, [])
   );
+
+  const fetchNews = useCallback(async () => {
+    try {
+      const news = await api.get('/users/news/latest');
+      if (news) {
+        setNewsItem(news);
+        setShowNewsPopup(true);
+      }
+    } catch (error) {
+      console.log('No news available');
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchNews();
+    }, [fetchNews])
+  );
+
+
+  const handleDismissNews = async (newsId: string) => {
+    setShowNewsPopup(false);
+    setNewsItem(null);
+    try {
+      await api.post(`/users/news/${newsId}/dismiss`, {});
+    } catch (error) {
+      console.error('Failed to dismiss news:', error);
+    }
+  };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -262,6 +294,12 @@ export default function HomeScreen({
         visible={showCreateEvent}
         onClose={() => setShowCreateEvent(false)}
         onCreated={handleEventCreated}
+      />
+
+      <NewsPopup
+        visible={showNewsPopup}
+        news={newsItem}
+        onDismiss={handleDismissNews}
       />
     </LinearGradient>
   );

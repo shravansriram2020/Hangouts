@@ -56,6 +56,14 @@ const locationLimiter = rateLimit({
   message: { error: 'Too many location requests, please slow down.' },
 });
 
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many admin requests, please slow down.' },
+});
+
 const allowedOrigins = [
   process.env.EXPO_PUBLIC_API_URL,
   'https://hangouts-devteam.replit.app',
@@ -98,7 +106,7 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
       details: [
         {
           appID: '694Y4SHTTZ.com.sdj.hangouts',
-          paths: ['NOT /share/*', '/event/*', '/invite/*']
+          paths: ['/share/*', '/event/*', '/invite/*']
         }
       ]
     }
@@ -245,7 +253,7 @@ app.use('/api/messages', messageLimiter, messagesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminLimiter, adminRoutes);
 
 app.get('/api/health', async (req, res) => {
   const resendConfigured = await isResendConfigured();

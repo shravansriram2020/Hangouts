@@ -228,4 +228,50 @@ router.delete('/account', authenticateToken, async (req, res) => {
   }
 });
 
+// ============== NEWS ENDPOINTS ==============
+
+// Get latest news for user (not yet dismissed)
+router.get('/news/latest', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT n.id, n.title, n.caption, n.image_url, n.published_at
+       FROM news_items n
+       WHERE n.is_published = true
+       AND NOT EXISTS (
+         SELECT 1 FROM news_dismissals d 
+         WHERE d.news_id = n.id AND d.user_id = $1
+       )
+       ORDER BY n.published_at DESC
+       LIMIT 1`,
+      [req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.json(null);
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get latest news error:', error);
+    res.status(500).json({ error: 'Failed to get news' });
+  }
+});
+
+// Dismiss a news item
+router.post('/news/:id/dismiss', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      `INSERT INTO news_dismissals (user_id, news_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, news_id) DO NOTHING`,
+      [req.user.id, req.params.id]
+    );
+    
+    res.json({ message: 'News dismissed' });
+  } catch (error) {
+    console.error('Dismiss news error:', error);
+    res.status(500).json({ error: 'Failed to dismiss news' });
+  }
+});
+
 module.exports = router;

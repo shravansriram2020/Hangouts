@@ -212,6 +212,28 @@ const initDb = async () => {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_expires_at TIMESTAMP;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_by UUID;
+
+      -- News announcements table
+      CREATE TABLE IF NOT EXISTS news_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        title VARCHAR(255),
+        caption TEXT NOT NULL,
+        image_url TEXT,
+        is_published BOOLEAN DEFAULT false,
+        created_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+        published_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      -- Track which users have dismissed which news items
+      CREATE TABLE IF NOT EXISTS news_dismissals (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        news_id UUID REFERENCES news_items(id) ON DELETE CASCADE,
+        dismissed_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, news_id)
+      );
     `);
     console.log('Database tables created successfully');
   } catch (error) {

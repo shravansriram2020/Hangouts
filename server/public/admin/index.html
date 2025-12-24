@@ -481,6 +481,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="users">Users</button>
         <button class="tab" data-tab="stats">Statistics</button>
+        <button class="tab" data-tab="news">News</button>
         <button class="tab" data-tab="broadcast">Push Notifications</button>
         <button class="tab" data-tab="email">Email</button>
         <button class="tab" data-tab="audit">Audit Log</button>
@@ -567,6 +568,55 @@
           <div id="eventGrowthChart" style="display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 20px 0;">
             <p style="color: var(--text-light);">Loading chart...</p>
           </div>
+        </div>
+      </div>
+      
+      <!-- News Tab -->
+      <div class="tab-content" id="tab-news">
+        <div class="card">
+          <h2>Create News Announcement</h2>
+          <p style="color: var(--text-light); margin-bottom: 24px;">Create announcements that will appear as popups when users open the app. Users can dismiss them and won't see the same announcement again.</p>
+          <form id="newsForm">
+            <div class="form-group">
+              <label for="newsTitle">Title (optional)</label>
+              <input type="text" id="newsTitle" placeholder="Announcement title">
+            </div>
+            <div class="form-group">
+              <label for="newsCaption">Caption *</label>
+              <textarea id="newsCaption" required placeholder="Write your announcement message here..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="newsImageUrl">Image URL (optional)</label>
+              <input type="url" id="newsImageUrl" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="broadcast-preview" id="newsPreview" style="display: none;">
+              <h4>Preview</h4>
+              <div style="background: white; border-radius: 12px; padding: 16px; margin-top: 12px;">
+                <img id="newsPreviewImage" src="" style="width: 100%; border-radius: 8px; margin-bottom: 12px; display: none;">
+                <p id="newsPreviewTitle" style="font-weight: 600; margin-bottom: 8px;"></p>
+                <p id="newsPreviewCaption" style="color: var(--text-light);"></p>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Create News</button>
+          </form>
+        </div>
+        
+        <div class="card">
+          <h2>All News Items</h2>
+          <table id="newsTable">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Caption</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="newsTableBody">
+              <tr><td colspan="5" class="loading">Loading news items...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
       
@@ -794,6 +844,7 @@
       loadStats();
       loadUsers();
       loadAuditLog();
+      loadNews();
     }
     
     async function logout() {
@@ -1227,6 +1278,165 @@
       } catch (e) {
         console.error('Failed to load audit log:', e);
         tbody.innerHTML = '<tr><td colspan="5" class="loading">Failed to load audit log</td></tr>';
+      }
+    }
+    
+    // ============== NEWS MANAGEMENT ==============
+    
+    const newsTitle = document.getElementById('newsTitle');
+    const newsCaption = document.getElementById('newsCaption');
+    const newsImageUrl = document.getElementById('newsImageUrl');
+    const newsPreview = document.getElementById('newsPreview');
+    const newsPreviewImage = document.getElementById('newsPreviewImage');
+    const newsPreviewTitle = document.getElementById('newsPreviewTitle');
+    const newsPreviewCaption = document.getElementById('newsPreviewCaption');
+    
+    function updateNewsPreview() {
+      const title = newsTitle.value;
+      const caption = newsCaption.value;
+      const imageUrl = newsImageUrl.value;
+      
+      if (caption.trim()) {
+        newsPreview.style.display = 'block';
+        newsPreviewTitle.textContent = title || '';
+        newsPreviewCaption.textContent = caption;
+        
+        if (imageUrl) {
+          newsPreviewImage.src = imageUrl;
+          newsPreviewImage.style.display = 'block';
+        } else {
+          newsPreviewImage.style.display = 'none';
+        }
+      } else {
+        newsPreview.style.display = 'none';
+      }
+    }
+    
+    newsTitle.addEventListener('input', updateNewsPreview);
+    newsCaption.addEventListener('input', updateNewsPreview);
+    newsImageUrl.addEventListener('input', updateNewsPreview);
+    
+    document.getElementById('newsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const title = newsTitle.value;
+      const caption = newsCaption.value;
+      const imageUrl = newsImageUrl.value;
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+      
+      try {
+        const res = await fetch(`${API_BASE}/news`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ title, caption, imageUrl })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          alert('News item created successfully!');
+          document.getElementById('newsForm').reset();
+          newsPreview.style.display = 'none';
+          loadNews();
+        } else {
+          alert(data.error || 'Failed to create news item');
+        }
+      } catch (e) {
+        alert('Network error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create News';
+      }
+    });
+    
+    async function loadNews() {
+      const tbody = document.getElementById('newsTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+      
+      try {
+        const res = await fetch(`${API_BASE}/news`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="loading">No news items</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = data.map(news => `
+          <tr>
+            <td>${news.title || '<em>No title</em>'}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${news.caption}</td>
+            <td>${news.is_published 
+              ? '<span class="badge badge-success">Published</span>' 
+              : '<span class="badge" style="background: #eee; color: #666;">Draft</span>'}</td>
+            <td>${new Date(news.created_at).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-small ${news.is_published ? 'btn-danger' : 'btn-success'}" 
+                      onclick="togglePublishNews('${news.id}', ${!news.is_published})">
+                ${news.is_published ? 'Unpublish' : 'Publish'}
+              </button>
+              <button class="btn btn-small" style="background: var(--danger); color: white; margin-left: 4px;" 
+                      onclick="deleteNews('${news.id}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load news:', e);
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">Failed to load news</td></tr>';
+      }
+    }
+    
+    async function togglePublishNews(newsId, publish) {
+      if (!confirm(`Are you sure you want to ${publish ? 'publish' : 'unpublish'} this news item?`)) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/news/${newsId}/publish`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ publish })
+        });
+        
+        if (res.ok) {
+          loadNews();
+          loadAuditLog();
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to update news status');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    }
+    
+    async function deleteNews(newsId) {
+      if (!confirm('Are you sure you want to delete this news item?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/news/${newsId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          loadNews();
+          loadAuditLog();
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to delete news item');
+        }
+      } catch (e) {
+        alert('Network error');
       }
     }
   </script>

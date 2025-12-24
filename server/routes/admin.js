@@ -776,4 +776,116 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
   }
 });
 
+// ============== NEWS MANAGEMENT ==============
+
+// Get all news items (admin)
+router.get('/news', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT n.*, a.name as created_by_name
+       FROM news_items n
+       LEFT JOIN admin_users a ON n.created_by = a.id
+       ORDER BY n.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get news error:', error);
+    res.status(500).json({ error: 'Failed to get news items' });
+  }
+});
+
+// Create news item
+router.post('/news', authenticateAdmin, async (req, res) => {
+  const { title, caption, imageUrl } = req.body;
+  
+  if (!caption) {
+    return res.status(400).json({ error: 'Caption is required' });
+  }
+  
+  try {
+    const result = await pool.query(
+      `INSERT INTO news_items (title, caption, image_url, created_by)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [title || null, caption, imageUrl || null, req.admin.id]
+    );
+    
+    await logAction(req.admin.id, 'create_news', null, { newsId: result.rows[0].id, title });
+    
+    console.log('[Admin] News item created by', req.admin.email);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Create news error:', error);
+    res.status(500).json({ error: 'Failed to create news item' });
+  }
+});
+
+// Update news item
+router.put('/news/:id', authenticateAdmin, async (req, res) => {
+  const { title, caption, imageUrl } = req.body;
+  
+  try {
+    const result = await pool.query(
+      `UPDATE news_items 
+       SET title = $1, caption = $2, image_url = $3, updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [title || null, caption, imageUrl || null, req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'News item not found' });
+    }
+    
+    await logAction(req.admin.id, 'update_news', null, { newsId: req.params.id });
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Update news error:', error);
+    res.status(500).json({ error: 'Failed to update news item' });
+  }
+});
+
+// Publish/unpublish news item
+router.post('/news/:id/publish', authenticateAdmin, async (req, res) => {
+  const { publish } = req.body;
+  
+  try {
+    const result = await pool.query(
+      `UPDATE news_items 
+       SET is_published = $1, published_at = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [publish, publish ? new Date() : null, req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'News item not found' });
+    }
+    
+    await logAction(req.admin.id, publish ? 'publish_news' : 'unpublish_news', null, { newsId: req.params.id });
+    
+    console.log('[Admin] News item', publish ? 'published' : 'unpublished', 'by', req.admin.email);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Publish news error:', error);
+    res.status(500).json({ error: 'Failed to update news item' });
+  }
+});
+
+// Delete news item
+router.delete('/news/:id', authenticateAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM news_items WHERE id = $1', [req.params.id]);
+    
+    await logAction(req.admin.id, 'delete_news', null, { newsId: req.params.id });
+    
+    console.log('[Admin] News item deleted by', req.admin.email);
+    res.json({ message: 'News item deleted' });
+  } catch (error) {
+    console.error('Delete news error:', error);
+    res.status(500).json({ error: 'Failed to delete news item' });
+  }
+});
+
 module.exports = router;
