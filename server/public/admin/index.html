@@ -656,6 +656,16 @@
       
       <!-- Email Tab -->
       <div class="tab-content" id="tab-email">
+        <div class="card" style="margin-bottom: 24px;">
+          <h2>Email List Export</h2>
+          <p style="color: var(--text-light); margin-bottom: 16px;">Copy this list to use in Mailchimp or other email services. Format: comma-separated emails.</p>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+            <button type="button" class="btn btn-primary btn-small" onclick="loadEmailList()">Load Email List</button>
+            <button type="button" class="btn btn-success btn-small" onclick="copyEmailList()">Copy to Clipboard</button>
+          </div>
+          <textarea id="emailListExport" readonly style="width: 100%; min-height: 150px; font-family: monospace; font-size: 13px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #f8f9fa;" placeholder="Click 'Load Email List' to fetch all user emails..."></textarea>
+          <p id="emailListCount" style="color: var(--text-light); margin-top: 8px; font-size: 14px;"></p>
+        </div>
         <div class="card">
           <h2>Send Email to All Users</h2>
           <p style="color: var(--text-light); margin-bottom: 24px;">Compose a custom email to send to all active users. You can upload images directly.</p>
@@ -1447,6 +1457,53 @@
         submitBtn.textContent = 'Create News';
       }
     });
+    
+    async function loadEmailList() {
+      const textarea = document.getElementById('emailListExport');
+      const countEl = document.getElementById('emailListCount');
+      textarea.value = 'Loading...';
+      countEl.textContent = '';
+      
+      try {
+        const res = await fetch(`${API_BASE}/email-list`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          textarea.value = data.emails.join(', ');
+          countEl.textContent = `${data.count} emails loaded`;
+        } else {
+          textarea.value = 'Error loading email list';
+          countEl.textContent = '';
+        }
+      } catch (e) {
+        console.error('Failed to load email list:', e);
+        textarea.value = 'Network error loading email list';
+        countEl.textContent = '';
+      }
+    }
+    
+    function copyEmailList() {
+      const textarea = document.getElementById('emailListExport');
+      if (!textarea.value || textarea.value === 'Loading...' || textarea.value.includes('Error') || textarea.value.includes('Click')) {
+        alert('Please load the email list first');
+        return;
+      }
+      
+      textarea.select();
+      document.execCommand('copy');
+      
+      const countEl = document.getElementById('emailListCount');
+      const originalText = countEl.textContent;
+      countEl.textContent = 'Copied to clipboard!';
+      countEl.style.color = 'var(--success)';
+      
+      setTimeout(() => {
+        countEl.textContent = originalText;
+        countEl.style.color = 'var(--text-light)';
+      }, 2000);
+    }
     
     async function loadNews() {
       const tbody = document.getElementById('newsTableBody');

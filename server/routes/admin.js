@@ -684,6 +684,25 @@ router.get('/audit-log', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Get email list for export
+router.get('/email-list', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT email FROM users WHERE is_banned = false AND email IS NOT NULL ORDER BY created_at DESC`
+    );
+    
+    const emails = result.rows.map(row => row.email);
+    
+    res.json({
+      emails,
+      count: emails.length
+    });
+  } catch (error) {
+    console.error('Get email list error:', error);
+    res.status(500).json({ error: 'Failed to get email list' });
+  }
+});
+
 // Get dashboard stats
 router.get('/stats', authenticateAdmin, async (req, res) => {
   try {
