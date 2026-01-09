@@ -22,9 +22,15 @@ function formatPrivateKey(key) {
     .replace(/\r/g, '\n')
     .trim();
   
-  const pemType = 'PRIVATE KEY';
-  const beginMarker = ['-----BEGIN', pemType, '-----'].join(' ');
-  const endMarker = ['-----END', pemType, '-----'].join(' ');
+  let pemType = 'PRIVATE KEY';
+  let beginMarker = '-----BEGIN PRIVATE KEY-----';
+  let endMarker = '-----END PRIVATE KEY-----';
+  
+  if (cleanKey.includes('EC PRIVATE KEY')) {
+    pemType = 'EC PRIVATE KEY';
+    beginMarker = '-----BEGIN EC PRIVATE KEY-----';
+    endMarker = '-----END EC PRIVATE KEY-----';
+  }
   
   let keyContent = cleanKey;
   
@@ -42,12 +48,17 @@ function formatPrivateKey(key) {
   keyContent = keyContent.replace(/[\s\n\r]/g, '');
   
   if (!keyContent || keyContent.length < 50) {
-    console.error('[APNs] Key content too short or empty');
+    console.error('[APNs] Key content too short or empty. Length:', keyContent ? keyContent.length : 0);
+    console.error('[APNs] Raw key starts with:', key.substring(0, 50));
     return null;
   }
   
   const chunks = keyContent.match(/.{1,64}/g) || [];
-  return [beginMarker, ...chunks, endMarker].join('\n');
+  const formattedKey = [beginMarker, ...chunks, endMarker].join('\n');
+  
+  console.log('[APNs] Key formatted successfully, type:', pemType, 'content length:', keyContent.length);
+  
+  return formattedKey;
 }
 
 function getAPNsJWT() {
