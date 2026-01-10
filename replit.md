@@ -108,6 +108,32 @@ Preferred communication style: Simple, everyday language.
 - Rate limiting applied to all admin routes (200 requests/15 min)
 - User endpoints: `GET /api/users/news/latest`, `POST /api/users/news/:id/dismiss`
 
+### Deep Linking Fix (January 2026)
+- Fixed "unmatched route" error when opening share links while app is already running (warm start)
+- Fixed Dynamic Island location tap not opening app properly
+- Replaced `Linking.useURL()` hook with proper event listener pattern
+- Added `Linking.addEventListener('url')` for warm start URL handling
+- Added `Linking.getInitialURL()` for cold start URL handling
+- Unified URL parsing handles multiple formats: Universal Links, custom scheme (`hangouts://`), and path variations
+- Deduplication prevents same URL being handled multiple times
+
+### Google AdMob Integration (January 2026)
+- Added `react-native-google-mobile-ads` for sponsored location ads
+- Configured app.json with AdMob plugin, SKAdNetwork items, and App Tracking Transparency
+- Added `expo-build-properties` with iOS static frameworks for AdMob compatibility
+- Created `SponsoredLocationCard` component with glass-panel styling matching app design
+- Sponsored ad displays at bottom of HomeScreen with "Sponsored" label and X dismiss button
+- Clicking sponsored location opens CreateEventModal with location pre-filled
+- AdMob initialized in `index.js` before app starts
+- **TODO**: Replace placeholder AdMob App IDs in app.json with real IDs from Google AdMob console
+
+### Admin Email List Export (January 2026)
+- Added email export feature to admin portal for Mailchimp integration
+- Backend endpoint: `GET /api/admin/email-list` returns all non-banned user emails
+- Admin UI: Load button fetches emails, Copy button copies comma-separated list to clipboard
+- Ready for direct paste into Mailchimp or other email marketing tools
+
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
 - `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)
+- `GET /api/admin/email-list` - Export all user emails (admin auth required)

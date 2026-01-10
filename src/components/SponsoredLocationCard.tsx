@@ -1,0 +1,240 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Colors } from '../../constants/theme';
+
+interface LocationData {
+  name: string;
+  address: string;
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface SponsoredLocationCardProps {
+  onPress: (location: LocationData) => void;
+  onDismiss: () => void;
+}
+
+export default function SponsoredLocationCard({ onPress, onDismiss }: SponsoredLocationCardProps) {
+  const [adData, setAdData] = useState<LocationData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  useEffect(() => {
+    loadNativeAd();
+  }, []);
+
+  const loadNativeAd = async () => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual AdMob native ad loading
+      // For now, use a placeholder that will be replaced when AdMob is configured
+      // The actual implementation will use react-native-google-mobile-ads NativeAd
+      
+      // Simulating ad load - in production this will be replaced with:
+      // const ad = await NativeAd.createForAdRequest(adUnitId, { ... });
+      // ad.onAdLoaded((info) => setAdData(...));
+      
+      // Placeholder - remove when AdMob is configured with real app IDs
+      setTimeout(() => {
+        setAdData({
+          name: 'Configure AdMob',
+          address: 'Add your AdMob App ID in app.json to see sponsored locations',
+          imageUrl: undefined,
+        });
+        setIsLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.log('Ad failed to load:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const handlePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (adData) {
+      onPress(adData);
+    }
+  };
+
+  const handleDismiss = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsDismissed(true);
+    onDismiss();
+  };
+
+  if (isDismissed || isLoading || !adData) {
+    return null;
+  }
+
+  const CardContent = () => (
+    <View style={styles.cardContent}>
+      <View style={styles.sponsoredLabel}>
+        <Text style={styles.sponsoredText}>Sponsored</Text>
+      </View>
+      
+      <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
+        <Ionicons name="close" size={18} color={Colors.secondary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.mainContent} onPress={handlePress} activeOpacity={0.8}>
+        <View style={styles.imageContainer}>
+          {adData.imageUrl ? (
+            <Image source={{ uri: adData.imageUrl }} style={styles.locationImage} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="location" size={24} color={Colors.secondary} />
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.textContainer}>
+          <Text style={styles.locationName} numberOfLines={1}>{adData.name}</Text>
+          <Text style={styles.locationAddress} numberOfLines={1}>{adData.address}</Text>
+        </View>
+        
+        <View style={styles.arrowContainer}>
+          <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.webGlass}>
+          <CardContent />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+        <View style={styles.overlay}>
+          <CardContent />
+        </View>
+      </BlurView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+  },
+  blurContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  overlay: {
+    backgroundColor: Colors.glassOverlay,
+  },
+  webGlass: {
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  cardContent: {
+    padding: 12,
+    position: 'relative',
+  },
+  sponsoredLabel: {
+    position: 'absolute',
+    top: 4,
+    left: 12,
+  },
+  sponsoredText: {
+    fontSize: 9,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.grayMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dismissButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  mainContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  imageContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  locationImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  locationName: {
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+    marginBottom: 2,
+  },
+  locationAddress: {
+    fontSize: 12,
+    fontFamily: 'Prompt-Regular',
+    color: Colors.grayMedium,
+  },
+  arrowContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

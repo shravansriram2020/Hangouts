@@ -27,10 +27,18 @@ import GlassModal from './GlassModal';
 import NativeGradientPicker, { GRADIENT_PRESETS } from './NativeGradientPicker';
 import LocationSuggestModal from './LocationSuggestModal';
 
+interface InitialLocation {
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 interface Props {
   visible: boolean;
   onClose: () => void;
   onCreated: () => void;
+  initialLocation?: InitialLocation | null;
 }
 
 interface LocationSuggestion {
@@ -50,7 +58,7 @@ interface UserResult {
   isFriend?: boolean;
 }
 
-export default function CreateEventModal({ visible, onClose, onCreated }: Props) {
+export default function CreateEventModal({ visible, onClose, onCreated, initialLocation }: Props) {
   const [title, setTitle] = useState('');
   const [eventImage, setEventImage] = useState('');
   const [eventDate, setEventDate] = useState<Date | null>(null);
@@ -89,8 +97,17 @@ export default function CreateEventModal({ visible, onClose, onCreated }: Props)
   useEffect(() => {
     if (visible) {
       getCurrentLocation();
+      
+      // Pre-fill location from sponsored ad or external source
+      if (initialLocation) {
+        setLocationName(initialLocation.name);
+        setLocationAddress(initialLocation.address);
+        if (initialLocation.latitude) setLocationLat(initialLocation.latitude);
+        if (initialLocation.longitude) setLocationLng(initialLocation.longitude);
+        setLocationQuery(initialLocation.name);
+      }
     }
-  }, [visible]);
+  }, [visible, initialLocation]);
 
   useEffect(() => {
     if (showDatePicker) {

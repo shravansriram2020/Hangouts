@@ -24,6 +24,7 @@ import CreateEventModal from '../components/CreateEventModal';
 import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
 import NewsPopup from '../components/NewsPopup';
+import SponsoredLocationCard from '../components/SponsoredLocationCard';
 
 interface HomeScreenProps {
   navigation: any;
@@ -50,6 +51,8 @@ export default function HomeScreen({
   const hasInitialData = useRef(!!initialEvents);
   const [newsItem, setNewsItem] = useState<any>(null);
   const [showNewsPopup, setShowNewsPopup] = useState(false);
+  const [showSponsoredAd, setShowSponsoredAd] = useState(true);
+  const [sponsoredLocation, setSponsoredLocation] = useState<any>(null);
 
   const fetchEvents = async () => {
     try {
@@ -122,6 +125,20 @@ export default function HomeScreen({
     } catch (error) {
       console.error('Failed to dismiss news:', error);
     }
+  };
+
+  const handleSponsoredLocationPress = (location: any) => {
+    setSponsoredLocation(location);
+    setShowCreateEvent(true);
+  };
+
+  const handleSponsoredAdDismiss = () => {
+    setShowSponsoredAd(false);
+  };
+
+  const handleCreateEventClose = () => {
+    setShowCreateEvent(false);
+    setSponsoredLocation(null);
   };
 
   const onRefresh = useCallback(async () => {
@@ -292,8 +309,9 @@ export default function HomeScreen({
 
       <CreateEventModal
         visible={showCreateEvent}
-        onClose={() => setShowCreateEvent(false)}
+        onClose={handleCreateEventClose}
         onCreated={handleEventCreated}
+        initialLocation={sponsoredLocation}
       />
 
       <NewsPopup
@@ -301,6 +319,13 @@ export default function HomeScreen({
         news={newsItem}
         onDismiss={handleDismissNews}
       />
+
+      {showSponsoredAd && (
+        <SponsoredLocationCard
+          onPress={handleSponsoredLocationPress}
+          onDismiss={handleSponsoredAdDismiss}
+        />
+      )}
     </LinearGradient>
   );
 }
@@ -359,7 +384,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   tabContainer: {
     flexDirection: 'row',
