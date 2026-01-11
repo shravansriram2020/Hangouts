@@ -74,8 +74,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
-          "iosAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
+          "androidAppId": "ca-app-pub-6700271097724179~2262333616",
+          "iosAppId": "ca-app-pub-6700271097724179~2262333616",
           "userTrackingUsageDescription": "This helps us show you relevant ads for local venues and events.",
           "skAdNetworkItems": [
             "cstr6suwn9.skadnetwork",

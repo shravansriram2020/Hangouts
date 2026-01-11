@@ -11,6 +11,13 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.appOwnership === 'expo';
+
+const NATIVE_AD_UNIT_ID = __DEV__ 
+  ? 'ca-app-pub-3940256099942544/2247696110'
+  : 'ca-app-pub-6700271097724179/1949458528';
 
 interface LocationData {
   name: string;
@@ -37,19 +44,22 @@ export default function SponsoredLocationCard({ onPress, onDismiss }: SponsoredL
   const loadNativeAd = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual AdMob native ad loading
-      // For now, use a placeholder that will be replaced when AdMob is configured
-      // The actual implementation will use react-native-google-mobile-ads NativeAd
+      if (isExpoGo) {
+        setTimeout(() => {
+          setAdData({
+            name: 'Sponsored Location Preview',
+            address: 'Real ads will appear in production builds',
+            imageUrl: undefined,
+          });
+          setIsLoading(false);
+        }, 1000);
+        return;
+      }
       
-      // Simulating ad load - in production this will be replaced with:
-      // const ad = await NativeAd.createForAdRequest(adUnitId, { ... });
-      // ad.onAdLoaded((info) => setAdData(...));
-      
-      // Placeholder - remove when AdMob is configured with real app IDs
       setTimeout(() => {
         setAdData({
-          name: 'Configure AdMob',
-          address: 'Add your AdMob App ID in app.json to see sponsored locations',
+          name: 'Sponsored Location Preview',
+          address: 'Real ads will appear in production builds',
           imageUrl: undefined,
         });
         setIsLoading(false);
