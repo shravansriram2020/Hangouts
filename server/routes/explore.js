@@ -1,10 +1,84 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
 const TOMTOM_API_KEY = process.env.TOMTOM_API_KEY;
+
+let fallbackData = null;
+try {
+  const fallbackPath = path.join(__dirname, '../data/exploreFallback.json');
+  fallbackData = JSON.parse(fs.readFileSync(fallbackPath, 'utf8'));
+} catch (e) {
+  console.log('Fallback data not loaded:', e.message);
+}
+
+function getCategoryImage(category) {
+  if (!fallbackData?.categoryImages) {
+    return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=300&fit=crop';
+  }
+  
+  const lowerCategory = (category || '').toLowerCase();
+  
+  if (lowerCategory.includes('restaurant') || lowerCategory.includes('food') || lowerCategory.includes('pizza') || lowerCategory.includes('burger')) {
+    return fallbackData.categoryImages.restaurant;
+  }
+  if (lowerCategory.includes('cafe') || lowerCategory.includes('coffee')) {
+    return fallbackData.categoryImages.cafe;
+  }
+  if (lowerCategory.includes('bar') || lowerCategory.includes('pub')) {
+    return fallbackData.categoryImages.bar;
+  }
+  if (lowerCategory.includes('club') || lowerCategory.includes('nightlife')) {
+    return fallbackData.categoryImages.nightclub;
+  }
+  if (lowerCategory.includes('cinema') || lowerCategory.includes('theater') || lowerCategory.includes('movie')) {
+    return fallbackData.categoryImages.cinema;
+  }
+  if (lowerCategory.includes('park') || lowerCategory.includes('garden')) {
+    return fallbackData.categoryImages.park;
+  }
+  if (lowerCategory.includes('beach')) {
+    return fallbackData.categoryImages.beach;
+  }
+  if (lowerCategory.includes('gym') || lowerCategory.includes('fitness')) {
+    return fallbackData.categoryImages.gym;
+  }
+  if (lowerCategory.includes('sport') || lowerCategory.includes('court') || lowerCategory.includes('golf')) {
+    return fallbackData.categoryImages.sports;
+  }
+  if (lowerCategory.includes('bowling')) {
+    return fallbackData.categoryImages.bowling;
+  }
+  if (lowerCategory.includes('entertainment') || lowerCategory.includes('arcade') || lowerCategory.includes('game')) {
+    return fallbackData.categoryImages.entertainment;
+  }
+  
+  return fallbackData.categoryImages.default;
+}
+
+function getFallbackLocations(categoryKey, count = 6) {
+  if (!fallbackData?.categories?.[categoryKey]) {
+    return [];
+  }
+  
+  const category = fallbackData.categories[categoryKey];
+  return category.locations.slice(0, count).map((loc, index) => ({
+    id: `fallback-${categoryKey}-${index}`,
+    name: loc.name,
+    abbreviatedName: loc.name.length > 25 ? loc.name.substring(0, 22) + '...' : loc.name,
+    address: '',
+    lat: null,
+    lng: null,
+    category: loc.category,
+    distance: null,
+    imageUrl: loc.image,
+    isFallback: true,
+  }));
+}
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 3959;
@@ -82,6 +156,7 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
         const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
         const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
 
+        const poiCategory = result.poi?.categories?.[0] || '';
         return {
           id: result.id,
           name: name,
@@ -89,9 +164,9 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
           address: result.address?.freeformAddress || '',
           lat: resultLat,
           lng: resultLng,
-          category: result.poi?.categories?.[0] || '',
+          category: poiCategory,
           distance: distanceMiles,
-          imageUrl: null,
+          imageUrl: getCategoryImage(poiCategory),
         };
       })
       .filter(Boolean);
@@ -137,6 +212,7 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
         const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
         const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
 
+        const poiCategory = result.poi?.categories?.[0] || '';
         return {
           id: result.id,
           name: name,
@@ -144,9 +220,9 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
           address: result.address?.freeformAddress || '',
           lat: resultLat,
           lng: resultLng,
-          category: result.poi?.categories?.[0] || '',
+          category: poiCategory,
           distance: distanceMiles,
-          imageUrl: null,
+          imageUrl: getCategoryImage(poiCategory),
         };
       })
       .filter(Boolean);
@@ -228,7 +304,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
         category: 'hangout',
         distance: calculateDistance(userLat, userLng, parseFloat(row.lat), parseFloat(row.lng)),
         attendeeCount: parseInt(row.attendeeCount) || 0,
-        imageUrl: null,
+        imageUrl: getCategoryImage('entertainment'),
         isUserHangout: true,
       }));
     } catch (dbError) {
@@ -266,10 +342,32 @@ router.get('/feed', authenticateToken, async (req, res) => {
       trendingCategoriesPromise,
     ]);
 
+    let finalSuggested = suggestedLocations;
+    if (finalSuggested.length === 0) {
+      finalSuggested = getFallbackLocations('food', 6);
+    }
+
+    let finalTrending = trendingCategories.filter(cat => cat.locations.length > 0);
+    if (finalTrending.length === 0) {
+      const categoryKeyMap = {
+        'Food': 'food',
+        'Entertainment': 'entertainment',
+        'Outdoors': 'outdoors',
+        'Sports': 'sports',
+        'Nightlife': 'nightlife',
+      };
+      
+      finalTrending = TRENDING_CATEGORIES.map(cat => ({
+        category: cat.category,
+        emoji: cat.emoji,
+        locations: getFallbackLocations(categoryKeyMap[cat.category] || 'food', 4),
+      }));
+    }
+
     res.json({
-      suggestedLocations,
+      suggestedLocations: finalSuggested,
       userHangouts,
-      trendingCategories: trendingCategories.filter(cat => cat.locations.length > 0),
+      trendingCategories: finalTrending,
       sharedPhotos,
     });
   } catch (error) {

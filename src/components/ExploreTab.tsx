@@ -194,25 +194,32 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       onPress={() => handleLocationPress(location)}
       activeOpacity={0.8}
     >
-      <View style={styles.locationIconContainer}>
-        <Ionicons 
-          name={isHangout ? "people" : "location"} 
-          size={24} 
-          color={Colors.secondary} 
+      {location.imageUrl ? (
+        <Image 
+          source={{ uri: location.imageUrl }} 
+          style={styles.locationCardImage}
+          resizeMode="cover"
         />
-      </View>
-      <View style={styles.locationInfo}>
+      ) : (
+        <View style={styles.locationIconContainer}>
+          <Ionicons 
+            name={isHangout ? "people" : "location"} 
+            size={24} 
+            color={Colors.secondary} 
+          />
+        </View>
+      )}
+      <View style={styles.locationCardContent}>
         <Text style={styles.locationName} numberOfLines={1}>
           {location.abbreviatedName || location.name}
         </Text>
-        {location.distance !== undefined && (
+        {location.distance !== undefined && location.distance !== null && (
           <Text style={styles.locationDistance}>{formatDistance(location.distance)} away</Text>
         )}
         {isHangout && location.attendeeCount !== undefined && location.attendeeCount > 0 && (
           <Text style={styles.attendeeCount}>{location.attendeeCount} going</Text>
         )}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={Colors.grayMedium} />
     </TouchableOpacity>
   );
 
@@ -250,15 +257,25 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             onPress={() => handleLocationPress(location)}
             activeOpacity={0.8}
           >
-            <View style={styles.categoryCardIcon}>
-              <Ionicons name="location" size={20} color={Colors.secondary} />
-            </View>
-            <Text style={styles.categoryCardName} numberOfLines={2}>
-              {location.abbreviatedName || location.name}
-            </Text>
-            {location.distance !== undefined && (
-              <Text style={styles.categoryCardDistance}>{formatDistance(location.distance)}</Text>
+            {location.imageUrl ? (
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.categoryCardImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.categoryCardIcon}>
+                <Ionicons name="location" size={20} color={Colors.secondary} />
+              </View>
             )}
+            <View style={styles.categoryCardOverlay}>
+              <Text style={styles.categoryCardName} numberOfLines={2}>
+                {location.abbreviatedName || location.name}
+              </Text>
+              {location.distance !== undefined && location.distance !== null && (
+                <Text style={styles.categoryCardDistance}>{formatDistance(location.distance)}</Text>
+              )}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -534,22 +551,26 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 12,
-    padding: 14,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
+    overflow: 'hidden',
+  },
+  locationCardImage: {
+    width: '100%',
+    height: 120,
   },
   locationIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: '100%',
+    height: 120,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  locationCardContent: {
+    padding: 12,
   },
   locationInfo: {
     flex: 1,
@@ -638,20 +659,25 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - 40) / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 12,
-    padding: 14,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
-    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  categoryCardImage: {
+    width: '100%',
+    height: 100,
   },
   categoryCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: '100%',
+    height: 100,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  categoryCardOverlay: {
+    padding: 10,
+    alignItems: 'center',
   },
   categoryCardName: {
     fontSize: 13,
