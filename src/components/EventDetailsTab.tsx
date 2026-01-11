@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   conflictsButtonText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
     marginLeft: 8,
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
     marginTop: 8,
@@ -190,9 +190,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesTitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Agrandir-GrandHeavy',
   },
   addNotesButton: {
     flexDirection: 'row',
@@ -209,22 +209,23 @@ const styles = StyleSheet.create({
   },
   stickyNote: {
     backgroundColor: Colors.stickyYellow,
-    padding: 12,
+    padding: 14,
     borderRadius: 4,
     marginRight: 12,
-    width: 140,
-    minHeight: 80,
+    width: 150,
+    minHeight: 90,
   },
   stickyNoteText: {
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
+    lineHeight: 20,
   },
   stickyNoteAuthor: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.gray,
     fontFamily: 'Agrandir-Tight',
-    marginTop: 8,
+    marginTop: 10,
     textAlign: 'right',
   },
   noNotesText: {
@@ -264,14 +265,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Agrandir-TextBold',
   },
   hostLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.gray,
     fontFamily: 'Agrandir-Tight',
+    marginBottom: 2,
   },
   hostName: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Agrandir-GrandHeavy',
   },
   locationSection: {
     marginBottom: 20,
@@ -282,21 +284,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Agrandir-GrandHeavy',
     marginLeft: 6,
   },
   locationName: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
   },
   locationAddress: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.gray,
     fontFamily: 'Agrandir-Tight',
-    marginTop: 2,
+    marginTop: 3,
   },
   attendeesSection: {
     marginBottom: 40,

@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
     minHeight: 60,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
   },
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.gray,
     fontFamily: 'Agrandir-Tight',
     textAlign: 'center',
@@ -200,23 +200,23 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   noteAvatarText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Agrandir-GrandHeavy',
   },
   noteName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Agrandir-GrandHeavy',
   },
   deleteNoteButton: {
     padding: 4,
   },
   noteContent: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.secondary,
     fontFamily: 'Agrandir-Tight',
-    lineHeight: 20,
+    lineHeight: 22,
   },
 });

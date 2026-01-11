@@ -39,7 +39,7 @@ export const Fonts = {
   regular: 'Agrandir-Tight',
   medium: 'Agrandir-Tight',
   semiBold: 'Agrandir-TextBold',
-  bold: 'Agrandir-TextBold',
+  bold: 'Agrandir-GrandHeavy',
 };
 
 export const Shadows = {

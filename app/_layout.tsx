@@ -106,6 +106,7 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     'Agrandir-Tight': require('../assets/fonts/Agrandir-Tight.otf'),
     'Agrandir-TextBold': require('../assets/fonts/Agrandir-TextBold.otf'),
+    'Agrandir-GrandHeavy': require('../assets/fonts/Agrandir-GrandHeavy.otf'),
   });
 
   useEffect(() => {
