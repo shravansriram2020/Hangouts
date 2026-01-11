@@ -91,41 +91,42 @@ export default function SponsoredLocationCard({ onPress, onDismiss }: SponsoredL
     return null;
   }
 
-  const CardContent = () => (
-    <View style={styles.cardContent}>
-      <View style={styles.headerRow}>
-        <Text style={styles.sponsoredText}>Sponsored</Text>
-        <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
-          <Ionicons name="close" size={12} color={Colors.grayMedium} />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.mainContent} onPress={handlePress} activeOpacity={0.8}>
-        <View style={styles.imageContainer}>
-          {adData.imageUrl ? (
-            <Image source={{ uri: adData.imageUrl }} style={styles.locationImage} />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="location" size={24} color={Colors.secondary} />
-            </View>
-          )}
-        </View>
-        
-        <View style={styles.textContainer}>
-          <Text style={styles.locationName} numberOfLines={1}>{adData.name}</Text>
-          <Text style={styles.locationAddress} numberOfLines={1}>{adData.address}</Text>
-        </View>
-        
-        <View style={styles.arrowContainer}>
-          <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
-        </View>
+  const HeaderRow = () => (
+    <View style={styles.headerRow}>
+      <Text style={styles.sponsoredText}>Sponsored</Text>
+      <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
+        <Ionicons name="close" size={12} color={Colors.grayMedium} />
       </TouchableOpacity>
     </View>
+  );
+
+  const CardContent = () => (
+    <TouchableOpacity style={styles.mainContent} onPress={handlePress} activeOpacity={0.8}>
+      <View style={styles.imageContainer}>
+        {adData.imageUrl ? (
+          <Image source={{ uri: adData.imageUrl }} style={styles.locationImage} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="location" size={24} color={Colors.secondary} />
+          </View>
+        )}
+      </View>
+      
+      <View style={styles.textContainer}>
+        <Text style={styles.locationName} numberOfLines={1}>{adData.name}</Text>
+        <Text style={styles.locationAddress} numberOfLines={1}>{adData.address}</Text>
+      </View>
+      
+      <View style={styles.arrowContainer}>
+        <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
+      </View>
+    </TouchableOpacity>
   );
 
   if (Platform.OS === 'web') {
     return (
       <View style={styles.container}>
+        <HeaderRow />
         <View style={styles.webGlass}>
           <CardContent />
         </View>
@@ -135,6 +136,7 @@ export default function SponsoredLocationCard({ onPress, onDismiss }: SponsoredL
 
   return (
     <View style={styles.container}>
+      <HeaderRow />
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         <View style={styles.overlay}>
           <CardContent />
@@ -172,14 +174,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
   },
-  cardContent: {
-    padding: 12,
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    paddingHorizontal: 4,
   },
   sponsoredText: {
     fontSize: 9,
@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
   mainContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 12,
   },
   imageContainer: {
     width: 48,
