@@ -213,7 +213,7 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
   }
 
   try {
-    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
+    const url = `https://api.tomtom.com/search/2/nearbySearch.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
     
     const response = await fetchWithTimeout(url, 5000);
     
@@ -269,7 +269,7 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
   }
 
   try {
-    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
+    const url = `https://api.tomtom.com/search/2/nearbySearch.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
     
     const response = await fetchWithTimeout(url, 5000);
     
@@ -360,11 +360,11 @@ router.get('/feed', authenticateToken, async (req, res) => {
           u.first_name as "creatorName",
           COUNT(DISTINCT ea.user_id) as "attendeeCount"
         FROM events e
-        JOIN users u ON e.creator_id = u.id
+        JOIN users u ON e.host_id = u.id
         LEFT JOIN event_attendees ea ON e.id = ea.event_id
         WHERE e.location_lat IS NOT NULL
           AND e.location_lng IS NOT NULL
-          AND e.date >= CURRENT_DATE
+          AND e.event_date >= CURRENT_DATE
           AND (
             3959 * acos(
               cos(radians($1)) * cos(radians(e.location_lat)) *
