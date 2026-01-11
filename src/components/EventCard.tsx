@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
   dateMonth: {
     fontSize: 10,
     color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     letterSpacing: 0.5,
   },
   dateDay: {
     fontSize: 20,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
     marginTop: -2,
   },
   content: {
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     flex: 1,
     marginRight: 8,
   },
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   hostText: {
     fontSize: 10,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 3,
   },
   details: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 4,
     flex: 1,
   },
@@ -251,12 +251,12 @@ const styles = StyleSheet.create({
   attendeeInitial: {
     fontSize: 9,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   attendeeCount: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 6,
   },
 });

@@ -858,12 +858,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   headerSubtitle: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 2,
   },
   closeButton: {
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     marginTop: 16,
     marginBottom: 8,
   },
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
   uploadText: {
     fontSize: 13,
     color: Colors.grayMedium,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 2,
     textAlign: 'center',
   },
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   textArea: {
     height: 80,
@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginBottom: 6,
   },
   pickerButton: {
@@ -955,12 +955,12 @@ const styles = StyleSheet.create({
   pickerText: {
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   pickerPlaceholder: {
     fontSize: 15,
     color: Colors.grayMedium,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   inlinePicker: {
     backgroundColor: Colors.white,
@@ -977,7 +977,7 @@ const styles = StyleSheet.create({
   pickerTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   pickerDoneButton: {
     alignItems: 'center',
@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
   pickerDoneText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   locationInputRow: {
     position: 'relative',
@@ -1010,7 +1010,7 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 6,
   },
   suggestionsScrollView: {
@@ -1041,12 +1041,12 @@ const styles = StyleSheet.create({
   suggestionName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   suggestionAddress: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   suggestButton: {
     flexDirection: 'row',
@@ -1060,7 +1060,7 @@ const styles = StyleSheet.create({
   suggestButtonText: {
     fontSize: 12,
     color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     marginLeft: 8,
   },
   suggestButtonDisabled: {
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
   helperTextWarning: {
     fontSize: 11,
     color: Colors.primary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -1110,12 +1110,12 @@ const styles = StyleSheet.create({
   userAvatarText: {
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   userName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   invitedList: {
     flexDirection: 'row',
@@ -1135,7 +1135,7 @@ const styles = StyleSheet.create({
   invitedUsername: {
     fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginRight: 6,
   },
   colorRow: {
@@ -1177,7 +1177,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   createButton: {
     flex: 1,
@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     marginLeft: 4,
   },
   createButtonTextDisabled: {

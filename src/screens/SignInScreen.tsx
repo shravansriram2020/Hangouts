@@ -154,13 +154,13 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     textAlign: 'center',
     marginBottom: 40,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   errorText: {
     color: Colors.red,
     textAlign: 'center',
     marginBottom: 16,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   inputContainer: {
     marginBottom: 16,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: Colors.black,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   eyeIcon: {
     position: 'absolute',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   signInButtonText: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -205,12 +205,12 @@ const styles = StyleSheet.create({
   signUpText: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   signUpLink: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     textDecorationLine: 'underline',
   },
 });

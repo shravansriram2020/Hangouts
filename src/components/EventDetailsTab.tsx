@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 8,
   },
   categoryButtons: {
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 8,
   },
   notesSection: {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   notesTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   addNotesButton: {
     flexDirection: 'row',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   addNotesText: {
     fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 4,
   },
   notesScroll: {
@@ -218,19 +218,19 @@ const styles = StyleSheet.create({
   stickyNoteText: {
     fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   stickyNoteAuthor: {
     fontSize: 10,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 8,
     textAlign: 'right',
   },
   noNotesText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     fontStyle: 'italic',
   },
   hostSection: {
@@ -261,17 +261,17 @@ const styles = StyleSheet.create({
   hostInitial: {
     fontSize: 18,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   hostLabel: {
     fontSize: 10,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   hostName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   locationSection: {
     marginBottom: 20,
@@ -284,18 +284,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     marginLeft: 6,
   },
   locationName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   locationAddress: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 2,
   },
   attendeesSection: {
@@ -328,18 +328,18 @@ const styles = StyleSheet.create({
   attendeeInitial: {
     fontSize: 18,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   attendeeName: {
     fontSize: 11,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     textAlign: 'center',
   },
   attendeeStatus: {
     fontSize: 9,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   friendToggle: {
     marginTop: 4,

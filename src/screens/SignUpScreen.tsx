@@ -520,25 +520,25 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     textAlign: 'center',
     marginBottom: 32,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   verifyMessage: {
     fontSize: 16,
     color: Colors.secondary,
     textAlign: 'center',
     marginBottom: 24,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     lineHeight: 24,
   },
   emailHighlight: {
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     color: Colors.secondary,
   },
   errorText: {
     color: Colors.red,
     textAlign: 'center',
     marginBottom: 16,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   inputContainer: {
     marginBottom: 16,
@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: Colors.black,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   nameRow: {
     flexDirection: 'row',
@@ -597,11 +597,11 @@ const styles = StyleSheet.create({
   agreementText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   link: {
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     textDecorationLine: 'underline',
   },
   createButton: {
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   signInContainer: {
     flexDirection: 'row',
@@ -627,12 +627,12 @@ const styles = StyleSheet.create({
   signInText: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   signInLink: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     textDecorationLine: 'underline',
   },
   codeContainer: {
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     fontSize: 24,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     textAlign: 'center',
     color: Colors.secondary,
   },
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   resendText: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     textDecorationLine: 'underline',
   },
   backButton: {
@@ -671,6 +671,6 @@ const styles = StyleSheet.create({
   backText: {
     color: Colors.secondary,
     fontSize: 14,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
 });

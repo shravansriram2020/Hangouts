@@ -536,13 +536,13 @@ const styles = StyleSheet.create({
   changePhotoText: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 5,
   },
   sectionTitle: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
     marginTop: 20,
     marginBottom: 10,
   },
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     color: Colors.grayDark,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginBottom: 5,
   },
   input: {
@@ -562,12 +562,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   inputHelper: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 3,
   },
   nameRow: {
@@ -593,12 +593,12 @@ const styles = StyleSheet.create({
   switchTitle: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   switchDescription: {
     fontSize: 12,
     color: Colors.grayDark,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
   },
   actionButton: {
     flexDirection: 'row',
@@ -612,13 +612,13 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 6,
   },
   link: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     textDecorationLine: 'underline',
     marginBottom: 10,
   },
@@ -637,12 +637,12 @@ const styles = StyleSheet.create({
   dangerTitle: {
     fontSize: 13,
     color: Colors.red,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   dangerDescription: {
     fontSize: 11,
     color: Colors.red,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     opacity: 0.8,
   },
   deleteButton: {
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 11,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 4,
   },
   footer: {
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   saveButton: {
     flex: 1,
@@ -692,13 +692,13 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 15,
     color: Colors.white,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   version: {
     textAlign: 'center',
     fontSize: 11,
     color: Colors.grayMedium,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginBottom: 20,
   },
   creditsButton: {
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: Colors.grayDark,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 8,
   },
   friendsButton: {
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: Colors.grayDark,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 8,
   },
 });

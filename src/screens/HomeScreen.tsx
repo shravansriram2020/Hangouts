@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: Colors.white,
     fontSize: 10,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   addButton: {
     backgroundColor: Colors.secondary,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 20,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   tabTextActive: {
     opacity: 1,
@@ -406,13 +406,13 @@ const styles = StyleSheet.create({
   tabDot: {
     fontSize: 20,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
     marginHorizontal: 10,
   },
   sectionTitle: {
     fontSize: 20,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
     marginBottom: 16,
     marginTop: 8,
   },
@@ -433,13 +433,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 22,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   createFirstButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 8,
   },
 });

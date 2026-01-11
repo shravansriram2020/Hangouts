@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     minHeight: 60,
     textAlignVertical: 'top',
   },
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
+    fontFamily: 'Agrandir-Tight',
   },
   notesList: {
     padding: 16,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     textAlign: 'center',
     paddingVertical: 20,
   },
@@ -202,13 +202,13 @@ const styles = StyleSheet.create({
   noteAvatarText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   noteName: {
     flex: 1,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-SemiBold',
+    fontFamily: 'Agrandir-TextBold',
   },
   deleteNoteButton: {
     padding: 4,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   noteContent: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     lineHeight: 20,
   },
 });

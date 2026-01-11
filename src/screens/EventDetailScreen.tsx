@@ -397,12 +397,12 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 22,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   eventDateTime: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginTop: 2,
   },
   deleteButton: {
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 4,
     flex: 1,
   },
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   attendeeInitial: {
     fontSize: 12,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   moreAttendees: {
     backgroundColor: Colors.grayMedium,
@@ -460,12 +460,12 @@ const styles = StyleSheet.create({
   moreAttendeesText: {
     fontSize: 9,
     color: Colors.white,
-    fontFamily: 'Prompt-Bold',
+    fontFamily: 'Agrandir-TextBold',
   },
   attendeeCount: {
     fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Prompt-Regular',
+    fontFamily: 'Agrandir-Tight',
     marginLeft: 10,
   },
   contentCard: {
