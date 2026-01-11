@@ -666,7 +666,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderSection = (sectionId: string) => {
     switch (sectionId) {
       case 'topAdBox':
-        return renderAdBox('topAdBox');
+        return (
+          <View key="topAdBox" style={styles.midAdWrapper}>
+            <AdBox unitId={ADMOB_BOX_ID} />
+          </View>
+        );
       case 'featuredLocation':
         return renderFeaturedLocation();
       case 'featuredHangout':
@@ -689,8 +693,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         return renderAdBanner('adBanner1');
       case 'categories':
         return renderCategories();
-      case 'morePlaces':
-        return renderMorePlaces();
       case 'moreHangouts':
         return renderMoreHangouts();
       case 'discoverMore':

@@ -188,10 +188,15 @@ const EXPLORE_CATEGORIES = [
 
 const ALL_FUN_CODES = EXPLORE_CATEGORIES.map(c => c.codes).join(',');
 
-const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital', 'medical', 'clinic', 'school', 'church', 'office', 'bank', 'atm', 'gas station', 'parking'];
+const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital', 'medical', 'clinic', 'school', 'church', 'office', 'bank', 'atm', 'gas station', 'parking', 'city', 'county', 'municipality', 'government', 'police', 'fire station', 'post office', 'library', 'university', 'college', 'dmv', 'court', 'prison', 'jail'];
+
+const EXCLUDED_CATEGORIES = ['city', 'town', 'municipality', 'administrative', 'geographic', 'neighbourhood', 'hamlet', 'village', 'suburb', 'borough', 'district'];
 
 function isFunLocation(name, category) {
   const combined = `${name} ${category}`.toLowerCase();
+  if (EXCLUDED_CATEGORIES.some(excluded => combined.includes(excluded))) {
+    return false;
+  }
   return !EXCLUDED_NAMES.some(excluded => combined.includes(excluded));
 }
 
@@ -369,27 +374,35 @@ const OPTIONAL_CATEGORIES = [
   { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
 ];
 
-const LAYOUT_SECTIONS = [
-  'topAdBox',
+const REQUIRED_ADS = ['topAdBox', 'adBox1', 'adBox2'];
+const CONTENT_SECTIONS = [
   'featuredLocation',
   'featuredHangout', 
   'sharedPhotos',
   'hangoutBanner1',
   'trending',
-  'adBox1',
   'categories',
   'hangoutBanner2',
-  'adBanner1',
-  'morePlaces',
   'moreHangouts',
   'discoverMore',
   'hangoutBanner3',
-  'adBox2',
 ];
 
 function generateRandomLayout() {
-  const shuffled = shuffleArray([...LAYOUT_SECTIONS]);
-  return shuffled;
+  const shuffledContent = shuffleArray([...CONTENT_SECTIONS]);
+  const shuffledAds = shuffleArray([...REQUIRED_ADS]);
+  
+  const result = [];
+  
+  for (let i = 0; i < shuffledContent.length; i++) {
+    result.push(shuffledContent[i]);
+    const adSlot = Math.floor(i / 3);
+    if ((i + 1) % 3 === 0 && adSlot < shuffledAds.length) {
+      result.push(shuffledAds[adSlot]);
+    }
+  }
+  
+  return result;
 }
 
 function sampleAcrossRadius(locations, count) {
@@ -419,10 +432,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
   try {
     const layoutOrder = generateRandomLayout();
     
-    const shuffledOptional = shuffleArray([...OPTIONAL_CATEGORIES]);
-    const selectedOptional = shuffledOptional.slice(0, 2);
-    const allCategories = [...REQUIRED_CATEGORIES, ...selectedOptional];
-    const shuffledCategories = shuffleArray(allCategories);
+    const shuffledCategories = shuffleArray([...REQUIRED_CATEGORIES]);
     
     const categoryPromises = shuffledCategories.map(section => 
       searchNearbyPlaces(userLat, userLng, section.codes, 8).then(locations => ({
@@ -524,7 +534,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
           ) <= $3
         GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.username
         ORDER BY "attendeeCount" DESC, e.event_date ASC
-        LIMIT 15
+        LIMIT 4
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
       
       userHangouts = hangoutsResult.rows.map(row => ({
@@ -548,7 +558,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
     let sharedPhotos = [];
     try {
       const photosResult = await pool.query(`
-        SELECT 
+        SELECT DISTINCT ON (ep.photo_url)
           ep.id,
           ep.photo_url as "imageUrl",
           COALESCE(u.username, 'User') as username,
@@ -562,7 +572,8 @@ router.get('/feed', authenticateToken, async (req, res) => {
               cos(radians(e.location_lng) - radians($2)) +
               sin(radians($1)) * sin(radians(e.location_lat))
             )
-          ) as distance
+          ) as distance,
+          ep.created_at
         FROM event_photos ep
         JOIN events e ON ep.event_id = e.id
         JOIN users u ON ep.uploader_id = u.id
@@ -577,7 +588,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
               sin(radians($1)) * sin(radians(e.location_lat))
             )
           ) <= $3
-        ORDER BY distance ASC, ep.created_at DESC
+        ORDER BY ep.photo_url, distance ASC, ep.created_at DESC
         LIMIT 10
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
       sharedPhotos = photosResult.rows;
@@ -611,7 +622,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
       isRealEvent: true,
     }));
 
-    const categorySections = await Promise.all(categoryPromises);
+    const categorySections = (await Promise.all(categoryPromises)).slice(0, 3);
     
     res.json({
       layoutOrder,
