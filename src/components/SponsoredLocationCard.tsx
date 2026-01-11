@@ -93,13 +93,12 @@ export default function SponsoredLocationCard({ onPress, onDismiss }: SponsoredL
 
   const CardContent = () => (
     <View style={styles.cardContent}>
-      <View style={styles.sponsoredLabel}>
+      <View style={styles.headerRow}>
         <Text style={styles.sponsoredText}>Sponsored</Text>
+        <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
+          <Ionicons name="close" size={12} color={Colors.grayMedium} />
+        </TouchableOpacity>
       </View>
-      
-      <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
-        <Ionicons name="close" size={18} color={Colors.secondary} />
-      </TouchableOpacity>
 
       <TouchableOpacity style={styles.mainContent} onPress={handlePress} activeOpacity={0.8}>
         <View style={styles.imageContainer}>
@@ -175,12 +174,12 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: 12,
-    position: 'relative',
   },
-  sponsoredLabel: {
-    position: 'absolute',
-    top: 4,
-    left: 12,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   sponsoredText: {
     fontSize: 9,
@@ -188,23 +187,17 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    lineHeight: 14,
   },
   dismissButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    width: 14,
+    height: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
   mainContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
   },
   imageContainer: {
     width: 48,
