@@ -173,23 +173,27 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 const MAX_DISTANCE_MILES = 60;
 const MAX_RADIUS_METERS = 96560;
 
-const CATEGORY_CODES = {
-  FOOD: '7315',
-  ENTERTAINMENT: '9362,7342,9902,9361',
-  OUTDOORS: '9362,9927,7305',
-  SPORTS: '7320,7374,9361',
-  NIGHTLIFE: '9376,9379',
-  AMUSEMENT: '9902',
-};
-
-const TRENDING_CATEGORIES = [
-  { category: 'Amusement Parks', emoji: '🔥', categoryCodes: CATEGORY_CODES.AMUSEMENT },
-  { category: 'Food', emoji: '🍽️', categoryCodes: CATEGORY_CODES.FOOD },
-  { category: 'Entertainment', emoji: '🎬', categoryCodes: CATEGORY_CODES.ENTERTAINMENT },
-  { category: 'Nightlife', emoji: '🍸', categoryCodes: CATEGORY_CODES.NIGHTLIFE },
-  { category: 'Outdoors', emoji: '🌳', categoryCodes: CATEGORY_CODES.OUTDOORS },
-  { category: 'Sports', emoji: '⚽', categoryCodes: CATEGORY_CODES.SPORTS },
+const EXPLORE_CATEGORIES = [
+  { name: 'Food & Dining', emoji: '🍽️', codes: '7315' },
+  { name: 'Bars & Pubs', emoji: '🍺', codes: '9376' },
+  { name: 'Nightlife', emoji: '🌙', codes: '9379' },
+  { name: 'Entertainment', emoji: '🎬', codes: '7335,7342' },
+  { name: 'Parks & Recreation', emoji: '🏞️', codes: '9362' },
+  { name: 'Sports & Fitness', emoji: '⚽', codes: '7320,9373' },
+  { name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
+  { name: 'Shopping', emoji: '🛍️', codes: '7338' },
+  { name: 'Amusement', emoji: '🎢', codes: '9902' },
+  { name: 'Cafes & Coffee', emoji: '☕', codes: '9377' },
 ];
+
+const ALL_FUN_CODES = EXPLORE_CATEGORIES.map(c => c.codes).join(',');
+
+const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital', 'medical', 'clinic', 'school', 'church', 'office', 'bank', 'atm', 'gas station', 'parking'];
+
+function isFunLocation(name, category) {
+  const combined = `${name} ${category}`.toLowerCase();
+  return !EXCLUDED_NAMES.some(excluded => combined.includes(excluded));
+}
 
 
 async function fetchWithTimeout(url, timeoutMs = 5000) {
@@ -206,7 +210,7 @@ async function fetchWithTimeout(url, timeoutMs = 5000) {
   }
 }
 
-async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
+async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 10) {
   if (!TOMTOM_API_KEY) {
     console.log('TomTom API key not configured, returning empty results');
     return [];
@@ -235,9 +239,14 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
         }
         
         const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
+        const poiCategory = result.poi?.categories?.[0] || '';
+        
+        if (!isFunLocation(name, poiCategory)) {
+          return null;
+        }
+        
         const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
 
-        const poiCategory = result.poi?.categories?.[0] || '';
         return {
           id: result.id,
           name: name,
@@ -319,6 +328,15 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
   }
 }
 
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 router.get('/feed', authenticateToken, async (req, res) => {
   const { lat, lng } = req.query;
 
@@ -330,8 +348,11 @@ router.get('/feed', authenticateToken, async (req, res) => {
   const userLng = parseFloat(lng);
 
   try {
-    const allFunCategoryCodes = `${CATEGORY_CODES.FOOD},${CATEGORY_CODES.ENTERTAINMENT},${CATEGORY_CODES.NIGHTLIFE}`;
-    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, allFunCategoryCodes, 6);
+    const shuffledCategories = shuffleArray(EXPLORE_CATEGORIES);
+    const selectedCategories = shuffledCategories.slice(0, 3);
+    const categoryCodes = selectedCategories.map(c => c.codes).join(',');
+    console.log('[Explore] Using category codes:', categoryCodes);
+    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, categoryCodes, 12);
 
     const trendingEventsPromise = pool.query(`
       SELECT 
@@ -344,17 +365,15 @@ router.get('/feed', authenticateToken, async (req, res) => {
         e.location_address as address,
         e.location_lat as lat,
         e.location_lng as lng,
-        u.first_name as "creatorName",
+        u.username as "creatorName",
         e.event_date,
         COUNT(DISTINCT ea.user_id) as "attendeeCount",
         (
           SELECT ep.photo_url FROM event_photos ep 
           WHERE ep.event_id = e.id 
-            AND (ep.share_to_explore = true AND ep.moderation_status = 'approved'
-                 OR ep.share_to_explore = false OR ep.share_to_explore IS NULL)
-          ORDER BY 
-            CASE WHEN ep.share_to_explore = true AND ep.moderation_status = 'approved' THEN 0 ELSE 1 END,
-            ep.created_at DESC 
+            AND ep.share_to_explore = true 
+            AND ep.moderation_status = 'approved'
+          ORDER BY ep.created_at DESC 
           LIMIT 1
         ) as "eventPhoto",
         (
@@ -378,9 +397,9 @@ router.get('/feed', authenticateToken, async (req, res) => {
           )
         ) <= $3
       GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, 
-               u.first_name, e.event_date
+               u.username, e.event_date
       ORDER BY "attendeeCount" DESC, e.event_date DESC
-      LIMIT 20
+      LIMIT 10
     `, [userLat, userLng, MAX_DISTANCE_MILES]).catch(err => {
       console.log('Trending events query failed:', err.message);
       return { rows: [] };
@@ -399,7 +418,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
           e.location_address as address,
           e.location_lat as lat,
           e.location_lng as lng,
-          u.first_name as "creatorName",
+          u.username as "creatorName",
           COUNT(DISTINCT ea.user_id) as "attendeeCount"
         FROM events e
         JOIN users u ON e.host_id = u.id
@@ -414,7 +433,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
               sin(radians($1)) * sin(radians(e.location_lat))
             )
           ) <= $3
-        GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.first_name
+        GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.username
         ORDER BY "attendeeCount" DESC, e.event_date ASC
         LIMIT 10
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
@@ -443,7 +462,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
         SELECT 
           ep.id,
           ep.photo_url as "imageUrl",
-          COALESCE(u.first_name, 'User') as username,
+          COALESCE(u.username, 'User') as username,
           e.location_name as "locationName",
           e.location_address as "locationAddress",
           e.location_lat as lat,
@@ -521,7 +540,7 @@ router.get('/shared-photos', authenticateToken, async (req, res) => {
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
-        COALESCE(u.first_name, 'User') as username,
+        COALESCE(u.username, 'User') as username,
         e.location_name as "locationName",
         e.location_address as "locationAddress",
         e.location_lat as lat,

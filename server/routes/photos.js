@@ -10,7 +10,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     console.log('[Photos] Fetching photos for event:', req.params.eventId);
     const result = await pool.query(
-      `SELECT ep.*, ep.uploader_id as user_id, ep.share_to_explore, ep.moderation_status, u.first_name, u.profile_photo
+      `SELECT ep.*, ep.uploader_id as user_id, ep.share_to_explore, ep.moderation_status, u.username, u.profile_photo
        FROM event_photos ep
        JOIN users u ON ep.uploader_id = u.id
        WHERE ep.event_id = $1
@@ -54,7 +54,7 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const photoWithUser = await pool.query(
-      `SELECT ep.*, u.first_name, u.profile_photo
+      `SELECT ep.*, u.username, u.profile_photo
        FROM event_photos ep
        JOIN users u ON ep.uploader_id = u.id
        WHERE ep.id = $1`,

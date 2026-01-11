@@ -239,12 +239,12 @@ export default function EventPhotosTab({ eventId }: Props) {
                     ) : (
                       <View style={styles.uploaderPhotoPlaceholder}>
                         <Text style={styles.uploaderInitial}>
-                          {selectedPhoto.first_name?.charAt(0)}
+                          {selectedPhoto.username?.charAt(0)?.toUpperCase()}
                         </Text>
                       </View>
                     )}
                     <View>
-                      <Text style={styles.uploaderName}>{selectedPhoto.first_name}</Text>
+                      <Text style={styles.uploaderName}>{selectedPhoto.username}</Text>
                       <Text style={styles.uploadTime}>
                         {formatDate(selectedPhoto.created_at)}
                       </Text>

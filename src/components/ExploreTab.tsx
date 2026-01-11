@@ -312,8 +312,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <Text style={styles.trendingEmoji}>🔥</Text>
             <Text style={styles.trendingTitle}>Trending Hangouts Near You</Text>
           </View>
-          <View style={styles.trendingGrid}>
-            {trendingEvents.slice(0, 6).map((event, index) => (
+          <View style={styles.trendingGridCentered}>
+            {trendingEvents.slice(0, 4).map((event, index) => (
               <TouchableOpacity
                 key={event.id || `trend-${index}`}
                 style={styles.trendingEventCard}
@@ -354,8 +354,130 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
+      <View style={styles.midAdWrapper}>
+        <AdBox unitId={ADMOB_BOX_ID} />
+      </View>
+
+      {suggestedLocations.length > 1 && (
+        <View style={styles.morePlacesSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="compass" size={18} color={Colors.secondary} />
+            <Text style={styles.sectionTitle}>More Places To Explore</Text>
+          </View>
+          <View style={styles.placesGrid}>
+            {suggestedLocations.slice(1, 7).map((location, index) => (
+              <TouchableOpacity
+                key={location.id || `place-${index}`}
+                style={styles.placeCard}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: location.imageUrl }} 
+                  style={styles.placeImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.placeOverlay}>
+                  <Text style={styles.placeName} numberOfLines={2}>
+                    {location.abbreviatedName}
+                  </Text>
+                  {location.distance !== undefined && (
+                    <Text style={styles.placeDistance}>
+                      {formatDistance(location.distance)}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={styles.midAdWrapper}>
+        <AdBox unitId={ADMOB_BOX_ID} />
+      </View>
+
+      {userHangouts.length > 1 && (
+        <View style={styles.moreHangoutsSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="people" size={18} color={Colors.secondary} />
+            <Text style={styles.sectionTitle}>Where Others Are Hanging Out</Text>
+          </View>
+          <View style={styles.hangoutsGrid}>
+            {userHangouts.slice(1, 5).map((hangout, index) => (
+              <TouchableOpacity
+                key={hangout.id || `hangout-${index}`}
+                style={styles.smallHangoutCard}
+                onPress={() => handleLocationPress(hangout)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: hangout.imageUrl }} 
+                  style={styles.smallHangoutImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.smallHangoutOverlay}>
+                  <Text style={styles.smallHangoutName} numberOfLines={1}>
+                    {hangout.abbreviatedName}
+                  </Text>
+                  <View style={styles.smallHangoutMeta}>
+                    <Text style={styles.smallHangoutCreator}>
+                      by {hangout.creatorName || 'User'}
+                    </Text>
+                    {hangout.attendeeCount && hangout.attendeeCount > 0 && (
+                      <View style={styles.smallAttendeeBadge}>
+                        <Text style={styles.smallAttendeeText}>{hangout.attendeeCount}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.bannerWrapper}>
         <AdBanner unitId={ADMOB_BANNER_ID} />
+      </View>
+
+      {suggestedLocations.length > 7 && (
+        <View style={styles.evenMoreSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="sparkles" size={18} color={Colors.secondary} />
+            <Text style={styles.sectionTitle}>Discover More Nearby</Text>
+          </View>
+          <View style={styles.placesGrid}>
+            {suggestedLocations.slice(7, 13).map((location, index) => (
+              <TouchableOpacity
+                key={location.id || `more-${index}`}
+                style={styles.placeCard}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: location.imageUrl }} 
+                  style={styles.placeImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.placeOverlay}>
+                  <Text style={styles.placeName} numberOfLines={2}>
+                    {location.abbreviatedName}
+                  </Text>
+                  {location.distance !== undefined && (
+                    <Text style={styles.placeDistance}>
+                      {formatDistance(location.distance)}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={styles.midAdWrapper}>
+        <AdBox unitId={ADMOB_BOX_ID} />
       </View>
 
       <View style={styles.bottomPadding} />
@@ -681,5 +803,124 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
     lineHeight: 18,
+  },
+  trendingGridCentered: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  midAdWrapper: {
+    marginVertical: 16,
+    alignItems: 'center',
+  },
+  morePlacesSection: {
+    marginBottom: 16,
+  },
+  moreHangoutsSection: {
+    marginBottom: 16,
+  },
+  evenMoreSection: {
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+  },
+  placesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  placeCard: {
+    width: '48%',
+    height: 130,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  placeImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  placeOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  placeName: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  placeDistance: {
+    fontSize: 11,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  hangoutsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  smallHangoutCard: {
+    width: '48%',
+    height: 120,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  smallHangoutImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  smallHangoutOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  smallHangoutName: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  smallHangoutMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  smallHangoutCreator: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  smallAttendeeBadge: {
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  smallAttendeeText: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Bold',
+    color: Colors.white,
   },
 });
