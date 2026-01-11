@@ -137,18 +137,23 @@ Preferred communication style: Simple, everyday language.
 - New "Explore" tab as default landing screen in HomeScreen
 - Displays nearby location suggestions using TomTom API with user's GPS coordinates
 - Location names abbreviated to max 25 characters for clean display
+- **Layout**: Vertical card grid (no horizontal scrolling), glass-panel styling
 - Features:
   - **Suggested Locations**: Glass-panel cards with location name, distance, and tap-to-create-event
+  - **Where Others Are Hanging Out**: Shows nearby events created by other users within 60 miles
   - **Trending Categories**: Food, Entertainment, Outdoors, Sports, Nightlife sections
   - **Shared Photos**: User photos marked for explore (requires admin moderation)
-  - **Popular Nearby**: Horizontal scrolling location cards
-- AdMob integration with placeholder ads in Expo Go (real ads in production builds)
+- **TomTom Category Filters**: Fun/social venues only - Food (7315), Entertainment (9362,7342,9902,9361), Outdoors (9362,9927,7305), Sports (7320,7374,9361), Nightlife (9376,9379)
+- **Distance Limit**: All locations filtered to 60 miles maximum radius
+- **AdMob Integration**:
+  - Platform-specific ad components: `AdComponents.native.tsx` for native builds, `AdComponents.tsx` for web
+  - Ad unit IDs: Box (ca-app-pub-6700271097724179/7640768902), Banner (ca-app-pub-6700271097724179/1798427047)
+  - Placeholders shown in Expo Go and web; real ads only in production native builds
 - Photo sharing toggle in EventPhotosTab with moderation workflow (pending/approved/rejected)
 - Database columns: `share_to_explore`, `moderation_status` in `event_photos` table
 - Admin moderation endpoints: `GET /api/admin/photos/pending`, `GET /api/admin/photos/all`, `POST /api/admin/photos/:id/moderate`
 - TomTom API resilience: 5-second timeout, AbortController, graceful empty state on failure
 - Empty state shows actionable "Create Hangout" CTA when no explore content available
-- **Future enhancement**: Consider adding cached TomTom results or curated location seeds for better offline/degraded experience
 
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
