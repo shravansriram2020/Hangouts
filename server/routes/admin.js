@@ -1000,6 +1000,87 @@ router.post('/upload/email', authenticateAdmin, (req, res, next) => {
   }
 });
 
+// Photo moderation endpoints
+router.get('/photos/pending', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT ep.*, 
+              u.first_name as uploader_name, u.email as uploader_email,
+              e.title as event_title
+       FROM event_photos ep
+       JOIN users u ON ep.uploader_id = u.id
+       JOIN events e ON ep.event_id = e.id
+       WHERE ep.share_to_explore = true 
+         AND ep.moderation_status = 'pending'
+       ORDER BY ep.created_at DESC`
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get pending photos error:', error);
+    res.status(500).json({ error: 'Failed to get pending photos' });
+  }
+});
+
+router.get('/photos/all', authenticateAdmin, async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = `
+      SELECT ep.*, 
+             u.first_name as uploader_name, u.email as uploader_email,
+             e.title as event_title
+      FROM event_photos ep
+      JOIN users u ON ep.uploader_id = u.id
+      JOIN events e ON ep.event_id = e.id
+      WHERE ep.share_to_explore = true
+    `;
+    
+    const params = [];
+    if (status && status !== 'all') {
+      params.push(status);
+      query += ` AND ep.moderation_status = $1`;
+    }
+    
+    query += ` ORDER BY ep.created_at DESC`;
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all shared photos error:', error);
+    res.status(500).json({ error: 'Failed to get shared photos' });
+  }
+});
+
+router.post('/photos/:id/moderate', authenticateAdmin, async (req, res) => {
+  const { action } = req.body;
+  
+  if (!['approved', 'rejected'].includes(action)) {
+    return res.status(400).json({ error: 'Invalid action. Use "approved" or "rejected".' });
+  }
+  
+  try {
+    const result = await pool.query(
+      `UPDATE event_photos 
+       SET moderation_status = $1
+       WHERE id = $2
+       RETURNING *`,
+      [action, req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+    
+    await logAction(req.admin.id, `${action}_photo`, null, { photoId: req.params.id });
+    
+    console.log('[Admin] Photo', action, 'by', req.admin.email);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Moderate photo error:', error);
+    res.status(500).json({ error: 'Failed to moderate photo' });
+  }
+});
+
 // Error handler for multer
 router.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {

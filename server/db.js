@@ -234,6 +234,11 @@ const initDb = async () => {
         dismissed_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, news_id)
       );
+
+      -- Add explore sharing columns to event_photos
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS share_to_explore BOOLEAN DEFAULT false;
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20);
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS uploaded_by UUID REFERENCES users(id) ON DELETE CASCADE;
     `);
     console.log('Database tables created successfully');
   } catch (error) {

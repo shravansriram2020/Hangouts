@@ -106,6 +106,13 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  async patch(endpoint: string, body: any) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  }
 }
 
 export const api = new ApiService();

@@ -17,6 +17,7 @@ const notificationsRoutes = require('./routes/notifications');
 const conflictsRoutes = require('./routes/conflicts');
 const locationRoutes = require('./routes/location');
 const adminRoutes = require('./routes/admin');
+const exploreRoutes = require('./routes/explore');
 const { isResendConfigured } = require('./utils/emailService');
 
 const app = express();
@@ -254,6 +255,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/conflicts', conflictsRoutes);
 app.use('/api/location', locationLimiter, locationRoutes);
 app.use('/api/admin', adminLimiter, adminRoutes);
+app.use('/api/explore', exploreRoutes);
 
 app.get('/api/health', async (req, res) => {
   const resendConfigured = await isResendConfigured();

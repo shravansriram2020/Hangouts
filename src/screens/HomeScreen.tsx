@@ -25,6 +25,7 @@ import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
 import NewsPopup from '../components/NewsPopup';
 import SponsoredLocationCard from '../components/SponsoredLocationCard';
+import ExploreTab from '../components/ExploreTab';
 
 interface HomeScreenProps {
   navigation: any;
@@ -47,7 +48,7 @@ export default function HomeScreen({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount || 0);
-  const [activeTab, setActiveTab] = useState<'current' | 'archived'>('current');
+  const [activeTab, setActiveTab] = useState<'explore' | 'current' | 'archived'>('explore');
   const hasInitialData = useRef(!!initialEvents);
   const [newsItem, setNewsItem] = useState<any>(null);
   const [showNewsPopup, setShowNewsPopup] = useState(false);
@@ -228,13 +229,28 @@ export default function HomeScreen({
               if (Platform.OS === 'ios') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
+              setActiveTab('explore');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.tabText,
+              activeTab !== 'explore' && styles.tabTextInactive
+            ]}>Explore</Text>
+          </TouchableOpacity>
+          <Text style={styles.tabDot}>•</Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
               setActiveTab('current');
             }}
             activeOpacity={0.7}
           >
             <Text style={[
               styles.tabText,
-              activeTab !== 'current' && archivedEvents.length > 0 && styles.tabTextInactive
+              activeTab !== 'current' && styles.tabTextInactive
             ]}>Your Hangouts</Text>
           </TouchableOpacity>
           {archivedEvents.length > 0 && (
@@ -258,7 +274,16 @@ export default function HomeScreen({
           )}
         </View>
 
-        {activeTab === 'current' ? (
+        {activeTab === 'explore' && (
+          <ExploreTab
+            onSelectLocation={(location) => {
+              setSponsoredLocation(location);
+              setShowCreateEvent(true);
+            }}
+          />
+        )}
+
+        {activeTab === 'current' && (
           events.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
@@ -285,7 +310,9 @@ export default function HomeScreen({
               />
             ))
           )
-        ) : (
+        )}
+
+        {activeTab === 'archived' && (
           <ArchivedEvents
             events={archivedEvents}
             onRefresh={fetchEvents}
@@ -320,7 +347,7 @@ export default function HomeScreen({
         onDismiss={handleDismissNews}
       />
 
-      {showSponsoredAd && (
+      {showSponsoredAd && activeTab !== 'explore' && (
         <SponsoredLocationCard
           onPress={handleSponsoredLocationPress}
           onDismiss={handleSponsoredAdDismiss}

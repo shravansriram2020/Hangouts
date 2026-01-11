@@ -10,7 +10,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     console.log('[Photos] Fetching photos for event:', req.params.eventId);
     const result = await pool.query(
-      `SELECT ep.*, ep.uploader_id as user_id, u.first_name, u.profile_photo
+      `SELECT ep.*, ep.uploader_id as user_id, ep.share_to_explore, ep.moderation_status, u.first_name, u.profile_photo
        FROM event_photos ep
        JOIN users u ON ep.uploader_id = u.id
        WHERE ep.event_id = $1
@@ -178,6 +178,30 @@ router.post('/batch', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Batch upload photo error:', error);
     res.status(500).json({ error: 'Failed to upload photos' });
+  }
+});
+
+router.patch('/:id/share', authenticateToken, async (req, res) => {
+  const { share_to_explore } = req.body;
+  
+  try {
+    const result = await pool.query(
+      `UPDATE event_photos 
+       SET share_to_explore = $1, 
+           moderation_status = $2
+       WHERE id = $3 AND uploader_id = $4
+       RETURNING *`,
+      [share_to_explore, share_to_explore ? 'pending' : null, req.params.id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found or unauthorized' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Update share preference error:', error);
+    res.status(500).json({ error: 'Failed to update share preference' });
   }
 });
 

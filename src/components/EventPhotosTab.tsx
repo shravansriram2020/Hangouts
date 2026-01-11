@@ -255,14 +255,46 @@ export default function EventPhotosTab({ eventId }: Props) {
                     <Ionicons name="download-outline" size={24} color={Colors.white} />
                   </TouchableOpacity>
                   {selectedPhoto.uploader_id === user?.id && (
-                    <TouchableOpacity
-                      style={styles.photoActionButton}
-                      onPress={() => handleDeletePhoto(selectedPhoto.id)}
-                    >
-                      <Ionicons name="trash-outline" size={24} color={Colors.red} />
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity
+                        style={[
+                          styles.photoActionButton,
+                          styles.shareToggle,
+                          selectedPhoto.share_to_explore && styles.shareToggleActive
+                        ]}
+                        onPress={async () => {
+                          try {
+                            const newValue = !selectedPhoto.share_to_explore;
+                            await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
+                            setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue });
+                            setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue } : p));
+                          } catch (error) {
+                            Alert.alert('Error', 'Failed to update sharing preference');
+                          }
+                        }}
+                      >
+                        <Ionicons
+                          name={selectedPhoto.share_to_explore ? "globe" : "globe-outline"}
+                          size={24}
+                          color={selectedPhoto.share_to_explore ? Colors.primary : Colors.white}
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.photoActionButton}
+                        onPress={() => handleDeletePhoto(selectedPhoto.id)}
+                      >
+                        <Ionicons name="trash-outline" size={24} color={Colors.red} />
+                      </TouchableOpacity>
+                    </>
                   )}
                 </View>
+                {selectedPhoto.uploader_id === user?.id && (
+                  <Text style={styles.shareHint}>
+                    {selectedPhoto.share_to_explore
+                      ? 'Shared to Explore (pending review)'
+                      : 'Tap globe to share to Explore'}
+                  </Text>
+                )}
               </View>
             </View>
           )}
@@ -444,6 +476,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+  },
+  shareToggle: {},
+  shareToggleActive: {
+    backgroundColor: 'rgba(102, 205, 170, 0.3)',
+  },
+  shareHint: {
+    fontSize: 12,
+    color: Colors.grayMedium,
+    fontFamily: 'Prompt-Regular',
+    textAlign: 'center',
+    marginTop: 8,
   },
   uploadOverlay: {
     flex: 1,
