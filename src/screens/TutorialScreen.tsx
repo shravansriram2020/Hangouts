@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   scrollView: {
     flex: 1,
@@ -318,14 +318,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
     textAlign: 'center',
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 10,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: 18,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginRight: 8,
   },
   permissionButtons: {
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   permissionButtonText: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 12,
   },
   permissionButtonTextEnabled: {

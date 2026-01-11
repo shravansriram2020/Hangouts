@@ -164,16 +164,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   dateMonth: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.white,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-SemiBold',
     letterSpacing: 0.5,
   },
   dateDay: {
-    fontSize: 22,
+    fontSize: 20,
     color: Colors.white,
-    fontFamily: 'Agrandir-GrandHeavy',
-    marginTop: -1,
+    fontFamily: 'Prompt-Bold',
+    marginTop: -2,
   },
   content: {
     flex: 1,
@@ -185,9 +185,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   title: {
-    fontSize: 17,
+    fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-SemiBold',
     flex: 1,
     marginRight: 8,
   },
@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   hostText: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
-    marginLeft: 4,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 3,
   },
   details: {
     marginBottom: 6,
@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
-    marginLeft: 5,
+    fontFamily: 'Prompt-Regular',
+    marginLeft: 4,
     flex: 1,
   },
   footer: {
@@ -249,14 +249,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   attendeeInitial: {
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.white,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-Bold',
   },
   attendeeCount: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 6,
   },
 });

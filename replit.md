@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **Project Structure**: `app/` for Expo Router routes, `src/` for core application code (screens, components, context, services), and `server/` for the Express.js backend.
 - **State Management**: React Context API for global authentication state and AsyncStorage for persistent token and user data.
 - **UI Components**: Custom reusable components, a modal-based architecture for secondary flows, and tab-based navigation within event details.
-- **Design Decisions**: Employs linear gradients, blur effects for glassmorphism, custom Agrandir Tight fonts (Agrandir-Tight for regular/medium, Agrandir-TextBold for bold), and haptic feedback for enhanced user experience, with responsive design principles.
+- **Design Decisions**: Employs linear gradients, blur effects for glassmorphism, custom Google Fonts (Prompt), and haptic feedback for enhanced user experience, with responsive design principles.
 
 ### Backend Architecture
 - **Server Framework**: Express.js 5.1.0 with a RESTful API design.

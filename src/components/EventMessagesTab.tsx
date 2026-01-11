@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   messageTextOwn: {
     color: Colors.white,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   conflictSuggestionText: {
     fontSize: 12,
     color: Colors.primary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 4,
   },
   addToConflictsButton: {
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   addToConflictsText: {
     fontSize: 11,
     color: Colors.white,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   messageFooter: {
     flexDirection: 'row',
@@ -332,13 +332,13 @@ const styles = StyleSheet.create({
   senderName: {
     fontSize: 11,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginRight: 4,
   },
   messageTime: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   messageAvatar: {
     width: 24,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 10,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   replyButton: {
     flexDirection: 'row',
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   replyText: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 4,
   },
   inputContainer: {
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     maxHeight: 100,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     paddingHorizontal: 20,
     paddingBottom: 12,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   replyPreviewName: {
     fontSize: 11,
     color: Colors.primary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginBottom: 2,
   },
   replyPreviewNameOwn: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   replyPreviewText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   replyPreviewTextOwn: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -466,12 +466,12 @@ const styles = StyleSheet.create({
   replyingToLabel: {
     fontSize: 11,
     color: Colors.primary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   replyingToMessage: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   cancelReplyButton: {
     padding: 4,

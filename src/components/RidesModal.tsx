@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginLeft: 6,
   },
   emptyState: {
@@ -254,13 +254,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
   rideCard: {
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   driverInitial: {
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   rideInfo: {
     flex: 1,
@@ -300,12 +300,12 @@ const styles = StyleSheet.create({
   driverName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   rideDetails: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   rideDetail: {
     flexDirection: 'row',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   rideDetailText: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 5,
   },
   rideDirections: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   directionText: {
     fontSize: 11,
     color: Colors.green,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 3,
   },
   passengers: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   passengersLabel: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginBottom: 4,
   },
   passengersList: {
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   passengerName: {
     fontSize: 11,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   joinButton: {
     backgroundColor: Colors.primary,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   joinButtonText: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   leaveButtonText: {
     color: Colors.red,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
     marginBottom: 16,
   },
   inputGroup: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginBottom: 5,
   },
   input: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   switchRow: {
     flexDirection: 'row',
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   formButtons: {
     flexDirection: 'row',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   submitButton: {
     flex: 1,
@@ -452,6 +452,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
 });

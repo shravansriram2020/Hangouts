@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   conflictCard: {
     backgroundColor: Colors.grayLight,
@@ -948,13 +948,13 @@ const styles = StyleSheet.create({
   conflictType: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginLeft: 8,
   },
   conflictReason: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginBottom: 8,
   },
   suggestionRow: {
@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 6,
   },
   votingSection: {
@@ -977,7 +977,7 @@ const styles = StyleSheet.create({
   votesText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   voteButtons: {
     flexDirection: 'row',
@@ -1013,7 +1013,7 @@ const styles = StyleSheet.create({
   changeButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   deleteConflictButton: {
     padding: 10,
@@ -1032,7 +1032,7 @@ const styles = StyleSheet.create({
   reportButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 8,
   },
   createForm: {
@@ -1041,7 +1041,7 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginBottom: 8,
     marginTop: 16,
   },
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 12,
   },
   input: {
@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   textArea: {
     height: 80,
@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
   suggestButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginLeft: 8,
   },
   suggestButtonDisabled: {
@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
   locationDisabledHint: {
     fontSize: 12,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     marginTop: 8,
   },
@@ -1120,7 +1120,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   submitButton: {
     flex: 1,
@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
   dateTimeText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   dateTimePlaceholder: {
     color: Colors.grayMedium,
@@ -1188,17 +1188,17 @@ const styles = StyleSheet.create({
   },
   pickerModalTitle: {
     fontSize: 17,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     color: Colors.secondary,
   },
   pickerModalCancel: {
     fontSize: 17,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     color: '#007AFF',
   },
   pickerModalDone: {
     fontSize: 17,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     color: '#007AFF',
   },
   pickerContainer: {
@@ -1231,7 +1231,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     paddingVertical: 10,
   },
   selectedLocationCard: {
@@ -1247,12 +1247,12 @@ const styles = StyleSheet.create({
   selectedLocationName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   selectedLocationAddress: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
   suggestionsScrollView: {
@@ -1289,12 +1289,12 @@ const styles = StyleSheet.create({
   suggestionName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   suggestionAddress: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
   distanceBadge: {
@@ -1306,6 +1306,6 @@ const styles = StyleSheet.create({
   distanceText: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
 });

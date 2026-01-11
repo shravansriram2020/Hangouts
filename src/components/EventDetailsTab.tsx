@@ -156,9 +156,9 @@ const styles = StyleSheet.create({
   },
   conflictsButtonText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 8,
   },
   categoryButtons: {
@@ -175,9 +175,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginTop: 8,
   },
   notesSection: {
@@ -190,9 +190,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesTitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-SemiBold',
   },
   addNotesButton: {
     flexDirection: 'row',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   addNotesText: {
     fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 4,
   },
   notesScroll: {
@@ -209,29 +209,28 @@ const styles = StyleSheet.create({
   },
   stickyNote: {
     backgroundColor: Colors.stickyYellow,
-    padding: 14,
+    padding: 12,
     borderRadius: 4,
     marginRight: 12,
-    width: 150,
-    minHeight: 90,
+    width: 140,
+    minHeight: 80,
   },
   stickyNoteText: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
-    lineHeight: 20,
+    fontFamily: 'Prompt-Regular',
   },
   stickyNoteAuthor: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
-    marginTop: 10,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 8,
     textAlign: 'right',
   },
   noNotesText: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     fontStyle: 'italic',
   },
   hostSection: {
@@ -262,18 +261,17 @@ const styles = StyleSheet.create({
   hostInitial: {
     fontSize: 18,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   hostLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
-    marginBottom: 2,
+    fontFamily: 'Prompt-Regular',
   },
   hostName: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-SemiBold',
   },
   locationSection: {
     marginBottom: 20,
@@ -284,21 +282,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-GrandHeavy',
+    fontFamily: 'Prompt-SemiBold',
     marginLeft: 6,
   },
   locationName: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   locationAddress: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
-    marginTop: 3,
+    fontFamily: 'Prompt-Regular',
+    marginTop: 2,
   },
   attendeesSection: {
     marginBottom: 40,
@@ -330,18 +328,18 @@ const styles = StyleSheet.create({
   attendeeInitial: {
     fontSize: 18,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   attendeeName: {
     fontSize: 11,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     textAlign: 'center',
   },
   attendeeStatus: {
     fontSize: 9,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   friendToggle: {
     marginTop: 4,

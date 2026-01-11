@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   },
   sponsoredText: {
     fontSize: 9,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     color: Colors.grayMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
   },
   locationName: {
     fontSize: 15,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     color: Colors.secondary,
     marginBottom: 2,
   },
   locationAddress: {
     fontSize: 12,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     color: Colors.grayMedium,
   },
   arrowContainer: {

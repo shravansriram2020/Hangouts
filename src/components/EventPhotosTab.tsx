@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   addPhotoText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 6,
   },
   downloadAllButton: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   downloadAllText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 4,
   },
   emptyState: {
@@ -341,13 +341,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     textAlign: 'center',
   },
   photoGrid: {
@@ -421,17 +421,17 @@ const styles = StyleSheet.create({
   uploaderInitial: {
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   uploaderName: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   uploadTime: {
     fontSize: 12,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   photoActions: {
     flexDirection: 'row',
@@ -464,6 +464,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
 });

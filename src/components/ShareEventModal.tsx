@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   rsvpRequiredText: {
     fontSize: 16,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     textAlign: 'center',
   },
   scrollContent: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   activeTabText: {
     color: Colors.secondary,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginBottom: 8,
   },
   labelRow: {
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginRight: 8,
   },
   shareButton: {
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   usernameSection: {
     padding: 20,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     borderWidth: 1,
     borderColor: Colors.secondary,
   },
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   friendLabel: {
     fontSize: 11,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
   userAvatar: {
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   userAvatarText: {
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   userInfo: {
     flex: 1,
@@ -350,6 +350,6 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
 });

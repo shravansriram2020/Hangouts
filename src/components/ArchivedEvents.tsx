@@ -236,13 +236,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 22,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
@@ -268,13 +268,13 @@ const styles = StyleSheet.create({
   dateMonth: {
     fontSize: 8,
     color: Colors.white,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     letterSpacing: 0.5,
   },
   dateDay: {
     fontSize: 16,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
     marginTop: -2,
   },
   eventInfo: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 14,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   actions: {
     flexDirection: 'row',

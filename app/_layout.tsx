@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
+import { useFonts, Prompt_400Regular, Prompt_500Medium, Prompt_600SemiBold, Prompt_700Bold } from '@expo-google-fonts/prompt';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider } from '../context/AuthContext';
@@ -104,9 +104,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    'Agrandir-Tight': require('../assets/fonts/Agrandir-Tight.otf'),
-    'Agrandir-TextBold': require('../assets/fonts/Agrandir-TextBold.otf'),
-    'Agrandir-GrandHeavy': require('../assets/fonts/Agrandir-GrandHeavy.otf'),
+    'Prompt-Regular': Prompt_400Regular,
+    'Prompt-Medium': Prompt_500Medium,
+    'Prompt-SemiBold': Prompt_600SemiBold,
+    'Prompt-Bold': Prompt_700Bold,
   });
 
   useEffect(() => {

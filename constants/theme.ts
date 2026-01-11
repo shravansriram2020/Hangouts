@@ -36,10 +36,10 @@ export const Colors = {
 };
 
 export const Fonts = {
-  regular: 'Agrandir-Tight',
-  medium: 'Agrandir-Tight',
-  semiBold: 'Agrandir-TextBold',
-  bold: 'Agrandir-GrandHeavy',
+  regular: 'Prompt-Regular',
+  medium: 'Prompt-Medium',
+  semiBold: 'Prompt-SemiBold',
+  bold: 'Prompt-Bold',
 };
 
 export const Shadows = {

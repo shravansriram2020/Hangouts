@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 14,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
     marginLeft: 6,
   },
   disabledButton: {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   disabledButtonText: {
     fontSize: 14,
     color: Colors.grayMedium,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginLeft: 6,
   },
   emptyState: {
@@ -253,13 +253,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginTop: 2,
   },
   requestCard: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   arrowIcon: {
     marginHorizontal: 6,
@@ -302,18 +302,18 @@ const styles = StyleSheet.create({
   requestAmount: {
     fontSize: 18,
     color: Colors.green,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
   },
   requestInfo: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     marginBottom: 3,
   },
   requestDescription: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
     fontStyle: 'italic',
     marginBottom: 6,
   },
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   paidText: {
     fontSize: 11,
     color: Colors.green,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginLeft: 3,
   },
   unpaidBadge: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   unpaidText: {
     fontSize: 11,
     color: Colors.yellow,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   requestActions: {
     flexDirection: 'row',
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   markPaidButtonText: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   clearButton: {
     flex: 1,
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
   deleteRequestButton: {
     padding: 8,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 16,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-Bold',
     marginBottom: 16,
   },
   inputGroup: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     color: Colors.gray,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
     marginBottom: 5,
   },
   input: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Regular',
   },
   pickerContainer: {
     backgroundColor: Colors.white,
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 13,
     color: Colors.secondary,
-    fontFamily: 'Agrandir-Tight',
+    fontFamily: 'Prompt-Medium',
   },
   submitButton: {
     flex: 1,
@@ -449,6 +449,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 13,
     color: Colors.white,
-    fontFamily: 'Agrandir-TextBold',
+    fontFamily: 'Prompt-SemiBold',
   },
 });
