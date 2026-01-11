@@ -160,13 +160,20 @@ Preferred communication style: Simple, everyday language.
   - Each location includes a curated image from Unsplash CDN
 - Images are category-based: restaurants get food photos, parks get nature photos, etc.
 - **Photo Sharing to Explore**:
-  - Users can tap globe icon in EventPhotosTab to share their photos to the Explore page
+  - Users can tap their photo in EventPhotosTab to open a detail modal with a prominent "Share to Explore page" checkbox
+  - Only the photo owner sees the share checkbox
   - Photos require admin moderation before appearing (pending → approved/rejected)
   - ExploreTab shows "Photos From Friends Nearby" section with approved shared photos
   - Each shared photo card displays: user photo, username with avatar, location name
   - Shared photos are filtered by distance (60 mile radius) and sorted by proximity
-  - Moderation status shown in EventPhotosTab: "Live on Explore page!" (green), "Not approved" (red), "pending review" (gray)
+  - Moderation status shown in modal: "Live on Explore page!" (green), "Not approved" (red), "pending review" (gray)
   - Tapping a shared photo opens the create event modal pre-filled with that location
+- **Trending Hangouts (January 2026)**:
+  - Replaced fake TomTom POI category sections with REAL user events from the database
+  - Shows events from the last 30 days, sorted by attendee count and recency
+  - Displays in a 2-column grid with event photos, names, attendee counts, and distances
+  - Photo selection prioritizes approved shared photos, falls back to any event photos
+  - Events are filtered by 60-mile radius from user's location
 
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
