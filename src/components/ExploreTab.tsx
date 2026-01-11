@@ -7,14 +7,12 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
-  Platform,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-import Constants from 'expo-constants';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { AdBox, AdBanner } from './AdComponents';
@@ -36,16 +34,7 @@ interface SuggestedLocation {
   distance?: number;
   isUserHangout?: boolean;
   attendeeCount?: number;
-}
-
-interface SharedPhoto {
-  id: string;
-  imageUrl: string;
-  username: string;
-  locationName: string;
-  locationAddress: string;
-  lat: number;
-  lng: number;
+  creatorName?: string;
 }
 
 interface TrendingCategory {
@@ -70,7 +59,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([]);
   const [userHangouts, setUserHangouts] = useState<SuggestedLocation[]>([]);
-  const [sharedPhotos, setSharedPhotos] = useState<SharedPhoto[]>([]);
   const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>([]);
 
   useEffect(() => {
@@ -115,7 +103,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       
       setSuggestedLocations(data.suggestedLocations || []);
       setUserHangouts(data.userHangouts || []);
-      setSharedPhotos(data.sharedPhotos || []);
       setTrendingCategories(data.trendingCategories || []);
     } catch (error) {
       console.error('Failed to fetch explore data:', error);
@@ -128,16 +115,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     setRefreshing(true);
     if (userLocation) {
       await fetchExploreData(userLocation);
-    } else {
-      await requestLocationAndFetch();
     }
     setRefreshing(false);
   }, [userLocation]);
 
   const handleLocationPress = (location: SuggestedLocation) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectLocation({
       name: location.name,
       address: location.address,
@@ -146,22 +129,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     });
   };
 
-  const handleSharedPhotoPress = (photo: SharedPhoto) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    onSelectLocation({
-      name: photo.locationName,
-      address: photo.locationAddress,
-      lat: photo.lat,
-      lng: photo.lng,
-    });
-  };
-
-  const formatDistance = (miles?: number): string => {
-    if (!miles) return '';
-    if (miles < 1) return `${Math.round(miles * 10) / 10} mi`;
-    return `${Math.round(miles)} mi`;
+  const formatDistance = (distance: number | undefined | null) => {
+    if (distance === undefined || distance === null) return '';
+    if (distance < 0.1) return 'Nearby';
+    if (distance < 1) return `${(distance * 5280).toFixed(0)} ft`;
+    return `${distance.toFixed(1)} mi`;
   };
 
   if (loading) {
@@ -186,142 +158,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   }
 
-
-  const renderLocationCard = (location: SuggestedLocation, index: number, isHangout: boolean = false) => (
-    <TouchableOpacity
-      key={location.id || `loc-${index}`}
-      style={styles.locationCard}
-      onPress={() => handleLocationPress(location)}
-      activeOpacity={0.8}
-    >
-      {location.imageUrl ? (
-        <Image 
-          source={{ uri: location.imageUrl }} 
-          style={styles.locationCardImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.locationIconContainer}>
-          <Ionicons 
-            name={isHangout ? "people" : "location"} 
-            size={24} 
-            color={Colors.secondary} 
-          />
-        </View>
-      )}
-      <View style={styles.locationCardContent}>
-        <Text style={styles.locationName} numberOfLines={1}>
-          {location.abbreviatedName || location.name}
-        </Text>
-        {location.distance !== undefined && location.distance !== null && (
-          <Text style={styles.locationDistance}>{formatDistance(location.distance)} away</Text>
-        )}
-        {isHangout && location.attendeeCount !== undefined && location.attendeeCount > 0 && (
-          <Text style={styles.attendeeCount}>{location.attendeeCount} going</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderPhotoCard = (photo: SharedPhoto, index: number) => (
-    <TouchableOpacity
-      key={photo.id || `photo-${index}`}
-      style={styles.photoCard}
-      onPress={() => handleSharedPhotoPress(photo)}
-      activeOpacity={0.8}
-    >
-      <Image source={{ uri: photo.imageUrl }} style={styles.photoImage} />
-      <View style={styles.photoOverlay}>
-        <View style={styles.photoUserRow}>
-          <Ionicons name="person-circle" size={16} color={Colors.white} />
-          <Text style={styles.photoUsername}>{photo.username}</Text>
-        </View>
-        <Text style={styles.photoLocation} numberOfLines={1}>
-          {photo.locationName.length > 20 ? photo.locationName.substring(0, 17) + '...' : photo.locationName}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderCategorySection = (category: TrendingCategory, index: number) => (
-    <View key={`cat-${category.category}-${index}`} style={styles.categorySection}>
-      <View style={styles.categoryHeader}>
-        <Text style={styles.categoryEmoji}>{category.emoji}</Text>
-        <Text style={styles.categoryTitle}>{category.category}</Text>
-      </View>
-      <View style={styles.categoryGrid}>
-        {category.locations.slice(0, 4).map((location, locIndex) => (
-          <TouchableOpacity
-            key={location.id || `cat-loc-${locIndex}`}
-            style={styles.categoryCard}
-            onPress={() => handleLocationPress(location)}
-            activeOpacity={0.8}
-          >
-            {location.imageUrl ? (
-              <Image 
-                source={{ uri: location.imageUrl }} 
-                style={styles.categoryCardImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.categoryCardIcon}>
-                <Ionicons name="location" size={20} color={Colors.secondary} />
-              </View>
-            )}
-            <View style={styles.categoryCardOverlay}>
-              <Text style={styles.categoryCardName} numberOfLines={2}>
-                {location.abbreviatedName || location.name}
-              </Text>
-              {location.distance !== undefined && location.distance !== null && (
-                <Text style={styles.categoryCardDistance}>{formatDistance(location.distance)}</Text>
-              )}
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const hasNoContent = suggestedLocations.length === 0 && userHangouts.length === 0 && trendingCategories.length === 0 && sharedPhotos.length === 0;
-
-  if (hasNoContent && !loading) {
-    return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.emptyContentContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.emptyStateContainer}>
-          <View style={styles.emptyIconCircle}>
-            <Ionicons name="compass-outline" size={48} color={Colors.secondary} />
-          </View>
-          <Text style={styles.emptyStateTitle}>No Suggestions Available</Text>
-          <Text style={styles.emptyStateText}>
-            Location suggestions are temporarily unavailable. Create a hangout and enter your own location!
-          </Text>
-          <TouchableOpacity 
-            style={styles.emptyStatePrimaryButton} 
-            onPress={() => onSelectLocation({
-              name: '',
-              address: '',
-              lat: userLocation?.lat || 0,
-              lng: userLocation?.lng || 0,
-            })}
-          >
-            <Ionicons name="add" size={18} color={Colors.white} />
-            <Text style={styles.emptyStatePrimaryButtonText}>Create Hangout</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.emptyStateSecondaryButton} onPress={onRefresh}>
-            <Ionicons name="refresh" size={16} color={Colors.secondary} />
-            <Text style={styles.emptyStateSecondaryButtonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
-  }
+  const featuredLocation = suggestedLocations[0];
+  const featuredHangout = userHangouts[0];
 
   return (
     <ScrollView
@@ -332,49 +170,104 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       }
       showsVerticalScrollIndicator={false}
     >
-      <AdBox unitId={ADMOB_BOX_ID} />
-
-      {userHangouts.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people" size={20} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>Where Others Are Hanging Out</Text>
-          </View>
-          {userHangouts.slice(0, 3).map((hangout, index) => 
-            renderLocationCard(hangout, index, true)
-          )}
+      <View style={styles.topRow}>
+        <View style={styles.adBoxWrapper}>
+          <AdBox unitId={ADMOB_BOX_ID} />
         </View>
+        
+        {featuredLocation && (
+          <TouchableOpacity 
+            style={styles.suggestedCard}
+            onPress={() => handleLocationPress(featuredLocation)}
+            activeOpacity={0.9}
+          >
+            <Image 
+              source={{ uri: featuredLocation.imageUrl }} 
+              style={styles.suggestedImage}
+              resizeMode="cover"
+            />
+            <View style={styles.suggestedOverlay}>
+              <Text style={styles.suggestedLabel}>Suggested Location Nearby</Text>
+              <View style={styles.suggestedNameRow}>
+                <Text style={styles.suggestedName} numberOfLines={2}>
+                  {featuredLocation.name}
+                </Text>
+                <View style={styles.chevronCircle}>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {featuredHangout && (
+        <TouchableOpacity 
+          style={styles.hangoutCard}
+          onPress={() => handleLocationPress(featuredHangout)}
+          activeOpacity={0.9}
+        >
+          <Image 
+            source={{ uri: featuredHangout.imageUrl }} 
+            style={styles.hangoutImage}
+            resizeMode="cover"
+          />
+          <View style={styles.hangoutOverlay}>
+            <View style={styles.hangoutUserRow}>
+              <View style={styles.hangoutAvatar}>
+                <Ionicons name="person" size={16} color={Colors.grayMedium} />
+              </View>
+              <Text style={styles.hangoutUsername}>
+                {featuredHangout.creatorName || 'A user'}
+              </Text>
+            </View>
+            <View style={styles.hangoutLocationRow}>
+              <Text style={styles.hangoutLabel}>Hangout Location</Text>
+              <View style={styles.hangoutNameRow}>
+                <Text style={styles.hangoutName} numberOfLines={1}>
+                  {featuredHangout.name}
+                </Text>
+                <View style={styles.chevronCircle}>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
       )}
 
-      {suggestedLocations.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="sparkles" size={20} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>Suggested For You</Text>
+      {trendingCategories.map((category, index) => (
+        <View key={`trending-${category.category}-${index}`} style={styles.trendingSection}>
+          <View style={styles.trendingHeader}>
+            <Text style={styles.trendingEmoji}>{category.emoji}</Text>
+            <Text style={styles.trendingTitle}>Trending - {category.category}</Text>
           </View>
-          {suggestedLocations.slice(0, 4).map((location, index) => 
-            renderLocationCard(location, index)
-          )}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.trendingScroll}
+          >
+            {category.locations.map((location, locIndex) => (
+              <TouchableOpacity
+                key={location.id || `trend-${locIndex}`}
+                style={styles.trendingCard}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: location.imageUrl }} 
+                  style={styles.trendingImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
-      )}
+      ))}
 
-      <AdBanner unitId={ADMOB_BANNER_ID} />
-
-      {sharedPhotos.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="camera" size={20} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>From the Community</Text>
-          </View>
-          <View style={styles.photosGrid}>
-            {sharedPhotos.slice(0, 4).map((photo, index) => 
-              renderPhotoCard(photo, index)
-            )}
-          </View>
-        </View>
-      )}
-
-      {trendingCategories.map((category, index) => renderCategorySection(category, index))}
+      <View style={styles.bannerWrapper}>
+        <AdBanner unitId={ADMOB_BANNER_ID} />
+      </View>
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -388,11 +281,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
-  },
-  emptyContentContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 60,
   },
   loadingContainer: {
     flex: 1,
@@ -438,259 +326,159 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
   },
-  emptyStateContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
+  topRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 12,
   },
-  emptyIconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
+  adBoxWrapper: {
+    flex: 1,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.secondary,
-    marginBottom: 12,
+  suggestedCard: {
+    flex: 1,
+    height: 180,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
-  emptyStateText: {
-    fontSize: 14,
-    fontFamily: 'Prompt-Regular',
-    color: Colors.grayMedium,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
+  suggestedImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
   },
-  emptyStatePrimaryButton: {
+  suggestedOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  suggestedLabel: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 4,
+  },
+  suggestedNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.secondary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 25,
-    marginBottom: 12,
+    justifyContent: 'space-between',
   },
-  emptyStatePrimaryButtonText: {
+  suggestedName: {
+    flex: 1,
     fontSize: 14,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
-    marginLeft: 8,
+    marginRight: 8,
   },
-  emptyStateSecondaryButton: {
-    flexDirection: 'row',
+  chevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
   },
-  emptyStateSecondaryButtonText: {
-    fontSize: 13,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.secondary,
-    marginLeft: 6,
-  },
-  adBoxContainer: {
-    alignItems: 'center',
+  hangoutCard: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
     marginBottom: 20,
   },
-  sponsoredLabel: {
-    fontSize: 9,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.grayMedium,
-    letterSpacing: 0.5,
-    marginBottom: 4,
+  hangoutImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
   },
-  adBox: {
-    width: 300,
-    height: 250,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  hangoutOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  hangoutUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  hangoutAvatar: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
+    marginRight: 8,
   },
-  adBannerContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
+  hangoutUsername: {
+    fontSize: 13,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.white,
   },
-  adBanner: {
-    width: SCREEN_WIDTH - 32,
-    height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
+  hangoutLocationRow: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  adPlaceholderText: {
-    fontSize: 12,
+  hangoutLabel: {
+    fontSize: 10,
     fontFamily: 'Prompt-Medium',
     color: Colors.grayMedium,
+    marginBottom: 2,
   },
-  section: {
-    marginBottom: 24,
+  hangoutNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  sectionHeader: {
+  hangoutName: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+    marginRight: 8,
+  },
+  trendingSection: {
+    marginBottom: 20,
+  },
+  trendingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
   },
-  sectionTitle: {
-    fontSize: 16,
+  trendingEmoji: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  trendingTitle: {
+    fontSize: 15,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.secondary,
-    marginLeft: 8,
   },
-  locationCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
+  trendingScroll: {
+    paddingRight: 16,
+  },
+  trendingCard: {
+    width: 110,
+    height: 110,
+    borderRadius: 16,
     overflow: 'hidden',
+    marginRight: 10,
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  locationCardImage: {
-    width: '100%',
-    height: 120,
-  },
-  locationIconContainer: {
-    width: '100%',
-    height: 120,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationCardContent: {
-    padding: 12,
-  },
-  locationInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  locationName: {
-    fontSize: 15,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.secondary,
-  },
-  locationDistance: {
-    fontSize: 12,
-    fontFamily: 'Prompt-Regular',
-    color: Colors.grayMedium,
-    marginTop: 2,
-  },
-  attendeeCount: {
-    fontSize: 11,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.primary,
-    marginTop: 2,
-  },
-  photosGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  photoCard: {
-    width: (SCREEN_WIDTH - 40) / 2,
-    height: 140,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  photoImage: {
+  trendingImage: {
     width: '100%',
     height: '100%',
   },
-  photoOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  photoUserRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  photoUsername: {
-    fontSize: 11,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.white,
-    marginLeft: 4,
-  },
-  photoLocation: {
-    fontSize: 12,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.white,
-  },
-  categorySection: {
-    marginBottom: 24,
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  categoryEmoji: {
-    fontSize: 18,
-  },
-  categoryTitle: {
-    fontSize: 16,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.secondary,
-    marginLeft: 8,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  categoryCard: {
-    width: (SCREEN_WIDTH - 40) / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
-  },
-  categoryCardImage: {
-    width: '100%',
-    height: 100,
-  },
-  categoryCardIcon: {
-    width: '100%',
-    height: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryCardOverlay: {
-    padding: 10,
-    alignItems: 'center',
-  },
-  categoryCardName: {
-    fontSize: 13,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.secondary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  categoryCardDistance: {
-    fontSize: 11,
-    fontFamily: 'Prompt-Regular',
-    color: Colors.grayMedium,
-    marginTop: 4,
+  bannerWrapper: {
+    marginTop: 10,
+    marginBottom: 20,
   },
   bottomPadding: {
     height: 100,

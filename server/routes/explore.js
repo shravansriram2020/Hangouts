@@ -276,8 +276,10 @@ router.get('/feed', authenticateToken, async (req, res) => {
           e.location_address as address,
           e.location_lat as lat,
           e.location_lng as lng,
+          u.first_name as "creatorName",
           COUNT(DISTINCT ea.user_id) as "attendeeCount"
         FROM events e
+        JOIN users u ON e.creator_id = u.id
         LEFT JOIN event_attendees ea ON e.id = ea.event_id
         WHERE e.location_lat IS NOT NULL
           AND e.location_lng IS NOT NULL
@@ -289,7 +291,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
               sin(radians($1)) * sin(radians(e.location_lat))
             )
           ) <= $3
-        GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng
+        GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.first_name
         ORDER BY "attendeeCount" DESC, e.date ASC
         LIMIT 10
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
@@ -304,8 +306,9 @@ router.get('/feed', authenticateToken, async (req, res) => {
         category: 'hangout',
         distance: calculateDistance(userLat, userLng, parseFloat(row.lat), parseFloat(row.lng)),
         attendeeCount: parseInt(row.attendeeCount) || 0,
-        imageUrl: getCategoryImage('entertainment'),
+        imageUrl: getCategoryImage('bar'),
         isUserHangout: true,
+        creatorName: row.creatorName || 'A user',
       }));
     } catch (dbError) {
       console.log('User hangouts query failed:', dbError.message);
