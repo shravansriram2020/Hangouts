@@ -17,15 +17,23 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+const MAX_DISTANCE_MILES = 60;
+const MAX_RADIUS_METERS = 96560;
+
+const CATEGORY_CODES = {
+  FOOD: '7315',
+  ENTERTAINMENT: '9362,7342,9902,9361',
+  OUTDOORS: '9362,9927,7305',
+  SPORTS: '7320,7374,9361',
+  NIGHTLIFE: '9376,9379',
+};
+
 const TRENDING_CATEGORIES = [
-  { category: 'Amusement Parks', emoji: '🔥', searchTerm: 'amusement park theme park' },
-  { category: 'Restaurants', emoji: '🍽️', searchTerm: 'restaurant dining' },
-  { category: 'Coffee Shops', emoji: '☕', searchTerm: 'coffee cafe' },
-  { category: 'Bars & Nightlife', emoji: '🍸', searchTerm: 'bar nightclub' },
-  { category: 'Parks & Recreation', emoji: '🌳', searchTerm: 'park recreation outdoor' },
-  { category: 'Shopping', emoji: '🛍️', searchTerm: 'shopping mall' },
-  { category: 'Movies', emoji: '🎬', searchTerm: 'cinema movie theater' },
-  { category: 'Sports', emoji: '⚽', searchTerm: 'sports stadium gym' },
+  { category: 'Food', emoji: '🍽️', categoryCodes: CATEGORY_CODES.FOOD },
+  { category: 'Entertainment', emoji: '🎬', categoryCodes: CATEGORY_CODES.ENTERTAINMENT },
+  { category: 'Outdoors', emoji: '🌳', categoryCodes: CATEGORY_CODES.OUTDOORS },
+  { category: 'Sports', emoji: '⚽', categoryCodes: CATEGORY_CODES.SPORTS },
+  { category: 'Nightlife', emoji: '🍸', categoryCodes: CATEGORY_CODES.NIGHTLIFE },
 ];
 
 
@@ -43,14 +51,14 @@ async function fetchWithTimeout(url, timeoutMs = 5000) {
   }
 }
 
-async function searchNearbyPlaces(lat, lng, query, limit = 5) {
+async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
   if (!TOMTOM_API_KEY) {
     console.log('TomTom API key not configured, returning empty results');
     return [];
   }
 
   try {
-    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=10000&limit=${limit}&query=${encodeURIComponent(query)}`;
+    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
     
     const response = await fetchWithTimeout(url, 5000);
     
@@ -61,26 +69,32 @@ async function searchNearbyPlaces(lat, lng, query, limit = 5) {
     
     const data = await response.json();
 
-    const results = (data.results || []).map(result => {
-      const resultLat = result.position?.lat;
-      const resultLng = result.position?.lon;
-      const distanceMiles = calculateDistance(lat, lng, resultLat, resultLng);
-      
-      const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
-      const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
+    const results = (data.results || [])
+      .map(result => {
+        const resultLat = result.position?.lat;
+        const resultLng = result.position?.lon;
+        const distanceMiles = calculateDistance(lat, lng, resultLat, resultLng);
+        
+        if (distanceMiles > MAX_DISTANCE_MILES) {
+          return null;
+        }
+        
+        const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
+        const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
 
-      return {
-        id: result.id,
-        name: name,
-        abbreviatedName: abbreviatedName,
-        address: result.address?.freeformAddress || '',
-        lat: resultLat,
-        lng: resultLng,
-        category: result.poi?.categories?.[0] || '',
-        distance: distanceMiles,
-        imageUrl: null,
-      };
-    });
+        return {
+          id: result.id,
+          name: name,
+          abbreviatedName: abbreviatedName,
+          address: result.address?.freeformAddress || '',
+          lat: resultLat,
+          lng: resultLng,
+          category: result.poi?.categories?.[0] || '',
+          distance: distanceMiles,
+          imageUrl: null,
+        };
+      })
+      .filter(Boolean);
     
     return results;
   } catch (error) {
@@ -93,13 +107,13 @@ async function searchNearbyPlaces(lat, lng, query, limit = 5) {
   }
 }
 
-async function searchPlacesByCategory(lat, lng, categoryCode, limit = 5) {
+async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
   if (!TOMTOM_API_KEY) {
     return [];
   }
 
   try {
-    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=15000&limit=${limit}&categorySet=${categoryCode}`;
+    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=${MAX_RADIUS_METERS}&limit=${limit}&categorySet=${categoryCodes}`;
     
     const response = await fetchWithTimeout(url, 5000);
     
@@ -110,26 +124,32 @@ async function searchPlacesByCategory(lat, lng, categoryCode, limit = 5) {
     
     const data = await response.json();
 
-    const results = (data.results || []).map(result => {
-      const resultLat = result.position?.lat;
-      const resultLng = result.position?.lon;
-      const distanceMiles = calculateDistance(lat, lng, resultLat, resultLng);
-      
-      const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
-      const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
+    const results = (data.results || [])
+      .map(result => {
+        const resultLat = result.position?.lat;
+        const resultLng = result.position?.lon;
+        const distanceMiles = calculateDistance(lat, lng, resultLat, resultLng);
+        
+        if (distanceMiles > MAX_DISTANCE_MILES) {
+          return null;
+        }
+        
+        const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
+        const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
 
-      return {
-        id: result.id,
-        name: name,
-        abbreviatedName: abbreviatedName,
-        address: result.address?.freeformAddress || '',
-        lat: resultLat,
-        lng: resultLng,
-        category: result.poi?.categories?.[0] || '',
-        distance: distanceMiles,
-        imageUrl: null,
-      };
-    });
+        return {
+          id: result.id,
+          name: name,
+          abbreviatedName: abbreviatedName,
+          address: result.address?.freeformAddress || '',
+          lat: resultLat,
+          lng: resultLng,
+          category: result.poi?.categories?.[0] || '',
+          distance: distanceMiles,
+          imageUrl: null,
+        };
+      })
+      .filter(Boolean);
     
     return results;
   } catch (error) {
@@ -153,17 +173,12 @@ router.get('/feed', authenticateToken, async (req, res) => {
   const userLng = parseFloat(lng);
 
   try {
-    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, 'restaurant cafe bar entertainment', 5);
-
-    const trendingLocationsPromise = searchNearbyPlaces(userLat, userLng, 'popular attraction landmark', 6);
-
-    const randomCategories = TRENDING_CATEGORIES
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+    const allFunCategoryCodes = `${CATEGORY_CODES.FOOD},${CATEGORY_CODES.ENTERTAINMENT},${CATEGORY_CODES.NIGHTLIFE}`;
+    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, allFunCategoryCodes, 6);
 
     const trendingCategoriesPromise = Promise.all(
-      randomCategories.map(async (cat) => {
-        const locations = await searchNearbyPlaces(userLat, userLng, cat.searchTerm, 4);
+      TRENDING_CATEGORIES.map(async (cat) => {
+        const locations = await searchPlacesByCategory(userLat, userLng, cat.categoryCodes, 4);
         return {
           category: cat.category,
           emoji: cat.emoji,
@@ -171,6 +186,54 @@ router.get('/feed', authenticateToken, async (req, res) => {
         };
       })
     );
+
+    let userHangouts = [];
+    try {
+      const hangoutsResult = await pool.query(`
+        SELECT 
+          e.id,
+          e.location_name as name,
+          CASE WHEN LENGTH(e.location_name) > 25 
+            THEN SUBSTRING(e.location_name, 1, 22) || '...' 
+            ELSE e.location_name 
+          END as "abbreviatedName",
+          e.location_address as address,
+          e.location_lat as lat,
+          e.location_lng as lng,
+          COUNT(DISTINCT ea.user_id) as "attendeeCount"
+        FROM events e
+        LEFT JOIN event_attendees ea ON e.id = ea.event_id
+        WHERE e.location_lat IS NOT NULL
+          AND e.location_lng IS NOT NULL
+          AND e.date >= CURRENT_DATE
+          AND (
+            3959 * acos(
+              cos(radians($1)) * cos(radians(e.location_lat)) *
+              cos(radians(e.location_lng) - radians($2)) +
+              sin(radians($1)) * sin(radians(e.location_lat))
+            )
+          ) <= $3
+        GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng
+        ORDER BY "attendeeCount" DESC, e.date ASC
+        LIMIT 10
+      `, [userLat, userLng, MAX_DISTANCE_MILES]);
+      
+      userHangouts = hangoutsResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        abbreviatedName: row.abbreviatedName,
+        address: row.address,
+        lat: parseFloat(row.lat),
+        lng: parseFloat(row.lng),
+        category: 'hangout',
+        distance: calculateDistance(userLat, userLng, parseFloat(row.lat), parseFloat(row.lng)),
+        attendeeCount: parseInt(row.attendeeCount) || 0,
+        imageUrl: null,
+        isUserHangout: true,
+      }));
+    } catch (dbError) {
+      console.log('User hangouts query failed:', dbError.message);
+    }
 
     let sharedPhotos = [];
     try {
@@ -198,15 +261,14 @@ router.get('/feed', authenticateToken, async (req, res) => {
       console.log('Shared photos query failed (columns may not exist yet):', dbError.message);
     }
 
-    const [suggestedLocations, trendingLocations, trendingCategories] = await Promise.all([
+    const [suggestedLocations, trendingCategories] = await Promise.all([
       suggestedLocationsPromise,
-      trendingLocationsPromise,
       trendingCategoriesPromise,
     ]);
 
     res.json({
       suggestedLocations,
-      trendingLocations,
+      userHangouts,
       trendingCategories: trendingCategories.filter(cat => cat.locations.length > 0),
       sharedPhotos,
     });
