@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
   - Categories include: Food, Entertainment, Outdoors, Sports, Nightlife
   - Each location includes a curated image from Unsplash CDN
 - Images are category-based: restaurants get food photos, parks get nature photos, etc.
+- **Photo Sharing to Explore**:
+  - Users can tap globe icon in EventPhotosTab to share their photos to the Explore page
+  - Photos require admin moderation before appearing (pending → approved/rejected)
+  - ExploreTab shows "Photos From Friends Nearby" section with approved shared photos
+  - Each shared photo card displays: user photo, username with avatar, location name
+  - Shared photos are filtered by distance (60 mile radius) and sorted by proximity
+  - Moderation status shown in EventPhotosTab: "Live on Explore page!" (green), "Not approved" (red), "pending review" (gray)
+  - Tapping a shared photo opens the create event modal pre-filled with that location
 
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)

@@ -405,7 +405,14 @@ router.get('/feed', authenticateToken, async (req, res) => {
           e.location_name as "locationName",
           e.location_address as "locationAddress",
           e.location_lat as lat,
-          e.location_lng as lng
+          e.location_lng as lng,
+          (
+            3959 * acos(
+              cos(radians($1)) * cos(radians(e.location_lat)) *
+              cos(radians(e.location_lng) - radians($2)) +
+              sin(radians($1)) * sin(radians(e.location_lat))
+            )
+          ) as distance
         FROM event_photos ep
         JOIN events e ON ep.event_id = e.id
         JOIN users u ON ep.uploader_id = u.id
@@ -413,9 +420,16 @@ router.get('/feed', authenticateToken, async (req, res) => {
           AND ep.moderation_status = 'approved'
           AND e.location_lat IS NOT NULL
           AND e.location_lng IS NOT NULL
-        ORDER BY ep.created_at DESC
-        LIMIT 5
-      `);
+          AND (
+            3959 * acos(
+              cos(radians($1)) * cos(radians(e.location_lat)) *
+              cos(radians(e.location_lng) - radians($2)) +
+              sin(radians($1)) * sin(radians(e.location_lat))
+            )
+          ) <= $3
+        ORDER BY distance ASC, ep.created_at DESC
+        LIMIT 10
+      `, [userLat, userLng, MAX_DISTANCE_MILES]);
       sharedPhotos = photosResult.rows;
     } catch (dbError) {
       console.log('Shared photos query failed (columns may not exist yet):', dbError.message);

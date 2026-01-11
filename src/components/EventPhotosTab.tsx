@@ -265,9 +265,10 @@ export default function EventPhotosTab({ eventId }: Props) {
                         onPress={async () => {
                           try {
                             const newValue = !selectedPhoto.share_to_explore;
-                            await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
-                            setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue });
-                            setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue } : p));
+                            const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
+                            const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
+                            setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
+                            setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
                           } catch (error) {
                             Alert.alert('Error', 'Failed to update sharing preference');
                           }
@@ -289,9 +290,17 @@ export default function EventPhotosTab({ eventId }: Props) {
                   )}
                 </View>
                 {selectedPhoto.uploader_id === user?.id && (
-                  <Text style={styles.shareHint}>
+                  <Text style={[
+                    styles.shareHint,
+                    selectedPhoto.moderation_status === 'approved' && styles.shareHintApproved,
+                    selectedPhoto.moderation_status === 'rejected' && styles.shareHintRejected,
+                  ]}>
                     {selectedPhoto.share_to_explore
-                      ? 'Shared to Explore (pending review)'
+                      ? selectedPhoto.moderation_status === 'approved'
+                        ? 'Live on Explore page!'
+                        : selectedPhoto.moderation_status === 'rejected'
+                        ? 'Not approved for Explore'
+                        : 'Shared to Explore (pending review)'
                       : 'Tap globe to share to Explore'}
                   </Text>
                 )}
@@ -487,6 +496,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     textAlign: 'center',
     marginTop: 8,
+  },
+  shareHintApproved: {
+    color: '#4CAF50',
+  },
+  shareHintRejected: {
+    color: '#F44336',
   },
   uploadOverlay: {
     flex: 1,

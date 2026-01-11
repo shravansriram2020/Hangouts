@@ -43,6 +43,16 @@ interface TrendingCategory {
   locations: SuggestedLocation[];
 }
 
+interface SharedPhoto {
+  id: string;
+  imageUrl: string;
+  username: string;
+  locationName: string;
+  locationAddress: string;
+  lat: number;
+  lng: number;
+}
+
 interface ExploreTabProps {
   onSelectLocation: (location: {
     name: string;
@@ -60,6 +70,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([]);
   const [userHangouts, setUserHangouts] = useState<SuggestedLocation[]>([]);
   const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>([]);
+  const [sharedPhotos, setSharedPhotos] = useState<SharedPhoto[]>([]);
 
   useEffect(() => {
     requestLocationAndFetch();
@@ -104,6 +115,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       setSuggestedLocations(data.suggestedLocations || []);
       setUserHangouts(data.userHangouts || []);
       setTrendingCategories(data.trendingCategories || []);
+      setSharedPhotos(data.sharedPhotos || []);
     } catch (error) {
       console.error('Failed to fetch explore data:', error);
     } finally {
@@ -234,6 +246,55 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             </View>
           </View>
         </TouchableOpacity>
+      )}
+
+      {sharedPhotos.length > 0 && (
+        <View style={styles.sharedPhotosSection}>
+          <View style={styles.sharedPhotosHeader}>
+            <Ionicons name="camera" size={18} color={Colors.secondary} />
+            <Text style={styles.sharedPhotosTitle}>Photos From Friends Nearby</Text>
+          </View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sharedPhotosScroll}
+          >
+            {sharedPhotos.map((photo, index) => (
+              <TouchableOpacity
+                key={photo.id || `photo-${index}`}
+                style={styles.sharedPhotoCard}
+                onPress={() => onSelectLocation({
+                  name: photo.locationName,
+                  address: photo.locationAddress,
+                  lat: photo.lat,
+                  lng: photo.lng,
+                })}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: photo.imageUrl }} 
+                  style={styles.sharedPhotoImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.sharedPhotoOverlay}>
+                  <View style={styles.sharedPhotoUserRow}>
+                    <View style={styles.sharedPhotoAvatar}>
+                      <Text style={styles.sharedPhotoInitial}>
+                        {photo.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </Text>
+                    </View>
+                    <Text style={styles.sharedPhotoUsername} numberOfLines={1}>
+                      {photo.username}
+                    </Text>
+                  </View>
+                  <Text style={styles.sharedPhotoLocation} numberOfLines={2}>
+                    {photo.locationName}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       )}
 
       {trendingCategories.map((category, index) => (
@@ -482,5 +543,77 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  sharedPhotosSection: {
+    marginBottom: 20,
+  },
+  sharedPhotosHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    gap: 8,
+  },
+  sharedPhotosTitle: {
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+  },
+  sharedPhotosScroll: {
+    paddingRight: 16,
+  },
+  sharedPhotoCard: {
+    width: 160,
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginRight: 12,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  sharedPhotoImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  sharedPhotoOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  sharedPhotoUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  sharedPhotoAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  sharedPhotoInitial: {
+    fontSize: 12,
+    fontFamily: 'Prompt-Bold',
+    color: Colors.white,
+  },
+  sharedPhotoUsername: {
+    fontSize: 12,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.white,
+    flex: 1,
+  },
+  sharedPhotoLocation: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    lineHeight: 18,
   },
 });
