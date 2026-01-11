@@ -355,19 +355,42 @@ function shuffleArray(array) {
   return shuffled;
 }
 
-const CATEGORY_SECTIONS = [
-  { id: 'restaurants', name: 'Restaurants Nearby', emoji: '🍽️', codes: '7315', priority: 1 },
-  { id: 'cafes', name: 'Coffee & Cafes', emoji: '☕', codes: '9377', priority: 1 },
-  { id: 'amusement', name: 'Amusement Parks', emoji: '🎢', codes: '9902', priority: 2 },
-  { id: 'sports', name: 'Sports & Recreation', emoji: '⚽', codes: '7320,9373', priority: 2 },
-  { id: 'bars', name: 'Bars & Nightlife', emoji: '🍺', codes: '9376,9379', priority: 2 },
-  { id: 'entertainment', name: 'Entertainment', emoji: '🎬', codes: '7335,7342', priority: 3 },
-  { id: 'parks', name: 'Parks & Outdoors', emoji: '🏞️', codes: '9362', priority: 3 },
-  { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317', priority: 3 },
+const REQUIRED_CATEGORIES = [
+  { id: 'restaurants', name: 'Restaurants', emoji: '🍽️', codes: '7315' },
+  { id: 'amusement', name: 'Amusement Parks', emoji: '🎢', codes: '9902' },
+  { id: 'sports', name: 'Sports & Recreation', emoji: '⚽', codes: '7320,9373' },
 ];
 
-const AD_POSITIONS = ['top', 'middle', 'bottom', 'between-sections'];
-const AD_FORMATS = ['banner', 'square'];
+const OPTIONAL_CATEGORIES = [
+  { id: 'cafes', name: 'Coffee & Cafes', emoji: '☕', codes: '9377' },
+  { id: 'bars', name: 'Bars & Nightlife', emoji: '🍺', codes: '9376,9379' },
+  { id: 'entertainment', name: 'Entertainment', emoji: '🎬', codes: '7335,7342' },
+  { id: 'parks', name: 'Parks & Outdoors', emoji: '🏞️', codes: '9362' },
+  { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
+];
+
+const LAYOUT_SECTIONS = [
+  'topAdBox',
+  'featuredLocation',
+  'featuredHangout', 
+  'sharedPhotos',
+  'hangoutBanner1',
+  'trending',
+  'adBox1',
+  'categories',
+  'hangoutBanner2',
+  'adBanner1',
+  'morePlaces',
+  'moreHangouts',
+  'discoverMore',
+  'hangoutBanner3',
+  'adBox2',
+];
+
+function generateRandomLayout() {
+  const shuffled = shuffleArray([...LAYOUT_SECTIONS]);
+  return shuffled;
+}
 
 function sampleAcrossRadius(locations, count) {
   if (locations.length <= count) return locations;
@@ -394,20 +417,23 @@ router.get('/feed', authenticateToken, async (req, res) => {
   const userLng = parseFloat(lng);
 
   try {
-    const shuffledSections = shuffleArray([...CATEGORY_SECTIONS]);
-    const prioritySections = shuffledSections.filter(s => s.priority === 1);
-    const otherSections = shuffledSections.filter(s => s.priority > 1).slice(0, 3);
-    const selectedSections = [...prioritySections, ...otherSections];
+    const layoutOrder = generateRandomLayout();
     
-    const categoryPromises = selectedSections.map(section => 
+    const shuffledOptional = shuffleArray([...OPTIONAL_CATEGORIES]);
+    const selectedOptional = shuffledOptional.slice(0, 2);
+    const allCategories = [...REQUIRED_CATEGORIES, ...selectedOptional];
+    const shuffledCategories = shuffleArray(allCategories);
+    
+    const categoryPromises = shuffledCategories.map(section => 
       searchNearbyPlaces(userLat, userLng, section.codes, 8).then(locations => ({
         ...section,
         locations: sampleAcrossRadius(locations, 6),
       }))
     );
     
-    const allCategoryCodes = selectedSections.map(s => s.codes).join(',');
-    console.log('[Explore] Using category sections:', selectedSections.map(s => s.id).join(', '));
+    const allCategoryCodes = shuffledCategories.map(s => s.codes).join(',');
+    console.log('[Explore] Layout order:', layoutOrder.slice(0, 5).join(', ') + '...');
+    console.log('[Explore] Categories:', shuffledCategories.map(s => s.name).join(', '));
     const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, allCategoryCodes, 20);
 
     const trendingEventsPromise = pool.query(`
@@ -585,7 +611,11 @@ router.get('/feed', authenticateToken, async (req, res) => {
       isRealEvent: true,
     }));
 
+    const categorySections = await Promise.all(categoryPromises);
+    
     res.json({
+      layoutOrder,
+      categorySections,
       suggestedLocations: finalSuggested,
       userHangouts,
       trendingEvents,

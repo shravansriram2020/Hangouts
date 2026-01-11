@@ -62,6 +62,13 @@ interface SharedPhoto {
   lng: number;
 }
 
+interface CategorySection {
+  id: string;
+  name: string;
+  emoji: string;
+  locations: SuggestedLocation[];
+}
+
 interface ExploreTabProps {
   onSelectLocation: (location: {
     name: string;
@@ -187,6 +194,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [userHangouts, setUserHangouts] = useState<SuggestedLocation[]>([]);
   const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
   const [sharedPhotos, setSharedPhotos] = useState<SharedPhoto[]>([]);
+  const [layoutOrder, setLayoutOrder] = useState<string[]>([]);
+  const [categorySections, setCategorySections] = useState<CategorySection[]>([]);
 
   useEffect(() => {
     requestLocationAndFetch();
@@ -232,6 +241,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       setUserHangouts(data.userHangouts || []);
       setTrendingEvents(data.trendingEvents || []);
       setSharedPhotos(data.sharedPhotos || []);
+      setLayoutOrder(data.layoutOrder || []);
+      setCategorySections(data.categorySections || []);
     } catch (error) {
       console.error('Failed to fetch explore data:', error);
     } finally {
@@ -264,6 +275,53 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     return `${distance.toFixed(1)} mi`;
   };
 
+  const renderCategorySection = (section: CategorySection) => {
+    if (!section.locations || section.locations.length === 0) return null;
+    return (
+      <View key={section.id} style={styles.categorySection}>
+        <View style={styles.centeredSectionHeader}>
+          <Text style={styles.categoryEmoji}>{section.emoji}</Text>
+          <Text style={styles.centeredSectionTitle}>{section.name}</Text>
+        </View>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          {section.locations.map((location, index) => (
+            <TouchableOpacity
+              key={location.id || `${section.id}-${index}`}
+              style={styles.categoryCard}
+              onPress={() => handleLocationPress(location)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.categoryCardImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryCardOverlay}>
+                <Text style={styles.categoryCardName} numberOfLines={2}>
+                  {location.abbreviatedName}
+                </Text>
+                {location.address && (
+                  <Text style={styles.categoryCardAddress} numberOfLines={1}>
+                    {location.address}
+                  </Text>
+                )}
+                {location.distance !== undefined && (
+                  <Text style={styles.categoryCardDistance}>
+                    {formatDistance(location.distance)}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -289,6 +347,359 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const featuredLocation = suggestedLocations[0];
   const featuredHangout = userHangouts[0];
 
+  const renderFeaturedLocation = () => {
+    if (!featuredLocation) return null;
+    return (
+      <TouchableOpacity 
+        key="featuredLocation"
+        style={styles.featuredLocationCard}
+        onPress={() => handleLocationPress(featuredLocation)}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{ uri: featuredLocation.imageUrl }} 
+          style={styles.suggestedImage}
+          resizeMode="cover"
+        />
+        <View style={styles.suggestedOverlay}>
+          <Text style={styles.suggestedLabel}>Suggested Location Nearby</Text>
+          <View style={styles.suggestedNameRow}>
+            <View style={styles.suggestedNameContainer}>
+              <Text style={styles.suggestedName} numberOfLines={2}>
+                {featuredLocation.name}
+              </Text>
+              {featuredLocation.address && (
+                <Text style={styles.suggestedAddress} numberOfLines={2}>
+                  {featuredLocation.address}
+                </Text>
+              )}
+            </View>
+            <View style={styles.chevronCircle}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderFeaturedHangout = () => {
+    if (!featuredHangout) return null;
+    return (
+      <LargeHangoutCard 
+        key="featuredHangout"
+        hangout={featuredHangout} 
+        onPress={() => handleLocationPress(featuredHangout)} 
+      />
+    );
+  };
+
+  const renderSharedPhotos = () => {
+    if (sharedPhotos.length === 0) return null;
+    return (
+      <View key="sharedPhotos" style={styles.sharedPhotosSection}>
+        <View style={styles.centeredSectionHeader}>
+          <Ionicons name="camera" size={18} color={Colors.secondary} />
+          <Text style={styles.centeredSectionTitle}>Photos From Friends Nearby</Text>
+        </View>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.sharedPhotosScroll}
+        >
+          {sharedPhotos.map((photo, index) => (
+            <TouchableOpacity
+              key={photo.id || `photo-${index}`}
+              style={styles.sharedPhotoCard}
+              onPress={() => onSelectLocation({
+                name: photo.locationName,
+                address: photo.locationAddress,
+                lat: photo.lat,
+                lng: photo.lng,
+              })}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: photo.imageUrl }} 
+                style={styles.sharedPhotoImage}
+                resizeMode="cover"
+              />
+              <View style={styles.sharedPhotoOverlay}>
+                <View style={styles.sharedPhotoUserRow}>
+                  <View style={styles.sharedPhotoAvatar}>
+                    <Text style={styles.sharedPhotoInitial}>
+                      {photo.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </Text>
+                  </View>
+                  <Text style={styles.sharedPhotoUsername} numberOfLines={1}>
+                    {photo.username}
+                  </Text>
+                </View>
+                <Text style={styles.sharedPhotoLocation} numberOfLines={2}>
+                  {photo.locationName}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderHangoutBanner = (bannerNumber: number) => {
+    const hangout = userHangouts[bannerNumber];
+    if (!hangout) return null;
+    return (
+      <LargeHangoutCard 
+        key={`hangoutBanner${bannerNumber}`}
+        hangout={hangout} 
+        onPress={() => handleLocationPress(hangout)} 
+      />
+    );
+  };
+
+  const renderTrending = () => {
+    if (trendingEvents.length === 0) return null;
+    return (
+      <View key="trending" style={styles.trendingSection}>
+        <View style={styles.centeredSectionHeader}>
+          <Text style={styles.categoryEmoji}>🔥</Text>
+          <Text style={styles.centeredSectionTitle}>Trending Hangouts Near You</Text>
+        </View>
+        <View style={styles.trendingGridCentered}>
+          {trendingEvents.slice(0, 4).map((event, index) => (
+            <TouchableOpacity
+              key={event.id || `trend-${index}`}
+              style={styles.trendingEventCard}
+              onPress={() => onSelectLocation({
+                name: event.name,
+                address: event.address,
+                lat: event.lat,
+                lng: event.lng,
+              })}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: event.imageUrl }} 
+                style={styles.trendingEventImage}
+                resizeMode="cover"
+              />
+              <View style={styles.trendingEventOverlay}>
+                <Text style={styles.trendingEventName} numberOfLines={2}>
+                  {event.abbreviatedName}
+                </Text>
+                <View style={styles.trendingEventMeta}>
+                  {event.attendeeCount > 0 && (
+                    <View style={styles.attendeeTag}>
+                      <Ionicons name="people" size={10} color={Colors.white} />
+                      <Text style={styles.attendeeCount}>{event.attendeeCount}</Text>
+                    </View>
+                  )}
+                  {event.distance && (
+                    <Text style={styles.trendingEventDistance}>
+                      {formatDistance(event.distance)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderAdBox = (key: string) => (
+    <View key={key} style={styles.midAdWrapper}>
+      <AdBox unitId={ADMOB_BOX_ID} />
+    </View>
+  );
+
+  const renderAdBanner = (key: string) => (
+    <View key={key} style={styles.bannerWrapper}>
+      <AdBanner unitId={ADMOB_BANNER_ID} />
+    </View>
+  );
+
+  const renderCategories = () => {
+    if (categorySections.length === 0) return null;
+    return (
+      <View key="categories">
+        {categorySections.map(section => renderCategorySection(section))}
+      </View>
+    );
+  };
+
+  const renderMorePlaces = () => {
+    if (suggestedLocations.length <= 1) return null;
+    return (
+      <View key="morePlaces" style={styles.morePlacesSection}>
+        <View style={styles.centeredSectionHeader}>
+          <Ionicons name="compass" size={18} color={Colors.secondary} />
+          <Text style={styles.centeredSectionTitle}>More Places To Explore</Text>
+        </View>
+        <View style={styles.placesGrid}>
+          {suggestedLocations.slice(1, 7).map((location, index) => (
+            <TouchableOpacity
+              key={location.id || `place-${index}`}
+              style={styles.placeCard}
+              onPress={() => handleLocationPress(location)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.placeImage}
+                resizeMode="cover"
+              />
+              <View style={styles.placeOverlay}>
+                <Text style={styles.placeName} numberOfLines={2}>
+                  {location.abbreviatedName}
+                </Text>
+                {location.address && (
+                  <Text style={styles.placeAddress} numberOfLines={2}>
+                    {location.address}
+                  </Text>
+                )}
+                {location.distance !== undefined && (
+                  <Text style={styles.placeDistance}>
+                    {formatDistance(location.distance)}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderMoreHangouts = () => {
+    if (userHangouts.length <= 3) return null;
+    return (
+      <View key="moreHangouts" style={styles.moreHangoutsSection}>
+        <View style={styles.centeredSectionHeader}>
+          <Ionicons name="people" size={18} color={Colors.secondary} />
+          <Text style={styles.centeredSectionTitle}>Where Others Are Hanging Out</Text>
+        </View>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.hangoutsScrollContent}
+        >
+          {userHangouts.slice(3, 7).map((hangout, index) => (
+            <TouchableOpacity
+              key={hangout.id || `hangout-${index}`}
+              style={styles.smallHangoutCard}
+              onPress={() => handleLocationPress(hangout)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: hangout.imageUrl }} 
+                style={styles.smallHangoutImage}
+                resizeMode="cover"
+              />
+              <View style={styles.smallHangoutOverlay}>
+                <Text style={styles.smallHangoutName} numberOfLines={1}>
+                  {hangout.abbreviatedName}
+                </Text>
+                <View style={styles.smallHangoutMeta}>
+                  <Text style={styles.smallHangoutCreator}>
+                    by {hangout.creatorName || 'User'}
+                  </Text>
+                  {hangout.attendeeCount && hangout.attendeeCount > 0 && (
+                    <View style={styles.smallAttendeeBadge}>
+                      <Text style={styles.smallAttendeeText}>{hangout.attendeeCount}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderDiscoverMore = () => {
+    if (suggestedLocations.length <= 7) return null;
+    return (
+      <View key="discoverMore" style={styles.evenMoreSection}>
+        <View style={styles.centeredSectionHeader}>
+          <Ionicons name="sparkles" size={18} color={Colors.secondary} />
+          <Text style={styles.centeredSectionTitle}>Discover More Nearby</Text>
+        </View>
+        <View style={styles.placesGrid}>
+          {suggestedLocations.slice(7, 13).map((location, index) => (
+            <TouchableOpacity
+              key={location.id || `more-${index}`}
+              style={styles.placeCard}
+              onPress={() => handleLocationPress(location)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.placeImage}
+                resizeMode="cover"
+              />
+              <View style={styles.placeOverlay}>
+                <Text style={styles.placeName} numberOfLines={2}>
+                  {location.abbreviatedName}
+                </Text>
+                {location.address && (
+                  <Text style={styles.placeAddress} numberOfLines={2}>
+                    {location.address}
+                  </Text>
+                )}
+                {location.distance !== undefined && (
+                  <Text style={styles.placeDistance}>
+                    {formatDistance(location.distance)}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderSection = (sectionId: string) => {
+    switch (sectionId) {
+      case 'topAdBox':
+        return renderAdBox('topAdBox');
+      case 'featuredLocation':
+        return renderFeaturedLocation();
+      case 'featuredHangout':
+        return renderFeaturedHangout();
+      case 'sharedPhotos':
+        return renderSharedPhotos();
+      case 'hangoutBanner1':
+        return renderHangoutBanner(1);
+      case 'hangoutBanner2':
+        return renderHangoutBanner(2);
+      case 'hangoutBanner3':
+        return renderHangoutBanner(3);
+      case 'trending':
+        return renderTrending();
+      case 'adBox1':
+        return renderAdBox('adBox1');
+      case 'adBox2':
+        return renderAdBox('adBox2');
+      case 'adBanner1':
+        return renderAdBanner('adBanner1');
+      case 'categories':
+        return renderCategories();
+      case 'morePlaces':
+        return renderMorePlaces();
+      case 'moreHangouts':
+        return renderMoreHangouts();
+      case 'discoverMore':
+        return renderDiscoverMore();
+      default:
+        return null;
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -298,308 +709,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       }
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.topRow}>
-        <View style={styles.adBoxWrapper}>
-          <AdBox unitId={ADMOB_BOX_ID} />
-        </View>
-        
-        {featuredLocation && (
-          <TouchableOpacity 
-            style={styles.suggestedCard}
-            onPress={() => handleLocationPress(featuredLocation)}
-            activeOpacity={0.9}
-          >
-            <Image 
-              source={{ uri: featuredLocation.imageUrl }} 
-              style={styles.suggestedImage}
-              resizeMode="cover"
-            />
-            <View style={styles.suggestedOverlay}>
-              <Text style={styles.suggestedLabel}>Suggested Location Nearby</Text>
-              <View style={styles.suggestedNameRow}>
-                <View style={styles.suggestedNameContainer}>
-                  <Text style={styles.suggestedName} numberOfLines={2}>
-                    {featuredLocation.name}
-                  </Text>
-                  {featuredLocation.address && (
-                    <Text style={styles.suggestedAddress} numberOfLines={2}>
-                      {featuredLocation.address}
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.chevronCircle}>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {featuredHangout && (
-        <LargeHangoutCard 
-          hangout={featuredHangout} 
-          onPress={() => handleLocationPress(featuredHangout)} 
-        />
-      )}
-
-      {sharedPhotos.length > 0 && (
-        <View style={styles.sharedPhotosSection}>
-          <View style={styles.sharedPhotosHeader}>
-            <Ionicons name="camera" size={18} color={Colors.secondary} />
-            <Text style={styles.sharedPhotosTitle}>Photos From Friends Nearby</Text>
-          </View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.sharedPhotosScroll}
-          >
-            {sharedPhotos.map((photo, index) => (
-              <TouchableOpacity
-                key={photo.id || `photo-${index}`}
-                style={styles.sharedPhotoCard}
-                onPress={() => onSelectLocation({
-                  name: photo.locationName,
-                  address: photo.locationAddress,
-                  lat: photo.lat,
-                  lng: photo.lng,
-                })}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: photo.imageUrl }} 
-                  style={styles.sharedPhotoImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.sharedPhotoOverlay}>
-                  <View style={styles.sharedPhotoUserRow}>
-                    <View style={styles.sharedPhotoAvatar}>
-                      <Text style={styles.sharedPhotoInitial}>
-                        {photo.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </Text>
-                    </View>
-                    <Text style={styles.sharedPhotoUsername} numberOfLines={1}>
-                      {photo.username}
-                    </Text>
-                  </View>
-                  <Text style={styles.sharedPhotoLocation} numberOfLines={2}>
-                    {photo.locationName}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {userHangouts[1] && (
-        <LargeHangoutCard 
-          hangout={userHangouts[1]} 
-          onPress={() => handleLocationPress(userHangouts[1])} 
-        />
-      )}
-
-      {trendingEvents.length > 0 && (
-        <View style={styles.trendingSection}>
-          <View style={styles.trendingHeader}>
-            <Text style={styles.trendingEmoji}>🔥</Text>
-            <Text style={styles.trendingTitle}>Trending Hangouts Near You</Text>
-          </View>
-          <View style={styles.trendingGridCentered}>
-            {trendingEvents.slice(0, 4).map((event, index) => (
-              <TouchableOpacity
-                key={event.id || `trend-${index}`}
-                style={styles.trendingEventCard}
-                onPress={() => onSelectLocation({
-                  name: event.name,
-                  address: event.address,
-                  lat: event.lat,
-                  lng: event.lng,
-                })}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: event.imageUrl }} 
-                  style={styles.trendingEventImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.trendingEventOverlay}>
-                  <Text style={styles.trendingEventName} numberOfLines={2}>
-                    {event.abbreviatedName}
-                  </Text>
-                  <View style={styles.trendingEventMeta}>
-                    {event.attendeeCount > 0 && (
-                      <View style={styles.attendeeTag}>
-                        <Ionicons name="people" size={10} color={Colors.white} />
-                        <Text style={styles.attendeeCount}>{event.attendeeCount}</Text>
-                      </View>
-                    )}
-                    {event.distance && (
-                      <Text style={styles.trendingEventDistance}>
-                        {formatDistance(event.distance)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
-      <View style={styles.bannerWrapper}>
-        <AdBanner unitId={ADMOB_BANNER_ID} />
-      </View>
-
-      {suggestedLocations.length > 1 && (
-        <View style={styles.morePlacesSection}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="compass" size={18} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>More Places To Explore</Text>
-          </View>
-          <View style={styles.placesGrid}>
-            {suggestedLocations.slice(1, 7).map((location, index) => (
-              <TouchableOpacity
-                key={location.id || `place-${index}`}
-                style={styles.placeCard}
-                onPress={() => handleLocationPress(location)}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: location.imageUrl }} 
-                  style={styles.placeImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.placeOverlay}>
-                  <Text style={styles.placeName} numberOfLines={2}>
-                    {location.abbreviatedName}
-                  </Text>
-                  {location.address && (
-                    <Text style={styles.placeAddress} numberOfLines={2}>
-                      {location.address}
-                    </Text>
-                  )}
-                  {location.distance !== undefined && (
-                    <Text style={styles.placeDistance}>
-                      {formatDistance(location.distance)}
-                    </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {userHangouts[2] && (
-        <LargeHangoutCard 
-          hangout={userHangouts[2]} 
-          onPress={() => handleLocationPress(userHangouts[2])} 
-        />
-      )}
-
-      <View style={styles.bannerWrapper}>
-        <AdBanner unitId={ADMOB_BANNER_ID} />
-      </View>
-
-      {userHangouts.length > 3 && (
-        <View style={styles.moreHangoutsSection}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people" size={18} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>Where Others Are Hanging Out</Text>
-          </View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hangoutsScrollContent}
-          >
-            {userHangouts.slice(3, 7).map((hangout, index) => (
-              <TouchableOpacity
-                key={hangout.id || `hangout-${index}`}
-                style={styles.smallHangoutCard}
-                onPress={() => handleLocationPress(hangout)}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: hangout.imageUrl }} 
-                  style={styles.smallHangoutImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.smallHangoutOverlay}>
-                  <Text style={styles.smallHangoutName} numberOfLines={1}>
-                    {hangout.abbreviatedName}
-                  </Text>
-                  <View style={styles.smallHangoutMeta}>
-                    <Text style={styles.smallHangoutCreator}>
-                      by {hangout.creatorName || 'User'}
-                    </Text>
-                    {hangout.attendeeCount && hangout.attendeeCount > 0 && (
-                      <View style={styles.smallAttendeeBadge}>
-                        <Text style={styles.smallAttendeeText}>{hangout.attendeeCount}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <View style={styles.bannerWrapper}>
-        <AdBanner unitId={ADMOB_BANNER_ID} />
-      </View>
-
-      {suggestedLocations.length > 7 && (
-        <View style={styles.evenMoreSection}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="sparkles" size={18} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>Discover More Nearby</Text>
-          </View>
-          <View style={styles.placesGrid}>
-            {suggestedLocations.slice(7, 13).map((location, index) => (
-              <TouchableOpacity
-                key={location.id || `more-${index}`}
-                style={styles.placeCard}
-                onPress={() => handleLocationPress(location)}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: location.imageUrl }} 
-                  style={styles.placeImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.placeOverlay}>
-                  <Text style={styles.placeName} numberOfLines={2}>
-                    {location.abbreviatedName}
-                  </Text>
-                  {location.address && (
-                    <Text style={styles.placeAddress} numberOfLines={2}>
-                      {location.address}
-                    </Text>
-                  )}
-                  {location.distance !== undefined && (
-                    <Text style={styles.placeDistance}>
-                      {formatDistance(location.distance)}
-                    </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {userHangouts[7] && (
-        <LargeHangoutCard 
-          hangout={userHangouts[7]} 
-          onPress={() => handleLocationPress(userHangouts[7])} 
-        />
-      )}
-
-      <View style={styles.bannerWrapper}>
-        <AdBanner unitId={ADMOB_BANNER_ID} />
-      </View>
+      {layoutOrder.map(sectionId => renderSection(sectionId))}
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -672,6 +782,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  featuredLocationCard: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 16,
   },
   suggestedImage: {
     width: '100%',
@@ -1061,5 +1179,63 @@ const styles = StyleSheet.create({
   hangoutsScrollContent: {
     paddingHorizontal: 4,
     gap: 12,
+  },
+  categorySection: {
+    marginBottom: 20,
+  },
+  centeredSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  categoryEmoji: {
+    fontSize: 18,
+  },
+  centeredSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.secondary,
+    textAlign: 'center',
+  },
+  categoryScroll: {
+    paddingHorizontal: 4,
+    gap: 12,
+  },
+  categoryCard: {
+    width: 150,
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  categoryCardImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  categoryCardOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  categoryCardName: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  categoryCardAddress: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Regular',
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 2,
+  },
+  categoryCardDistance: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.white,
   },
 });
