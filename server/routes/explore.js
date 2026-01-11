@@ -355,6 +355,34 @@ function shuffleArray(array) {
   return shuffled;
 }
 
+const CATEGORY_SECTIONS = [
+  { id: 'restaurants', name: 'Restaurants Nearby', emoji: '🍽️', codes: '7315', priority: 1 },
+  { id: 'cafes', name: 'Coffee & Cafes', emoji: '☕', codes: '9377', priority: 1 },
+  { id: 'amusement', name: 'Amusement Parks', emoji: '🎢', codes: '9902', priority: 2 },
+  { id: 'sports', name: 'Sports & Recreation', emoji: '⚽', codes: '7320,9373', priority: 2 },
+  { id: 'bars', name: 'Bars & Nightlife', emoji: '🍺', codes: '9376,9379', priority: 2 },
+  { id: 'entertainment', name: 'Entertainment', emoji: '🎬', codes: '7335,7342', priority: 3 },
+  { id: 'parks', name: 'Parks & Outdoors', emoji: '🏞️', codes: '9362', priority: 3 },
+  { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317', priority: 3 },
+];
+
+const AD_POSITIONS = ['top', 'middle', 'bottom', 'between-sections'];
+const AD_FORMATS = ['banner', 'square'];
+
+function sampleAcrossRadius(locations, count) {
+  if (locations.length <= count) return locations;
+  const sorted = [...locations].sort((a, b) => a.distance - b.distance);
+  const result = [];
+  const bucketSize = Math.ceil(sorted.length / count);
+  for (let i = 0; i < count && i * bucketSize < sorted.length; i++) {
+    const bucketStart = i * bucketSize;
+    const bucketEnd = Math.min(bucketStart + bucketSize, sorted.length);
+    const randomIndex = bucketStart + Math.floor(Math.random() * (bucketEnd - bucketStart));
+    result.push(sorted[randomIndex]);
+  }
+  return shuffleArray(result);
+}
+
 router.get('/feed', authenticateToken, async (req, res) => {
   const { lat, lng } = req.query;
 
@@ -366,14 +394,21 @@ router.get('/feed', authenticateToken, async (req, res) => {
   const userLng = parseFloat(lng);
 
   try {
-    const coreCategories = ['7315', '9377'];
-    const otherCategories = EXPLORE_CATEGORIES
-      .filter(c => !coreCategories.includes(c.codes))
-      .map(c => c.codes);
-    const shuffledOthers = shuffleArray(otherCategories).slice(0, 2);
-    const categoryCodes = [...coreCategories, ...shuffledOthers].join(',');
-    console.log('[Explore] Using category codes:', categoryCodes);
-    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, categoryCodes, 12);
+    const shuffledSections = shuffleArray([...CATEGORY_SECTIONS]);
+    const prioritySections = shuffledSections.filter(s => s.priority === 1);
+    const otherSections = shuffledSections.filter(s => s.priority > 1).slice(0, 3);
+    const selectedSections = [...prioritySections, ...otherSections];
+    
+    const categoryPromises = selectedSections.map(section => 
+      searchNearbyPlaces(userLat, userLng, section.codes, 8).then(locations => ({
+        ...section,
+        locations: sampleAcrossRadius(locations, 6),
+      }))
+    );
+    
+    const allCategoryCodes = selectedSections.map(s => s.codes).join(',');
+    console.log('[Explore] Using category sections:', selectedSections.map(s => s.id).join(', '));
+    const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, allCategoryCodes, 20);
 
     const trendingEventsPromise = pool.query(`
       SELECT 
@@ -410,6 +445,13 @@ router.get('/feed', authenticateToken, async (req, res) => {
       WHERE e.location_lat IS NOT NULL
         AND e.location_lng IS NOT NULL
         AND e.event_date >= CURRENT_DATE - INTERVAL '30 days'
+        AND LOWER(e.location_name) NOT LIKE '%hospital%'
+        AND LOWER(e.location_name) NOT LIKE '%medical%'
+        AND LOWER(e.location_name) NOT LIKE '%clinic%'
+        AND LOWER(e.location_name) NOT LIKE '%school%'
+        AND LOWER(e.location_name) NOT LIKE '%church%'
+        AND LOWER(e.location_name) NOT LIKE '%bank%'
+        AND LOWER(e.location_name) NOT LIKE '%office%'
         AND (
           3959 * acos(
             cos(radians($1)) * cos(radians(e.location_lat)) *
@@ -420,7 +462,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
       GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, 
                u.username, e.event_date
       ORDER BY "attendeeCount" DESC, e.event_date DESC
-      LIMIT 10
+      LIMIT 12
     `, [userLat, userLng, MAX_DISTANCE_MILES]).catch(err => {
       console.log('Trending events query failed:', err.message);
       return { rows: [] };
