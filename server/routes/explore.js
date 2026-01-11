@@ -170,8 +170,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-const MAX_DISTANCE_MILES = 60;
-const MAX_RADIUS_METERS = 96560;
+const MAX_DISTANCE_MILES = 30;
+const MAX_RADIUS_METERS = 48000;
 
 const EXPLORE_CATEGORIES = [
   { name: 'Food & Dining', emoji: '🍽️', codes: '7315' },
@@ -366,9 +366,12 @@ router.get('/feed', authenticateToken, async (req, res) => {
   const userLng = parseFloat(lng);
 
   try {
-    const shuffledCategories = shuffleArray(EXPLORE_CATEGORIES);
-    const selectedCategories = shuffledCategories.slice(0, 3);
-    const categoryCodes = selectedCategories.map(c => c.codes).join(',');
+    const coreCategories = ['7315', '9377'];
+    const otherCategories = EXPLORE_CATEGORIES
+      .filter(c => !coreCategories.includes(c.codes))
+      .map(c => c.codes);
+    const shuffledOthers = shuffleArray(otherCategories).slice(0, 2);
+    const categoryCodes = [...coreCategories, ...shuffledOthers].join(',');
     console.log('[Explore] Using category codes:', categoryCodes);
     const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, categoryCodes, 12);
 
