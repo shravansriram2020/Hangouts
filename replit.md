@@ -153,7 +153,12 @@ Preferred communication style: Simple, everyday language.
 - Database columns: `share_to_explore`, `moderation_status` in `event_photos` table
 - Admin moderation endpoints: `GET /api/admin/photos/pending`, `GET /api/admin/photos/all`, `POST /api/admin/photos/:id/moderate`
 - TomTom API resilience: 5-second timeout, AbortController, graceful empty state on failure
-- Empty state shows actionable "Create Hangout" CTA when no explore content available
+- **Fallback System**: Curated fallback locations ensure content is always displayed:
+  - `server/data/exploreFallback.json` contains pre-defined locations with images for each category
+  - If TomTom API fails or returns empty, fallback locations are served
+  - Categories include: Food, Entertainment, Outdoors, Sports, Nightlife
+  - Each location includes a curated image from Unsplash CDN
+- Images are category-based: restaurants get food photos, parks get nature photos, etc.
 
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
