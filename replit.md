@@ -133,7 +133,25 @@ Preferred communication style: Simple, everyday language.
 - Admin UI: Load button fetches emails, Copy button copies comma-separated list to clipboard
 - Ready for direct paste into Mailchimp or other email marketing tools
 
+### Explore Tab Feature (January 2026)
+- New "Explore" tab as default landing screen in HomeScreen
+- Displays nearby location suggestions using TomTom API with user's GPS coordinates
+- Location names abbreviated to max 25 characters for clean display
+- Features:
+  - **Suggested Locations**: Glass-panel cards with location name, distance, and tap-to-create-event
+  - **Trending Categories**: Food, Entertainment, Outdoors, Sports, Nightlife sections
+  - **Shared Photos**: User photos marked for explore (requires admin moderation)
+  - **Popular Nearby**: Horizontal scrolling location cards
+- AdMob integration with placeholder ads in Expo Go (real ads in production builds)
+- Photo sharing toggle in EventPhotosTab with moderation workflow (pending/approved/rejected)
+- Database columns: `share_to_explore`, `moderation_status` in `event_photos` table
+- Admin moderation endpoints: `GET /api/admin/photos/pending`, `GET /api/admin/photos/all`, `POST /api/admin/photos/:id/moderate`
+- TomTom API resilience: 5-second timeout, AbortController, graceful empty state on failure
+- Empty state shows actionable "Create Hangout" CTA when no explore content available
+- **Future enhancement**: Consider adding cached TomTom results or curated location seeds for better offline/degraded experience
+
 ## Testing Endpoints
 - `GET /api/health` - Check service status (APNs, Resend, database connectivity)
 - `POST /api/test-push` - Send test push notification (body: `{"userId": "uuid"}`)
 - `GET /api/admin/email-list` - Export all user emails (admin auth required)
+- `GET /api/explore/feed` - Get explore feed data (requires `lat` and `lng` query params)
