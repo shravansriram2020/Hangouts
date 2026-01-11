@@ -37,10 +37,19 @@ interface SuggestedLocation {
   creatorName?: string;
 }
 
-interface TrendingCategory {
-  category: string;
-  emoji: string;
-  locations: SuggestedLocation[];
+interface TrendingEvent {
+  id: string;
+  name: string;
+  abbreviatedName: string;
+  address: string;
+  lat: number;
+  lng: number;
+  distance: number;
+  attendeeCount: number;
+  imageUrl: string;
+  creatorName: string;
+  eventDate: string;
+  isRealEvent: boolean;
 }
 
 interface SharedPhoto {
@@ -69,7 +78,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([]);
   const [userHangouts, setUserHangouts] = useState<SuggestedLocation[]>([]);
-  const [trendingCategories, setTrendingCategories] = useState<TrendingCategory[]>([]);
+  const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
   const [sharedPhotos, setSharedPhotos] = useState<SharedPhoto[]>([]);
 
   useEffect(() => {
@@ -114,7 +123,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       
       setSuggestedLocations(data.suggestedLocations || []);
       setUserHangouts(data.userHangouts || []);
-      setTrendingCategories(data.trendingCategories || []);
+      setTrendingEvents(data.trendingEvents || []);
       setSharedPhotos(data.sharedPhotos || []);
     } catch (error) {
       console.error('Failed to fetch explore data:', error);
@@ -297,34 +306,53 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
-      {trendingCategories.map((category, index) => (
-        <View key={`trending-${category.category}-${index}`} style={styles.trendingSection}>
+      {trendingEvents.length > 0 && (
+        <View style={styles.trendingSection}>
           <View style={styles.trendingHeader}>
-            <Text style={styles.trendingEmoji}>{category.emoji}</Text>
-            <Text style={styles.trendingTitle}>Trending - {category.category}</Text>
+            <Text style={styles.trendingEmoji}>🔥</Text>
+            <Text style={styles.trendingTitle}>Trending Hangouts Near You</Text>
           </View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.trendingScroll}
-          >
-            {category.locations.map((location, locIndex) => (
+          <View style={styles.trendingGrid}>
+            {trendingEvents.slice(0, 6).map((event, index) => (
               <TouchableOpacity
-                key={location.id || `trend-${locIndex}`}
-                style={styles.trendingCard}
-                onPress={() => handleLocationPress(location)}
+                key={event.id || `trend-${index}`}
+                style={styles.trendingEventCard}
+                onPress={() => onSelectLocation({
+                  name: event.name,
+                  address: event.address,
+                  lat: event.lat,
+                  lng: event.lng,
+                })}
                 activeOpacity={0.9}
               >
                 <Image 
-                  source={{ uri: location.imageUrl }} 
-                  style={styles.trendingImage}
+                  source={{ uri: event.imageUrl }} 
+                  style={styles.trendingEventImage}
                   resizeMode="cover"
                 />
+                <View style={styles.trendingEventOverlay}>
+                  <Text style={styles.trendingEventName} numberOfLines={2}>
+                    {event.abbreviatedName}
+                  </Text>
+                  <View style={styles.trendingEventMeta}>
+                    {event.attendeeCount > 0 && (
+                      <View style={styles.attendeeTag}>
+                        <Ionicons name="people" size={10} color={Colors.white} />
+                        <Text style={styles.attendeeCount}>{event.attendeeCount}</Text>
+                      </View>
+                    )}
+                    {event.distance && (
+                      <Text style={styles.trendingEventDistance}>
+                        {formatDistance(event.distance)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </View>
         </View>
-      ))}
+      )}
 
       <View style={styles.bannerWrapper}>
         <AdBanner unitId={ADMOB_BANNER_ID} />
@@ -522,20 +550,58 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-SemiBold',
     color: Colors.secondary,
   },
-  trendingScroll: {
-    paddingRight: 16,
+  trendingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  trendingCard: {
-    width: 110,
-    height: 110,
+  trendingEventCard: {
+    width: '48%',
+    height: 140,
     borderRadius: 16,
     overflow: 'hidden',
-    marginRight: 10,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  trendingImage: {
+  trendingEventImage: {
     width: '100%',
     height: '100%',
+    position: 'absolute',
+  },
+  trendingEventOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  trendingEventName: {
+    fontSize: 14,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    marginBottom: 4,
+  },
+  trendingEventMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  attendeeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 4,
+  },
+  attendeeCount: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.white,
+  },
+  trendingEventDistance: {
+    fontSize: 11,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
   },
   bannerWrapper: {
     marginTop: 10,

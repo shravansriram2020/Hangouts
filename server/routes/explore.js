@@ -333,16 +333,58 @@ router.get('/feed', authenticateToken, async (req, res) => {
     const allFunCategoryCodes = `${CATEGORY_CODES.FOOD},${CATEGORY_CODES.ENTERTAINMENT},${CATEGORY_CODES.NIGHTLIFE}`;
     const suggestedLocationsPromise = searchNearbyPlaces(userLat, userLng, allFunCategoryCodes, 6);
 
-    const trendingCategoriesPromise = Promise.all(
-      TRENDING_CATEGORIES.map(async (cat) => {
-        const locations = await searchPlacesByCategory(userLat, userLng, cat.categoryCodes, 4);
-        return {
-          category: cat.category,
-          emoji: cat.emoji,
-          locations,
-        };
-      })
-    );
+    const trendingEventsPromise = pool.query(`
+      SELECT 
+        e.id,
+        e.location_name as name,
+        CASE WHEN LENGTH(e.location_name) > 25 
+          THEN SUBSTRING(e.location_name, 1, 22) || '...' 
+          ELSE e.location_name 
+        END as "abbreviatedName",
+        e.location_address as address,
+        e.location_lat as lat,
+        e.location_lng as lng,
+        u.first_name as "creatorName",
+        e.event_date,
+        COUNT(DISTINCT ea.user_id) as "attendeeCount",
+        (
+          SELECT ep.photo_url FROM event_photos ep 
+          WHERE ep.event_id = e.id 
+            AND (ep.share_to_explore = true AND ep.moderation_status = 'approved'
+                 OR ep.share_to_explore = false OR ep.share_to_explore IS NULL)
+          ORDER BY 
+            CASE WHEN ep.share_to_explore = true AND ep.moderation_status = 'approved' THEN 0 ELSE 1 END,
+            ep.created_at DESC 
+          LIMIT 1
+        ) as "eventPhoto",
+        (
+          3959 * acos(
+            cos(radians($1)) * cos(radians(e.location_lat)) *
+            cos(radians(e.location_lng) - radians($2)) +
+            sin(radians($1)) * sin(radians(e.location_lat))
+          )
+        ) as distance
+      FROM events e
+      JOIN users u ON e.host_id = u.id
+      LEFT JOIN event_attendees ea ON e.id = ea.event_id
+      WHERE e.location_lat IS NOT NULL
+        AND e.location_lng IS NOT NULL
+        AND e.event_date >= CURRENT_DATE - INTERVAL '30 days'
+        AND (
+          3959 * acos(
+            cos(radians($1)) * cos(radians(e.location_lat)) *
+            cos(radians(e.location_lng) - radians($2)) +
+            sin(radians($1)) * sin(radians(e.location_lat))
+          )
+        ) <= $3
+      GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, 
+               u.first_name, e.event_date
+      ORDER BY "attendeeCount" DESC, e.event_date DESC
+      LIMIT 20
+    `, [userLat, userLng, MAX_DISTANCE_MILES]).catch(err => {
+      console.log('Trending events query failed:', err.message);
+      return { rows: [] };
+    });
 
     let userHangouts = [];
     try {
@@ -373,7 +415,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
             )
           ) <= $3
         GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.first_name
-        ORDER BY "attendeeCount" DESC, e.date ASC
+        ORDER BY "attendeeCount" DESC, e.event_date ASC
         LIMIT 10
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
       
@@ -435,9 +477,9 @@ router.get('/feed', authenticateToken, async (req, res) => {
       console.log('Shared photos query failed (columns may not exist yet):', dbError.message);
     }
 
-    const [suggestedLocations, trendingCategories] = await Promise.all([
+    const [suggestedLocations, trendingEventsResult] = await Promise.all([
       suggestedLocationsPromise,
-      trendingCategoriesPromise,
+      trendingEventsPromise,
     ]);
 
     let finalSuggested = suggestedLocations;
@@ -445,27 +487,26 @@ router.get('/feed', authenticateToken, async (req, res) => {
       finalSuggested = getFallbackLocations('food', 6);
     }
 
-    let finalTrending = trendingCategories.filter(cat => cat.locations.length > 0);
-    if (finalTrending.length === 0) {
-      const categoryKeyMap = {
-        'Food': 'food',
-        'Entertainment': 'entertainment',
-        'Outdoors': 'outdoors',
-        'Sports': 'sports',
-        'Nightlife': 'nightlife',
-      };
-      
-      finalTrending = TRENDING_CATEGORIES.map(cat => ({
-        category: cat.category,
-        emoji: cat.emoji,
-        locations: getFallbackLocations(categoryKeyMap[cat.category] || 'food', 4),
-      }));
-    }
+    const trendingEvents = trendingEventsResult.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      abbreviatedName: row.abbreviatedName,
+      address: row.address,
+      lat: parseFloat(row.lat),
+      lng: parseFloat(row.lng),
+      category: 'event',
+      distance: parseFloat(row.distance) || 0,
+      attendeeCount: parseInt(row.attendeeCount) || 0,
+      imageUrl: row.eventPhoto || getCategoryImage('', row.name),
+      creatorName: row.creatorName || 'A user',
+      eventDate: row.event_date,
+      isRealEvent: true,
+    }));
 
     res.json({
       suggestedLocations: finalSuggested,
       userHangouts,
-      trendingCategories: finalTrending,
+      trendingEvents,
       sharedPhotos,
     });
   } catch (error) {
