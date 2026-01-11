@@ -498,7 +498,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
           ) <= $3
         GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.username
         ORDER BY "attendeeCount" DESC, e.event_date ASC
-        LIMIT 10
+        LIMIT 15
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
       
       userHangouts = hangoutsResult.rows.map(row => ({

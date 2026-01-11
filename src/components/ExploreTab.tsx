@@ -71,6 +71,113 @@ interface ExploreTabProps {
   }) => void;
 }
 
+function LargeHangoutCard({ hangout, onPress }: { hangout: SuggestedLocation; onPress: () => void }) {
+  return (
+    <TouchableOpacity 
+      style={largeHangoutStyles.card}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      <Image 
+        source={{ uri: hangout.imageUrl }} 
+        style={largeHangoutStyles.image}
+        resizeMode="cover"
+      />
+      <View style={largeHangoutStyles.overlay}>
+        <View style={largeHangoutStyles.userRow}>
+          <View style={largeHangoutStyles.avatar}>
+            <Ionicons name="person" size={16} color={Colors.grayMedium} />
+          </View>
+          <Text style={largeHangoutStyles.username}>
+            {hangout.creatorName || 'A user'}
+          </Text>
+        </View>
+        <View style={largeHangoutStyles.locationRow}>
+          <Text style={largeHangoutStyles.label}>Hangout Location</Text>
+          <View style={largeHangoutStyles.nameRow}>
+            <Text style={largeHangoutStyles.name} numberOfLines={1}>
+              {hangout.name}
+            </Text>
+            <View style={largeHangoutStyles.chevron}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const largeHangoutStyles = StyleSheet.create({
+  card: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  username: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
+  locationRow: {},
+  label: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  name: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Prompt-Bold',
+    color: Colors.white,
+    marginRight: 8,
+  },
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -230,38 +337,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       </View>
 
       {featuredHangout && (
-        <TouchableOpacity 
-          style={styles.hangoutCard}
-          onPress={() => handleLocationPress(featuredHangout)}
-          activeOpacity={0.9}
-        >
-          <Image 
-            source={{ uri: featuredHangout.imageUrl }} 
-            style={styles.hangoutImage}
-            resizeMode="cover"
-          />
-          <View style={styles.hangoutOverlay}>
-            <View style={styles.hangoutUserRow}>
-              <View style={styles.hangoutAvatar}>
-                <Ionicons name="person" size={16} color={Colors.grayMedium} />
-              </View>
-              <Text style={styles.hangoutUsername}>
-                {featuredHangout.creatorName || 'A user'}
-              </Text>
-            </View>
-            <View style={styles.hangoutLocationRow}>
-              <Text style={styles.hangoutLabel}>Hangout Location</Text>
-              <View style={styles.hangoutNameRow}>
-                <Text style={styles.hangoutName} numberOfLines={1}>
-                  {featuredHangout.name}
-                </Text>
-                <View style={styles.chevronCircle}>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
-                </View>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
+        <LargeHangoutCard 
+          hangout={featuredHangout} 
+          onPress={() => handleLocationPress(featuredHangout)} 
+        />
       )}
 
       {sharedPhotos.length > 0 && (
@@ -313,6 +392,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
+      {userHangouts[1] && (
+        <LargeHangoutCard 
+          hangout={userHangouts[1]} 
+          onPress={() => handleLocationPress(userHangouts[1])} 
+        />
+      )}
+
       {trendingEvents.length > 0 && (
         <View style={styles.trendingSection}>
           <View style={styles.trendingHeader}>
@@ -361,8 +447,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
-      <View style={styles.midAdWrapper}>
-        <AdBox unitId={ADMOB_BOX_ID} />
+      <View style={styles.bannerWrapper}>
+        <AdBanner unitId={ADMOB_BANNER_ID} />
       </View>
 
       {suggestedLocations.length > 1 && (
@@ -405,18 +491,29 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
-      <View style={styles.midAdWrapper}>
-        <AdBox unitId={ADMOB_BOX_ID} />
+      {userHangouts[2] && (
+        <LargeHangoutCard 
+          hangout={userHangouts[2]} 
+          onPress={() => handleLocationPress(userHangouts[2])} 
+        />
+      )}
+
+      <View style={styles.bannerWrapper}>
+        <AdBanner unitId={ADMOB_BANNER_ID} />
       </View>
 
-      {userHangouts.length > 1 && (
+      {userHangouts.length > 3 && (
         <View style={styles.moreHangoutsSection}>
           <View style={styles.sectionHeader}>
             <Ionicons name="people" size={18} color={Colors.secondary} />
             <Text style={styles.sectionTitle}>Where Others Are Hanging Out</Text>
           </View>
-          <View style={styles.hangoutsGrid}>
-            {userHangouts.slice(1, 5).map((hangout, index) => (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hangoutsScrollContent}
+          >
+            {userHangouts.slice(3, 7).map((hangout, index) => (
               <TouchableOpacity
                 key={hangout.id || `hangout-${index}`}
                 style={styles.smallHangoutCard}
@@ -445,7 +542,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 </View>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
       )}
 
@@ -493,8 +590,15 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       )}
 
-      <View style={styles.midAdWrapper}>
-        <AdBox unitId={ADMOB_BOX_ID} />
+      {userHangouts[7] && (
+        <LargeHangoutCard 
+          hangout={userHangouts[7]} 
+          onPress={() => handleLocationPress(userHangouts[7])} 
+        />
+      )}
+
+      <View style={styles.bannerWrapper}>
+        <AdBanner unitId={ADMOB_BANNER_ID} />
       </View>
 
       <View style={styles.bottomPadding} />
@@ -953,5 +1057,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Prompt-Bold',
     color: Colors.white,
+  },
+  hangoutsScrollContent: {
+    paddingHorizontal: 4,
+    gap: 12,
   },
 });
