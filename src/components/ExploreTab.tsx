@@ -210,9 +210,16 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <View style={styles.suggestedOverlay}>
               <Text style={styles.suggestedLabel}>Suggested Location Nearby</Text>
               <View style={styles.suggestedNameRow}>
-                <Text style={styles.suggestedName} numberOfLines={2}>
-                  {featuredLocation.name}
-                </Text>
+                <View style={styles.suggestedNameContainer}>
+                  <Text style={styles.suggestedName} numberOfLines={2}>
+                    {featuredLocation.name}
+                  </Text>
+                  {featuredLocation.address && (
+                    <Text style={styles.suggestedAddress} numberOfLines={2}>
+                      {featuredLocation.address}
+                    </Text>
+                  )}
+                </View>
                 <View style={styles.chevronCircle}>
                   <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
                 </View>
@@ -381,6 +388,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                   <Text style={styles.placeName} numberOfLines={2}>
                     {location.abbreviatedName}
                   </Text>
+                  {location.address && (
+                    <Text style={styles.placeAddress} numberOfLines={2}>
+                      {location.address}
+                    </Text>
+                  )}
                   {location.distance !== undefined && (
                     <Text style={styles.placeDistance}>
                       {formatDistance(location.distance)}
@@ -464,6 +476,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                   <Text style={styles.placeName} numberOfLines={2}>
                     {location.abbreviatedName}
                   </Text>
+                  {location.address && (
+                    <Text style={styles.placeAddress} numberOfLines={2}>
+                      {location.address}
+                    </Text>
+                  )}
                   {location.distance !== undefined && (
                     <Text style={styles.placeDistance}>
                       {formatDistance(location.distance)}
@@ -574,12 +591,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  suggestedName: {
+  suggestedNameContainer: {
     flex: 1,
+    marginRight: 8,
+  },
+  suggestedName: {
     fontSize: 14,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
-    marginRight: 8,
+  },
+  suggestedAddress: {
+    fontSize: 11,
+    fontFamily: 'Prompt-Regular',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
   },
   chevronCircle: {
     width: 28,
@@ -866,6 +891,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
+    marginBottom: 2,
+  },
+  placeAddress: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Regular',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 2,
   },
   placeDistance: {

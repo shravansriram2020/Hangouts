@@ -238,10 +238,19 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 10) {
           return null;
         }
         
-        const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
+        if (!result.poi?.name) {
+          return null;
+        }
+        
+        const name = result.poi.name;
         const poiCategory = result.poi?.categories?.[0] || '';
         
         if (!isFunLocation(name, poiCategory)) {
+          return null;
+        }
+        
+        const fullAddress = result.address?.freeformAddress || '';
+        if (!fullAddress) {
           return null;
         }
         
@@ -299,15 +308,24 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
           return null;
         }
         
-        const name = result.poi?.name || result.address?.freeformAddress || 'Unknown Location';
+        if (!result.poi?.name) {
+          return null;
+        }
+        
+        const name = result.poi.name;
+        const fullAddress = result.address?.freeformAddress || '';
+        if (!fullAddress) {
+          return null;
+        }
+        
         const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
-
         const poiCategory = result.poi?.categories?.[0] || '';
+        
         return {
           id: result.id,
           name: name,
           abbreviatedName: abbreviatedName,
-          address: result.address?.freeformAddress || '',
+          address: fullAddress,
           lat: resultLat,
           lng: resultLng,
           category: poiCategory,
