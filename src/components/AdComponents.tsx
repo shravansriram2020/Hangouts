@@ -38,8 +38,8 @@ export function AdBanner({ unitId }: AdBannerProps) {
 
 const styles = StyleSheet.create({
   adBoxContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+    flex: 1,
+    height: 180,
   },
   sponsoredLabel: {
     fontSize: 9,
@@ -47,37 +47,32 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: 'center',
   },
   adBox: {
-    width: 300,
-    height: 250,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
     overflow: 'hidden',
   },
   adBannerContainer: {
     alignItems: 'center',
-    marginVertical: 16,
   },
   adBanner: {
-    width: SCREEN_WIDTH - 32,
-    height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 8,
+    width: '100%',
+    height: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    gap: 12,
   },
   adPlaceholderText: {
     fontSize: 12,
     fontFamily: 'Prompt-Medium',
     color: Colors.grayMedium,
-    marginTop: 8,
   },
 });

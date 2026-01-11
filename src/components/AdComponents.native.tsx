@@ -9,14 +9,27 @@ const isExpoGo = Constants.appOwnership === 'expo';
 
 let BannerAd: any = null;
 let BannerAdSize: any = null;
+let adsInitialized = false;
 
 if (!isExpoGo) {
   try {
     const mobileAds = require('react-native-google-mobile-ads');
     BannerAd = mobileAds.BannerAd;
     BannerAdSize = mobileAds.BannerAdSize;
+    
+    if (!adsInitialized) {
+      adsInitialized = true;
+      mobileAds.default()
+        .initialize()
+        .then(() => {
+          console.log('[AdMob] Initialized successfully');
+        })
+        .catch((error: any) => {
+          console.log('[AdMob] Initialization error:', error);
+        });
+    }
   } catch (e) {
-    console.log('AdMob not available');
+    console.log('[AdMob] Not available');
   }
 }
 
@@ -83,8 +96,8 @@ export function AdBanner({ unitId }: AdBannerProps) {
 
 const styles = StyleSheet.create({
   adBoxContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+    flex: 1,
+    height: 180,
   },
   sponsoredLabel: {
     fontSize: 9,
@@ -92,37 +105,32 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: 'center',
   },
   adBox: {
-    width: 300,
-    height: 250,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
     overflow: 'hidden',
   },
   adBannerContainer: {
     alignItems: 'center',
-    marginVertical: 16,
   },
   adBanner: {
     width: SCREEN_WIDTH - 32,
-    height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 8,
+    height: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    flexDirection: 'row',
     overflow: 'hidden',
   },
   adPlaceholderText: {
     fontSize: 12,
     fontFamily: 'Prompt-Medium',
     color: Colors.grayMedium,
-    marginTop: 8,
   },
 });

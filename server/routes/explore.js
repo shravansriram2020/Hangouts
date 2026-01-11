@@ -16,48 +16,127 @@ try {
   console.log('Fallback data not loaded:', e.message);
 }
 
-function getCategoryImage(category) {
-  if (!fallbackData?.categoryImages) {
-    return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=300&fit=crop';
+const VENUE_TYPE_IMAGES = {
+  bowling: [
+    'https://images.unsplash.com/photo-1545232979-8bf68ee9b1af?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1562079579-79a7ea2f7c2e?w=400&h=300&fit=crop',
+  ],
+  restaurant: [
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+  ],
+  cafe: [
+    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop',
+  ],
+  bar: [
+    'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1574126154517-d1e0d89ef734?w=400&h=300&fit=crop',
+  ],
+  nightclub: [
+    'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1571204829887-3b8d69e4094d?w=400&h=300&fit=crop',
+  ],
+  cinema: [
+    'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1595769816263-9b910be24d5f?w=400&h=300&fit=crop',
+  ],
+  park: [
+    'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=400&h=300&fit=crop',
+  ],
+  beach: [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&h=300&fit=crop',
+  ],
+  gym: [
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400&h=300&fit=crop',
+  ],
+  sports: [
+    'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1526676037777-05a232554f77?w=400&h=300&fit=crop',
+  ],
+  entertainment: [
+    'https://images.unsplash.com/photo-1511882150382-421056c89033?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1536818968680-deeec2e9fd11?w=400&h=300&fit=crop',
+  ],
+  amusement: [
+    'https://images.unsplash.com/photo-1513889961551-628c1e5e2ee9?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=400&h=300&fit=crop',
+  ],
+  pizza: [
+    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=300&fit=crop',
+  ],
+  burger: [
+    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1550317138-10000687a72b?w=400&h=300&fit=crop',
+  ],
+  sushi: [
+    'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1553621042-f6e147245754?w=400&h=300&fit=crop',
+  ],
+  mexican: [
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=400&h=300&fit=crop',
+  ],
+  brewery: [
+    'https://images.unsplash.com/photo-1559526324-593bc073d938?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&h=300&fit=crop',
+  ],
+  default: [
+    'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=400&h=300&fit=crop',
+  ],
+};
+
+function getCategoryImage(category, venueName = '') {
+  const combined = `${category || ''} ${venueName || ''}`.toLowerCase();
+  
+  let imagePool = VENUE_TYPE_IMAGES.default;
+  
+  if (combined.includes('bowling') || combined.includes('bowlero') || combined.includes('amf')) {
+    imagePool = VENUE_TYPE_IMAGES.bowling;
+  } else if (combined.includes('pizza') || combined.includes('pizzeria')) {
+    imagePool = VENUE_TYPE_IMAGES.pizza;
+  } else if (combined.includes('burger') || combined.includes('grill') || combined.includes('five guys') || combined.includes('in-n-out')) {
+    imagePool = VENUE_TYPE_IMAGES.burger;
+  } else if (combined.includes('sushi') || combined.includes('japanese') || combined.includes('ramen')) {
+    imagePool = VENUE_TYPE_IMAGES.sushi;
+  } else if (combined.includes('mexican') || combined.includes('taco') || combined.includes('burrito')) {
+    imagePool = VENUE_TYPE_IMAGES.mexican;
+  } else if (combined.includes('brewery') || combined.includes('brewing')) {
+    imagePool = VENUE_TYPE_IMAGES.brewery;
+  } else if (combined.includes('restaurant') || combined.includes('food') || combined.includes('dining')) {
+    imagePool = VENUE_TYPE_IMAGES.restaurant;
+  } else if (combined.includes('cafe') || combined.includes('coffee') || combined.includes('starbucks')) {
+    imagePool = VENUE_TYPE_IMAGES.cafe;
+  } else if (combined.includes('bar') || combined.includes('pub') || combined.includes('tavern')) {
+    imagePool = VENUE_TYPE_IMAGES.bar;
+  } else if (combined.includes('club') || combined.includes('nightlife') || combined.includes('lounge')) {
+    imagePool = VENUE_TYPE_IMAGES.nightclub;
+  } else if (combined.includes('cinema') || combined.includes('theater') || combined.includes('movie') || combined.includes('amc')) {
+    imagePool = VENUE_TYPE_IMAGES.cinema;
+  } else if (combined.includes('park') || combined.includes('garden') || combined.includes('trail')) {
+    imagePool = VENUE_TYPE_IMAGES.park;
+  } else if (combined.includes('beach') || combined.includes('pier')) {
+    imagePool = VENUE_TYPE_IMAGES.beach;
+  } else if (combined.includes('gym') || combined.includes('fitness') || combined.includes('equinox') || combined.includes('planet fitness')) {
+    imagePool = VENUE_TYPE_IMAGES.gym;
+  } else if (combined.includes('sport') || combined.includes('court') || combined.includes('golf') || combined.includes('stadium')) {
+    imagePool = VENUE_TYPE_IMAGES.sports;
+  } else if (combined.includes('amusement') || combined.includes('theme park') || combined.includes('disneyland') || combined.includes('universal') || combined.includes('six flags')) {
+    imagePool = VENUE_TYPE_IMAGES.amusement;
+  } else if (combined.includes('entertainment') || combined.includes('arcade') || combined.includes('game') || combined.includes('dave') || combined.includes('round1')) {
+    imagePool = VENUE_TYPE_IMAGES.entertainment;
   }
   
-  const lowerCategory = (category || '').toLowerCase();
-  
-  if (lowerCategory.includes('restaurant') || lowerCategory.includes('food') || lowerCategory.includes('pizza') || lowerCategory.includes('burger')) {
-    return fallbackData.categoryImages.restaurant;
-  }
-  if (lowerCategory.includes('cafe') || lowerCategory.includes('coffee')) {
-    return fallbackData.categoryImages.cafe;
-  }
-  if (lowerCategory.includes('bar') || lowerCategory.includes('pub')) {
-    return fallbackData.categoryImages.bar;
-  }
-  if (lowerCategory.includes('club') || lowerCategory.includes('nightlife')) {
-    return fallbackData.categoryImages.nightclub;
-  }
-  if (lowerCategory.includes('cinema') || lowerCategory.includes('theater') || lowerCategory.includes('movie')) {
-    return fallbackData.categoryImages.cinema;
-  }
-  if (lowerCategory.includes('park') || lowerCategory.includes('garden')) {
-    return fallbackData.categoryImages.park;
-  }
-  if (lowerCategory.includes('beach')) {
-    return fallbackData.categoryImages.beach;
-  }
-  if (lowerCategory.includes('gym') || lowerCategory.includes('fitness')) {
-    return fallbackData.categoryImages.gym;
-  }
-  if (lowerCategory.includes('sport') || lowerCategory.includes('court') || lowerCategory.includes('golf')) {
-    return fallbackData.categoryImages.sports;
-  }
-  if (lowerCategory.includes('bowling')) {
-    return fallbackData.categoryImages.bowling;
-  }
-  if (lowerCategory.includes('entertainment') || lowerCategory.includes('arcade') || lowerCategory.includes('game')) {
-    return fallbackData.categoryImages.entertainment;
-  }
-  
-  return fallbackData.categoryImages.default;
+  const randomIndex = Math.floor(Math.random() * imagePool.length);
+  return imagePool[randomIndex];
 }
 
 function getFallbackLocations(categoryKey, count = 6) {
@@ -100,14 +179,16 @@ const CATEGORY_CODES = {
   OUTDOORS: '9362,9927,7305',
   SPORTS: '7320,7374,9361',
   NIGHTLIFE: '9376,9379',
+  AMUSEMENT: '9902',
 };
 
 const TRENDING_CATEGORIES = [
+  { category: 'Amusement Parks', emoji: '🔥', categoryCodes: CATEGORY_CODES.AMUSEMENT },
   { category: 'Food', emoji: '🍽️', categoryCodes: CATEGORY_CODES.FOOD },
   { category: 'Entertainment', emoji: '🎬', categoryCodes: CATEGORY_CODES.ENTERTAINMENT },
+  { category: 'Nightlife', emoji: '🍸', categoryCodes: CATEGORY_CODES.NIGHTLIFE },
   { category: 'Outdoors', emoji: '🌳', categoryCodes: CATEGORY_CODES.OUTDOORS },
   { category: 'Sports', emoji: '⚽', categoryCodes: CATEGORY_CODES.SPORTS },
-  { category: 'Nightlife', emoji: '🍸', categoryCodes: CATEGORY_CODES.NIGHTLIFE },
 ];
 
 
@@ -166,7 +247,7 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 5) {
           lng: resultLng,
           category: poiCategory,
           distance: distanceMiles,
-          imageUrl: getCategoryImage(poiCategory),
+          imageUrl: getCategoryImage(poiCategory, name),
         };
       })
       .filter(Boolean);
@@ -222,7 +303,7 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
           lng: resultLng,
           category: poiCategory,
           distance: distanceMiles,
-          imageUrl: getCategoryImage(poiCategory),
+          imageUrl: getCategoryImage(poiCategory, name),
         };
       })
       .filter(Boolean);
@@ -306,7 +387,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
         category: 'hangout',
         distance: calculateDistance(userLat, userLng, parseFloat(row.lat), parseFloat(row.lng)),
         attendeeCount: parseInt(row.attendeeCount) || 0,
-        imageUrl: getCategoryImage('bar'),
+        imageUrl: getCategoryImage('', row.name),
         isUserHangout: true,
         creatorName: row.creatorName || 'A user',
       }));
