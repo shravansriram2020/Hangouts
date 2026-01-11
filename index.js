@@ -1,15 +1,25 @@
 import { Text, TextInput } from 'react-native';
-import mobileAds from 'react-native-google-mobile-ads';
+import Constants from 'expo-constants';
 
-// Initialize Google Mobile Ads
-mobileAds()
-  .initialize()
-  .then(adapterStatuses => {
-    console.log('[AdMob] Initialized successfully');
-  })
-  .catch(error => {
-    console.log('[AdMob] Initialization error:', error);
-  });
+const isExpoGo = Constants.appOwnership === 'expo';
+
+if (!isExpoGo) {
+  try {
+    const mobileAds = require('react-native-google-mobile-ads').default;
+    mobileAds()
+      .initialize()
+      .then(adapterStatuses => {
+        console.log('[AdMob] Initialized successfully');
+      })
+      .catch(error => {
+        console.log('[AdMob] Initialization error:', error);
+      });
+  } catch (error) {
+    console.log('[AdMob] Not available (Expo Go or missing native module)');
+  }
+} else {
+  console.log('[AdMob] Skipped - running in Expo Go (ads will show as placeholders)');
+}
 
 // Disable font scaling globally BEFORE any components render
 // This must execute before expo-router/entry loads any components
