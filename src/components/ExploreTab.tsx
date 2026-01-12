@@ -6,10 +6,10 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
@@ -86,9 +86,11 @@ function LargeHangoutCard({ hangout, onPress }: { hangout: SuggestedLocation; on
       activeOpacity={0.9}
     >
       <Image 
-        source={{ uri: hangout.imageUrl }} 
+        source={hangout.imageUrl}
         style={largeHangoutStyles.image}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={200}
+        cachePolicy="disk"
       />
       <View style={largeHangoutStyles.overlay}>
         <View style={largeHangoutStyles.userRow}>
@@ -292,9 +294,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: location.imageUrl }} 
+                source={location.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.categoryRowImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.categoryRowOverlay}>
                 <Text style={styles.categoryRowName} numberOfLines={2}>
@@ -343,9 +347,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         activeOpacity={0.9}
       >
         <Image 
-          source={{ uri: featuredLocation.imageUrl }} 
+          source={featuredLocation.imageUrl}
+            cachePolicy="disk"
+            transition={200} 
           style={styles.suggestedImage}
-          resizeMode="cover"
+          contentFit="cover"
         />
         <View style={styles.suggestedOverlay}>
           <Text style={styles.suggestedLabel}>Suggested Location Nearby</Text>
@@ -406,9 +412,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: photo.imageUrl }} 
+                source={photo.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.sharedPhotoImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.sharedPhotoOverlay}>
                 <View style={styles.sharedPhotoUserRow}>
@@ -466,9 +474,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: event.imageUrl }} 
+                source={event.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.trendingEventImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.trendingEventOverlay}>
                 <Text style={styles.trendingEventName} numberOfLines={2}>
@@ -527,9 +537,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: location.imageUrl }} 
+                source={location.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.placeImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.placeOverlay}>
                 <Text style={styles.placeName} numberOfLines={2}>
@@ -574,9 +586,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: hangout.imageUrl }} 
+                source={hangout.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.smallHangoutImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.smallHangoutOverlay}>
                 <Text style={styles.smallHangoutName} numberOfLines={1}>
@@ -618,9 +632,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={{ uri: location.imageUrl }} 
+                source={location.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
                 style={styles.categoryRowImage}
-                resizeMode="cover"
+                contentFit="cover"
               />
               <View style={styles.categoryRowOverlay}>
                 <Text style={styles.categoryRowName} numberOfLines={2}>
@@ -645,9 +661,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         activeOpacity={0.9}
       >
         <Image 
-          source={{ uri: location.imageUrl }} 
+          source={location.imageUrl}
+                cachePolicy="disk"
+                transition={200} 
           style={styles.suggestedImage}
-          resizeMode="cover"
+          contentFit="cover"
         />
         <View style={styles.suggestedOverlay}>
           <Text style={styles.suggestedLabel}>Suggested Nearby</Text>
