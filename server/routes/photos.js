@@ -185,18 +185,72 @@ router.patch('/:id/share', authenticateToken, async (req, res) => {
   const { share_to_explore } = req.body;
   
   try {
+    // Get the photo and its associated event
+    const photoResult = await pool.query(
+      `SELECT ep.*, e.location_name, e.location_address
+       FROM event_photos ep
+       JOIN events e ON ep.event_id = e.id
+       WHERE ep.id = $1`,
+      [req.params.id]
+    );
+
+    if (photoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+
+    const photo = photoResult.rows[0];
+
+    // If trying to share, validate location is not a house/residential address
+    if (share_to_explore) {
+      const locationName = photo.location_name?.toLowerCase() || '';
+      const locationAddress = photo.location_address?.toLowerCase() || '';
+      
+      // Check if this looks like a residential address (no business name)
+      const hasBusinessName = photo.location_name && photo.location_name.trim().length > 0;
+      
+      // Residential indicators - addresses that are just street addresses without business names
+      const residentialPatterns = [
+        /^\d+\s+[a-z]/i,  // Starts with house number like "123 Main St"
+        /home|house|residence|apartment|apt|condo|unit\s*#?\d/i,
+        /my\s+(place|house|home|apartment)/i
+      ];
+      
+      // Check if location name looks residential
+      const looksResidential = !hasBusinessName || 
+        residentialPatterns.some(pattern => pattern.test(locationName));
+      
+      // Business indicators that override residential detection
+      const businessIndicators = [
+        /restaurant|cafe|bar|grill|bistro|diner|eatery|kitchen|bakery/i,
+        /park|recreation|sports|arena|stadium|field|court|gym|fitness/i,
+        /theater|theatre|cinema|museum|gallery|library/i,
+        /mall|plaza|center|centre|shop|store|market/i,
+        /hotel|inn|resort|lodge|motel/i,
+        /club|lounge|pub|tavern|brewery|winery/i,
+        /beach|lake|river|mountain|trail|garden|zoo|aquarium/i,
+        /bowling|golf|skating|swimming|pool/i,
+        /entertainment|amusement|arcade|gaming/i
+      ];
+      
+      const isLikelyBusiness = businessIndicators.some(pattern => 
+        pattern.test(locationName) || pattern.test(locationAddress)
+      );
+      
+      if (looksResidential && !isLikelyBusiness) {
+        return res.status(400).json({ 
+          error: 'Cannot share photos from private addresses to Explore. Only photos from businesses and public venues can be shared.' 
+        });
+      }
+    }
+
     const result = await pool.query(
       `UPDATE event_photos 
        SET share_to_explore = $1, 
            moderation_status = $2
-       WHERE id = $3 AND uploader_id = $4
+       WHERE id = $3
        RETURNING *`,
-      [share_to_explore, share_to_explore ? 'pending' : null, req.params.id, req.user.id]
+      [share_to_explore, share_to_explore ? 'pending' : null, req.params.id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Photo not found or unauthorized' });
-    }
 
     res.json(result.rows[0]);
   } catch (error) {
