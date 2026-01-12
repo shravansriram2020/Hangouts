@@ -133,7 +133,6 @@ const largeHangoutStyles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 14,
-    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   userRow: {
     flexDirection: 'row',
@@ -720,7 +719,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       }
       showsVerticalScrollIndicator={false}
     >
-      {layoutOrder.map(sectionId => renderSection(sectionId))}
+      {layoutOrder.map((sectionId, index) => (
+        <React.Fragment key={sectionId}>
+          {renderSection(sectionId)}
+          {index < layoutOrder.length - 1 && <View style={styles.sectionDivider} />}
+        </React.Fragment>
+      ))}
 
       <TouchableOpacity style={styles.refreshButton} onPress={onRefresh} activeOpacity={0.8}>
         <Ionicons name="refresh" size={18} color={Colors.white} />
@@ -873,7 +877,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   hangoutUserRow: {
     flexDirection: 'row',
@@ -1015,6 +1018,12 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 80,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginHorizontal: 16,
+    marginVertical: 8,
   },
   sharedPhotosSection: {
     marginBottom: 20,
@@ -1181,7 +1190,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   smallHangoutName: {
     fontSize: 13,
