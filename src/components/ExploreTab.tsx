@@ -277,7 +277,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const renderCategorySection = (section: CategorySection) => {
     if (!section.locations || section.locations.length === 0) return null;
-    const displayLocations = section.locations.slice(0, 4);
+    const displayLocations = section.locations.slice(0, 3);
     return (
       <View key={section.id} style={styles.categorySection}>
         <View style={styles.centeredSectionHeader}>
@@ -285,28 +285,23 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Text style={styles.centeredSectionTitle}>{section.name}</Text>
         </View>
         <View style={styles.categoryGlassBox}>
-          <View style={styles.categoryGrid}>
+          <View style={styles.categoryRow}>
             {displayLocations.map((location, index) => (
               <TouchableOpacity
                 key={location.id || `${section.id}-${index}`}
-                style={styles.categoryGridItem}
+                style={styles.categoryRowItem}
                 onPress={() => handleLocationPress(location)}
                 activeOpacity={0.9}
               >
                 <Image 
                   source={{ uri: location.imageUrl }} 
-                  style={styles.categoryGridImage}
+                  style={styles.categoryRowImage}
                   resizeMode="cover"
                 />
-                <View style={styles.categoryGridOverlay}>
-                  <Text style={styles.categoryGridName} numberOfLines={1}>
+                <View style={styles.categoryRowOverlay}>
+                  <Text style={styles.categoryRowName} numberOfLines={2}>
                     {location.abbreviatedName}
                   </Text>
-                  {location.distance !== undefined && (
-                    <Text style={styles.categoryGridDistance}>
-                      {formatDistance(location.distance)}
-                    </Text>
-                  )}
                 </View>
               </TouchableOpacity>
             ))}
@@ -610,7 +605,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const renderDiscoverMore = () => {
     if (suggestedLocations.length <= 3) return null;
-    const displayLocations = suggestedLocations.slice(3, 7);
+    const displayLocations = suggestedLocations.slice(3, 6);
     return (
       <View key="discoverMore" style={styles.evenMoreSection}>
         <View style={styles.centeredSectionHeader}>
@@ -618,28 +613,23 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Text style={styles.centeredSectionTitle}>Discover More Nearby</Text>
         </View>
         <View style={styles.categoryGlassBox}>
-          <View style={styles.categoryGrid}>
+          <View style={styles.categoryRow}>
             {displayLocations.map((location, index) => (
               <TouchableOpacity
                 key={location.id || `more-${index}`}
-                style={styles.categoryGridItem}
+                style={styles.categoryRowItem}
                 onPress={() => handleLocationPress(location)}
                 activeOpacity={0.9}
               >
                 <Image 
                   source={{ uri: location.imageUrl }} 
-                  style={styles.categoryGridImage}
+                  style={styles.categoryRowImage}
                   resizeMode="cover"
                 />
-                <View style={styles.categoryGridOverlay}>
-                  <Text style={styles.categoryGridName} numberOfLines={1}>
+                <View style={styles.categoryRowOverlay}>
+                  <Text style={styles.categoryRowName} numberOfLines={2}>
                     {location.abbreviatedName}
                   </Text>
-                  {location.distance !== undefined && (
-                    <Text style={styles.categoryGridDistance}>
-                      {formatDistance(location.distance)}
-                    </Text>
-                  )}
                 </View>
               </TouchableOpacity>
             ))}
@@ -1218,38 +1208,32 @@ const styles = StyleSheet.create({
     padding: 8,
     overflow: 'hidden',
   },
-  categoryGrid: {
+  categoryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
-  categoryGridItem: {
-    width: '48%',
-    aspectRatio: 1.2,
+  categoryRowItem: {
+    flex: 1,
+    aspectRatio: 0.85,
     borderRadius: 12,
     overflow: 'hidden',
   },
-  categoryGridImage: {
+  categoryRowImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
-  categoryGridOverlay: {
+  categoryRowOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 10,
+    padding: 8,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  categoryGridName: {
-    fontSize: 13,
+  categoryRowName: {
+    fontSize: 11,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
-  },
-  categoryGridDistance: {
-    fontSize: 10,
-    fontFamily: 'Prompt-Medium',
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+    textAlign: 'center',
   },
   centeredSectionHeader: {
     flexDirection: 'row',
