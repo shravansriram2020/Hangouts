@@ -24,8 +24,10 @@ import CreateEventModal from '../components/CreateEventModal';
 import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
 import NewsPopup from '../components/NewsPopup';
-import SponsoredLocationCard from '../components/SponsoredLocationCard';
+import { AdBanner } from '../components/AdComponents';
 import ExploreTab from '../components/ExploreTab';
+
+const ADMOB_BANNER_ID = 'ca-app-pub-6700271097724179/1798427047';
 
 interface HomeScreenProps {
   navigation: any;
@@ -52,7 +54,6 @@ export default function HomeScreen({
   const hasInitialData = useRef(!!initialEvents);
   const [newsItem, setNewsItem] = useState<any>(null);
   const [showNewsPopup, setShowNewsPopup] = useState(false);
-  const [showSponsoredAd, setShowSponsoredAd] = useState(true);
   const [sponsoredLocation, setSponsoredLocation] = useState<any>(null);
 
   const fetchEvents = async () => {
@@ -126,15 +127,6 @@ export default function HomeScreen({
     } catch (error) {
       console.error('Failed to dismiss news:', error);
     }
-  };
-
-  const handleSponsoredLocationPress = (location: any) => {
-    setSponsoredLocation(location);
-    setShowCreateEvent(true);
-  };
-
-  const handleSponsoredAdDismiss = () => {
-    setShowSponsoredAd(false);
   };
 
   const handleCreateEventClose = () => {
@@ -347,11 +339,10 @@ export default function HomeScreen({
         onDismiss={handleDismissNews}
       />
 
-      {showSponsoredAd && activeTab !== 'explore' && (
-        <SponsoredLocationCard
-          onPress={handleSponsoredLocationPress}
-          onDismiss={handleSponsoredAdDismiss}
-        />
+      {activeTab !== 'explore' && (
+        <View style={styles.homeAdContainer}>
+          <AdBanner unitId={ADMOB_BANNER_ID} />
+        </View>
       )}
     </LinearGradient>
   );
@@ -484,5 +475,9 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontFamily: 'Prompt-Medium',
     marginLeft: 8,
+  },
+  homeAdContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 });
