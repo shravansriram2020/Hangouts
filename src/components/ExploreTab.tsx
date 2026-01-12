@@ -952,7 +952,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       content: renderSection(sectionId),
       isAdBanner: sectionId.startsWith('adBanner'),
     })).filter(section => section.content !== null);
-  }, [layoutOrder, suggestedLocations, userHangouts, sharedPhotos, trendingEvents, categories]);
+  }, [layoutOrder, suggestedLocations, userHangouts, sharedPhotos, trendingEvents, categorySections]);
 
   return (
     <ScrollView
@@ -964,8 +964,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       showsVerticalScrollIndicator={false}
     >
       {renderedSections.map((section, index) => {
-        const nextNonAdSection = renderedSections.slice(index + 1).find(s => !s.isAdBanner);
-        const showDivider = !section.isAdBanner && !!nextNonAdSection;
+        const nextSection = renderedSections[index + 1];
+        const showDivider = !section.isAdBanner && nextSection && !nextSection.isAdBanner;
         return (
           <React.Fragment key={section.sectionId}>
             {section.content}
