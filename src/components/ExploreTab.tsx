@@ -10,12 +10,24 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
 import { AdBox, AdBanner } from './AdComponents';
+
+const CATEGORY_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+  'Restaurants': 'restaurant',
+  'Amusement Parks': 'game-controller',
+  'Sports & Recreation': 'football',
+  'Bars & Nightlife': 'wine',
+  'Entertainment': 'musical-notes',
+  'Shopping': 'bag',
+  'Parks & Nature': 'leaf',
+  'default': 'location',
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -93,7 +105,7 @@ function LargeHangoutCard({ hangout, onPress }: { hangout: SuggestedLocation; on
       <View style={largeHangoutStyles.overlay}>
         <View style={largeHangoutStyles.userRow}>
           <View style={largeHangoutStyles.avatar}>
-            <Ionicons name="person" size={16} color={Colors.grayMedium} />
+            <Ionicons name="person" size={16} color={Colors.white} />
           </View>
           <Text style={largeHangoutStyles.username}>
             {hangout.creatorName || 'A user'}
@@ -133,6 +145,7 @@ const largeHangoutStyles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 14,
+    backgroundColor: 'rgba(30, 58, 95, 0.75)',
   },
   userRow: {
     flexDirection: 'row',
@@ -143,7 +156,7 @@ const largeHangoutStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -279,10 +292,21 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     const displayLocations = section.locations.slice(0, 3);
     return (
       <View key={section.id} style={styles.categorySection}>
-        <View style={styles.centeredSectionHeader}>
-          <Text style={styles.categoryEmoji}>{section.emoji}</Text>
-          <Text style={styles.centeredSectionTitle}>{section.name}</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={styles.sectionIconCircle}>
+            <Ionicons 
+              name={CATEGORY_ICONS[section.name] || CATEGORY_ICONS.default} 
+              size={14} 
+              color={Colors.primary} 
+            />
+          </View>
+          <Text style={styles.sectionHeaderText}>{section.name}</Text>
+        </LinearGradient>
         <View style={styles.categoryRow}>
           {displayLocations.map((location, index) => (
             <TouchableOpacity
@@ -384,10 +408,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     if (sharedPhotos.length === 0) return null;
     return (
       <View key="sharedPhotos" style={styles.sharedPhotosSection}>
-        <View style={styles.centeredSectionHeader}>
-          <Ionicons name="camera" size={18} color={Colors.secondary} />
-          <Text style={styles.centeredSectionTitle}>Photos From Friends Nearby</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={styles.sectionIconCircle}>
+            <Ionicons name="camera" size={14} color={Colors.primary} />
+          </View>
+          <Text style={styles.sectionHeaderText}>Photos From Friends</Text>
+        </LinearGradient>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -448,10 +479,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     if (trendingEvents.length === 0) return null;
     return (
       <View key="trending" style={styles.trendingSection}>
-        <View style={styles.centeredSectionHeader}>
-          <Text style={styles.categoryEmoji}>🔥</Text>
-          <Text style={styles.centeredSectionTitle}>Trending Hangouts Near You</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={[styles.sectionIconCircle, { backgroundColor: Colors.orange }]}>
+            <Ionicons name="flame" size={14} color={Colors.white} />
+          </View>
+          <Text style={styles.sectionHeaderText}>Trending Hangouts</Text>
+        </LinearGradient>
         <View style={styles.trendingGridCentered}>
           {trendingEvents.slice(0, 4).map((event, index) => (
             <TouchableOpacity
@@ -514,10 +552,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     if (suggestedLocations.length <= 1) return null;
     return (
       <View key="morePlaces" style={styles.morePlacesSection}>
-        <View style={styles.centeredSectionHeader}>
-          <Ionicons name="compass" size={18} color={Colors.secondary} />
-          <Text style={styles.centeredSectionTitle}>More Places To Explore</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={styles.sectionIconCircle}>
+            <Ionicons name="compass" size={14} color={Colors.primary} />
+          </View>
+          <Text style={styles.sectionHeaderText}>More Places</Text>
+        </LinearGradient>
         <View style={styles.placesGrid}>
           {suggestedLocations.slice(1, 7).map((location, index) => (
             <TouchableOpacity
@@ -557,10 +602,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     if (userHangouts.length <= 3) return null;
     return (
       <View key="moreHangouts" style={styles.moreHangoutsSection}>
-        <View style={styles.centeredSectionHeader}>
-          <Ionicons name="people" size={18} color={Colors.secondary} />
-          <Text style={styles.centeredSectionTitle}>Where Others Are Hanging Out</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={[styles.sectionIconCircle, { backgroundColor: Colors.pink }]}>
+            <Ionicons name="people" size={14} color={Colors.white} />
+          </View>
+          <Text style={styles.sectionHeaderText}>User Hangouts</Text>
+        </LinearGradient>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -605,10 +657,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     const displayLocations = suggestedLocations.slice(3, 6);
     return (
       <View key="discoverMore" style={styles.evenMoreSection}>
-        <View style={styles.centeredSectionHeader}>
-          <Ionicons name="sparkles" size={18} color={Colors.secondary} />
-          <Text style={styles.centeredSectionTitle}>Discover More Nearby</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionHeaderPill}
+        >
+          <View style={[styles.sectionIconCircle, { backgroundColor: Colors.purple }]}>
+            <Ionicons name="sparkles" size={14} color={Colors.white} />
+          </View>
+          <Text style={styles.sectionHeaderText}>Discover More</Text>
+        </LinearGradient>
         <View style={styles.categoryRow}>
           {displayLocations.map((location, index) => (
             <TouchableOpacity
@@ -819,7 +878,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(30, 58, 95, 0.55)',
   },
   suggestedLabel: {
     fontSize: 10,
@@ -877,6 +936,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 16,
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   hangoutUserRow: {
     flexDirection: 'row',
@@ -963,7 +1023,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   trendingEventName: {
     fontSize: 14,
@@ -979,7 +1039,7 @@ const styles = StyleSheet.create({
   attendeeTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Colors.primaryLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -1021,9 +1081,10 @@ const styles = StyleSheet.create({
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    backgroundColor: Colors.primaryLight,
+    opacity: 0.3,
+    marginHorizontal: 24,
+    marginVertical: 12,
   },
   sharedPhotosSection: {
     marginBottom: 20,
@@ -1063,7 +1124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   sharedPhotoUserRow: {
     flexDirection: 'row',
@@ -1151,7 +1212,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   placeName: {
     fontSize: 13,
@@ -1190,6 +1251,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 10,
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   smallHangoutName: {
     fontSize: 13,
@@ -1244,7 +1306,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   categoryRowName: {
     fontSize: 11,
@@ -1258,6 +1320,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
     gap: 8,
+  },
+  sectionHeaderPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 14,
+    gap: 8,
+  },
+  sectionIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionHeaderText: {
+    fontSize: 14,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   categoryEmoji: {
     fontSize: 18,
@@ -1287,7 +1374,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(30, 58, 95, 0.6)',
   },
   categoryCardName: {
     fontSize: 13,
