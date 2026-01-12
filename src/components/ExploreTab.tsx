@@ -69,8 +69,11 @@ const getIconForCategory = (category?: string, name?: string): { icon: string; c
   return CATEGORY_ICONS.default;
 };
 
-const shouldShowIcon = (index: number): boolean => {
-  return index % 3 === 1;
+const shouldShowIcon = (index: number, isSmall: boolean = false): boolean => {
+  if (isSmall) {
+    return index % 2 === 1;
+  }
+  return false;
 };
 
 interface SuggestedLocation {
@@ -213,7 +216,7 @@ function BannerCard({ location, onPress, showIcon = false }: { location: Suggest
         </LinearGradient>
       ) : (
         <Image 
-          source={location.imageUrl}
+          source={{ uri: location.imageUrl }}
           style={bannerCardStyles.image}
           contentFit="cover"
           transition={200}
@@ -488,13 +491,24 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               onPress={() => handleLocationPress(location)}
               activeOpacity={0.9}
             >
-              <Image 
-                source={location.imageUrl}
-                cachePolicy="disk"
-                transition={200} 
-                style={styles.categoryRowImage}
-                contentFit="cover"
-              />
+              {shouldShowIcon(index, true) ? (
+                <LinearGradient
+                  colors={getIconForCategory(location.category, location.name).colors as [string, string]}
+                  style={styles.categoryRowIconBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={getIconForCategory(location.category, location.name).icon as any} size={28} color="rgba(255,255,255,0.9)" />
+                </LinearGradient>
+              ) : (
+                <Image 
+                  source={{ uri: location.imageUrl }}
+                  cachePolicy="disk"
+                  transition={200} 
+                  style={styles.categoryRowImage}
+                  contentFit="cover"
+                />
+              )}
               <View style={styles.categoryRowOverlay}>
                 <Text style={styles.categoryRowName} numberOfLines={2}>
                   {location.abbreviatedName}
@@ -542,9 +556,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         activeOpacity={0.9}
       >
         <Image 
-          source={featuredLocation.imageUrl}
-            cachePolicy="disk"
-            transition={200} 
+          source={{ uri: featuredLocation.imageUrl }}
+          cachePolicy="disk"
+          transition={200} 
           style={styles.suggestedImage}
           contentFit="cover"
         />
@@ -607,7 +621,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={photo.imageUrl}
+                source={{ uri: photo.imageUrl }}
                 cachePolicy="disk"
                 transition={200} 
                 style={styles.sharedPhotoImage}
@@ -670,7 +684,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               activeOpacity={0.9}
             >
               <Image 
-                source={event.imageUrl}
+                source={{ uri: event.imageUrl }}
                 cachePolicy="disk"
                 transition={200} 
                 style={styles.trendingEventImage}
@@ -732,13 +746,24 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               onPress={() => handleLocationPress(location)}
               activeOpacity={0.9}
             >
-              <Image 
-                source={location.imageUrl}
-                cachePolicy="disk"
-                transition={200} 
-                style={styles.placeImage}
-                contentFit="cover"
-              />
+              {shouldShowIcon(index, true) ? (
+                <LinearGradient
+                  colors={getIconForCategory(location.category, location.name).colors as [string, string]}
+                  style={styles.placeIconBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={getIconForCategory(location.category, location.name).icon as any} size={32} color="rgba(255,255,255,0.9)" />
+                </LinearGradient>
+              ) : (
+                <Image 
+                  source={{ uri: location.imageUrl }}
+                  cachePolicy="disk"
+                  transition={200} 
+                  style={styles.placeImage}
+                  contentFit="cover"
+                />
+              )}
               <View style={styles.placeOverlay}>
                 <Text style={styles.placeName} numberOfLines={2}>
                   {location.abbreviatedName}
@@ -781,13 +806,24 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               onPress={() => handleLocationPress(hangout)}
               activeOpacity={0.9}
             >
-              <Image 
-                source={hangout.imageUrl}
-                cachePolicy="disk"
-                transition={200} 
-                style={styles.smallHangoutImage}
-                contentFit="cover"
-              />
+              {shouldShowIcon(index, true) ? (
+                <LinearGradient
+                  colors={getIconForCategory(hangout.category, hangout.name).colors as [string, string]}
+                  style={styles.smallHangoutIconBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={getIconForCategory(hangout.category, hangout.name).icon as any} size={32} color="rgba(255,255,255,0.9)" />
+                </LinearGradient>
+              ) : (
+                <Image 
+                  source={{ uri: hangout.imageUrl }}
+                  cachePolicy="disk"
+                  transition={200} 
+                  style={styles.smallHangoutImage}
+                  contentFit="cover"
+                />
+              )}
               <View style={styles.smallHangoutOverlay}>
                 <Text style={styles.smallHangoutName} numberOfLines={1}>
                   {hangout.abbreviatedName}
@@ -827,13 +863,24 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               onPress={() => handleLocationPress(location)}
               activeOpacity={0.9}
             >
-              <Image 
-                source={location.imageUrl}
-                cachePolicy="disk"
-                transition={200} 
-                style={styles.categoryRowImage}
-                contentFit="cover"
-              />
+              {shouldShowIcon(index, true) ? (
+                <LinearGradient
+                  colors={getIconForCategory(location.category, location.name).colors as [string, string]}
+                  style={styles.categoryRowIconBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={getIconForCategory(location.category, location.name).icon as any} size={28} color="rgba(255,255,255,0.9)" />
+                </LinearGradient>
+              ) : (
+                <Image 
+                  source={{ uri: location.imageUrl }}
+                  cachePolicy="disk"
+                  transition={200} 
+                  style={styles.categoryRowImage}
+                  contentFit="cover"
+                />
+              )}
               <View style={styles.categoryRowOverlay}>
                 <Text style={styles.categoryRowName} numberOfLines={2}>
                   {location.abbreviatedName}
@@ -899,6 +946,14 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
+  const renderedSections = React.useMemo(() => {
+    return layoutOrder.map(sectionId => ({
+      sectionId,
+      content: renderSection(sectionId),
+      isAdBanner: sectionId.startsWith('adBanner'),
+    })).filter(section => section.content !== null);
+  }, [layoutOrder, suggestedLocations, userHangouts, sharedPhotos, trendingEvents, categories]);
+
   return (
     <ScrollView
       style={styles.container}
@@ -908,12 +963,16 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       }
       showsVerticalScrollIndicator={false}
     >
-      {layoutOrder.map((sectionId, index) => (
-        <React.Fragment key={sectionId}>
-          {renderSection(sectionId)}
-          {index < layoutOrder.length - 1 && <View style={styles.sectionDivider} />}
-        </React.Fragment>
-      ))}
+      {renderedSections.map((section, index) => {
+        const nextNonAdSection = renderedSections.slice(index + 1).find(s => !s.isAdBanner);
+        const showDivider = !section.isAdBanner && !!nextNonAdSection;
+        return (
+          <React.Fragment key={section.sectionId}>
+            {section.content}
+            {showDivider && <View style={styles.sectionDivider} />}
+          </React.Fragment>
+        );
+      })}
 
       <TouchableOpacity style={styles.refreshButton} onPress={onRefresh} activeOpacity={0.8}>
         <Ionicons name="refresh" size={18} color={Colors.white} />
@@ -1336,6 +1395,13 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'absolute',
   },
+  placeIconBg: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   placeOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -1374,6 +1440,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     position: 'absolute',
+  },
+  smallHangoutIconBg: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   smallHangoutOverlay: {
     flex: 1,
@@ -1428,6 +1501,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     position: 'absolute',
+  },
+  categoryRowIconBg: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryRowOverlay: {
     flex: 1,

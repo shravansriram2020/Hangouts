@@ -339,11 +339,6 @@ export default function HomeScreen({
         onDismiss={handleDismissNews}
       />
 
-      {activeTab !== 'explore' && (
-        <View style={styles.homeAdContainer}>
-          <AdBanner unitId={ADMOB_BANNER_ID} />
-        </View>
-      )}
     </LinearGradient>
   );
 }

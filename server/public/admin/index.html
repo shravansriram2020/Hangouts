@@ -406,6 +406,76 @@
       padding: 40px;
       color: var(--text-light);
     }
+    
+    .moderation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .moderation-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid var(--border);
+    }
+    
+    .moderation-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    .moderation-card-content {
+      padding: 16px;
+    }
+    
+    .moderation-card-content h4 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    
+    .moderation-card-content p {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    
+    .moderation-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .moderation-card-actions button {
+      flex: 1;
+    }
+    
+    .moderation-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .moderation-status.pending {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+    
+    .moderation-status.approved {
+      background: #D1FAE5;
+      color: #059669;
+    }
+    
+    .moderation-status.rejected {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
   </style>
 </head>
 <body>
@@ -480,6 +550,7 @@
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="users">Users</button>
+        <button class="tab" data-tab="moderation">Photo Moderation</button>
         <button class="tab" data-tab="stats">Statistics</button>
         <button class="tab" data-tab="news">News</button>
         <button class="tab" data-tab="broadcast">Push Notifications</button>
@@ -511,6 +582,26 @@
             </tbody>
           </table>
           <div class="pagination" id="usersPagination"></div>
+        </div>
+      </div>
+      
+      <!-- Photo Moderation Tab -->
+      <div class="tab-content" id="tab-moderation">
+        <div class="card">
+          <h2>Photo Moderation</h2>
+          <p style="color: var(--text-light); margin-bottom: 24px;">Review photos shared to Explore. Approved photos will be visible to all users on the Explore page.</p>
+          <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-small" onclick="loadModerationPhotos('pending')" id="filterPending">Pending</button>
+            <button class="btn btn-small" onclick="loadModerationPhotos('approved')" id="filterApproved">Approved</button>
+            <button class="btn btn-small" onclick="loadModerationPhotos('rejected')" id="filterRejected">Rejected</button>
+            <button class="btn btn-small" onclick="loadModerationPhotos('all')" id="filterAll">All</button>
+          </div>
+          <div id="moderationStats" style="margin-bottom: 24px;">
+            <span style="color: var(--text-light);">Loading stats...</span>
+          </div>
+          <div id="moderationGrid" class="moderation-grid">
+            <p style="color: var(--text-light);">Loading photos...</p>
+          </div>
         </div>
       </div>
       
@@ -889,6 +980,10 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        
+        if (tab.dataset.tab === 'moderation') {
+          loadModerationPhotos('pending');
+        }
       });
     });
     
@@ -958,6 +1053,97 @@
           </div>
         `;
       }).join('');
+    }
+    
+    // Photo Moderation
+    let currentModerationFilter = 'pending';
+    
+    async function loadModerationPhotos(filter = 'pending') {
+      currentModerationFilter = filter;
+      const grid = document.getElementById('moderationGrid');
+      grid.innerHTML = '<p style="color: var(--text-light);">Loading photos...</p>';
+      
+      ['Pending', 'Approved', 'Rejected', 'All'].forEach(f => {
+        const btn = document.getElementById('filter' + f);
+        if (btn) btn.classList.remove('btn-primary');
+      });
+      document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('btn-primary');
+      
+      try {
+        const [photosRes, pendingRes] = await Promise.all([
+          fetch(`${API_BASE}${filter === 'pending' ? '/photos/pending' : `/photos/all?status=${filter}`}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          filter === 'pending' ? Promise.resolve(null) : fetch(`${API_BASE}/photos/pending`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+        
+        const photos = await photosRes.json();
+        const pendingPhotos = pendingRes ? await pendingRes.json() : photos;
+        
+        document.getElementById('moderationStats').innerHTML = `
+          <span style="background: #FEF3C7; color: #D97706; padding: 6px 14px; border-radius: 20px; font-weight: 600;">
+            ${filter === 'pending' ? photos.length : pendingPhotos.length} pending review
+          </span>
+        `;
+        
+        if (photos.length === 0) {
+          grid.innerHTML = '<p style="color: var(--text-light);">No photos found with this filter.</p>';
+          return;
+        }
+        
+        grid.innerHTML = photos.map(photo => `
+          <div class="moderation-card">
+            <img src="${photo.photo_url}" alt="Photo" onclick="window.open('${photo.photo_url}', '_blank')">
+            <div class="moderation-card-content">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4>${photo.event_title || 'Unknown Event'}</h4>
+                <span class="moderation-status ${photo.moderation_status}">${photo.moderation_status}</span>
+              </div>
+              <p><strong>Uploaded by:</strong> ${photo.uploader_name} (${photo.uploader_email})</p>
+              <p><strong>Date:</strong> ${new Date(photo.created_at).toLocaleString()}</p>
+              ${photo.moderation_status === 'pending' ? `
+                <div class="moderation-card-actions">
+                  <button class="btn btn-success btn-small" onclick="moderatePhoto('${photo.id}', 'approved')">Approve</button>
+                  <button class="btn btn-danger btn-small" onclick="moderatePhoto('${photo.id}', 'rejected')">Reject</button>
+                </div>
+              ` : `
+                <div class="moderation-card-actions">
+                  <button class="btn btn-small" onclick="moderatePhoto('${photo.id}', '${photo.moderation_status === 'approved' ? 'rejected' : 'approved'}')">
+                    ${photo.moderation_status === 'approved' ? 'Reject' : 'Approve'}
+                  </button>
+                </div>
+              `}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load moderation photos:', e);
+        grid.innerHTML = '<p style="color: var(--danger);">Failed to load photos.</p>';
+      }
+    }
+    
+    async function moderatePhoto(photoId, action) {
+      try {
+        const res = await fetch(`${API_BASE}/photos/${photoId}/moderate`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ action })
+        });
+        
+        if (res.ok) {
+          loadModerationPhotos(currentModerationFilter);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to moderate photo');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
     }
     
     // Load Users
