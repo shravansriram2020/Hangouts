@@ -397,25 +397,14 @@ function generateRandomLayout() {
   const result = [];
   let adIndex = 0;
   
-  // Insert first ad after the first content section (ensures ad in top half of screen)
-  if (shuffledContent.length > 0) {
-    result.push(shuffledContent[0]);
-    if (shuffledAds.length > 0) {
-      result.push(shuffledAds[adIndex]);
-      adIndex++;
-    }
-  }
-  
-  // Continue with remaining content, inserting ads every 3 sections
-  for (let i = 1; i < shuffledContent.length; i++) {
+  for (let i = 0; i < shuffledContent.length; i++) {
     result.push(shuffledContent[i]);
-    if (i % 3 === 0 && adIndex < shuffledAds.length) {
+    if ((i + 1) % 3 === 0 && adIndex < shuffledAds.length) {
       result.push(shuffledAds[adIndex]);
       adIndex++;
     }
   }
   
-  // Insert any remaining ads
   while (adIndex < shuffledAds.length) {
     const insertPos = result.length - 1;
     result.splice(insertPos, 0, shuffledAds[adIndex]);
