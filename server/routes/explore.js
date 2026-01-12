@@ -374,7 +374,7 @@ const OPTIONAL_CATEGORIES = [
   { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
 ];
 
-const REQUIRED_ADS = ['adBanner1', 'adBanner2', 'adBanner3'];
+const REQUIRED_ADS = ['adBanner1', 'adBanner2', 'adBanner3', 'adBanner4'];
 const CONTENT_SECTIONS = [
   'suggestedLocation1',
   'featuredHangout', 
@@ -395,13 +395,20 @@ function generateRandomLayout() {
   const shuffledAds = shuffleArray([...REQUIRED_ADS]);
   
   const result = [];
+  let adIndex = 0;
   
   for (let i = 0; i < shuffledContent.length; i++) {
     result.push(shuffledContent[i]);
-    const adSlot = Math.floor(i / 3);
-    if ((i + 1) % 3 === 0 && adSlot < shuffledAds.length) {
-      result.push(shuffledAds[adSlot]);
+    if ((i + 1) % 3 === 0 && adIndex < shuffledAds.length) {
+      result.push(shuffledAds[adIndex]);
+      adIndex++;
     }
+  }
+  
+  while (adIndex < shuffledAds.length) {
+    const insertPos = result.length - 1;
+    result.splice(insertPos, 0, shuffledAds[adIndex]);
+    adIndex++;
   }
   
   return result;
@@ -536,7 +543,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
           ) <= $3
         GROUP BY e.id, e.location_name, e.location_address, e.location_lat, e.location_lng, u.username
         ORDER BY "attendeeCount" DESC, e.event_date ASC
-        LIMIT 4
+        LIMIT 8
       `, [userLat, userLng, MAX_DISTANCE_MILES]);
       
       userHangouts = hangoutsResult.rows.map(row => ({

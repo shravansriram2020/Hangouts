@@ -118,7 +118,7 @@ function LargeHangoutCard({ hangout, onPress }: { hangout: SuggestedLocation; on
 const largeHangoutStyles = StyleSheet.create({
   card: {
     width: '100%',
-    height: 160,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
@@ -284,28 +284,26 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Text style={styles.categoryEmoji}>{section.emoji}</Text>
           <Text style={styles.centeredSectionTitle}>{section.name}</Text>
         </View>
-        <View style={styles.categoryGlassBox}>
-          <View style={styles.categoryRow}>
-            {displayLocations.map((location, index) => (
-              <TouchableOpacity
-                key={location.id || `${section.id}-${index}`}
-                style={styles.categoryRowItem}
-                onPress={() => handleLocationPress(location)}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: location.imageUrl }} 
-                  style={styles.categoryRowImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.categoryRowOverlay}>
-                  <Text style={styles.categoryRowName} numberOfLines={2}>
-                    {location.abbreviatedName}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.categoryRow}>
+          {displayLocations.map((location, index) => (
+            <TouchableOpacity
+              key={location.id || `${section.id}-${index}`}
+              style={styles.categoryRowItem}
+              onPress={() => handleLocationPress(location)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.categoryRowImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryRowOverlay}>
+                <Text style={styles.categoryRowName} numberOfLines={2}>
+                  {location.abbreviatedName}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     );
@@ -612,28 +610,26 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Ionicons name="sparkles" size={18} color={Colors.secondary} />
           <Text style={styles.centeredSectionTitle}>Discover More Nearby</Text>
         </View>
-        <View style={styles.categoryGlassBox}>
-          <View style={styles.categoryRow}>
-            {displayLocations.map((location, index) => (
-              <TouchableOpacity
-                key={location.id || `more-${index}`}
-                style={styles.categoryRowItem}
-                onPress={() => handleLocationPress(location)}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{ uri: location.imageUrl }} 
-                  style={styles.categoryRowImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.categoryRowOverlay}>
-                  <Text style={styles.categoryRowName} numberOfLines={2}>
-                    {location.abbreviatedName}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.categoryRow}>
+          {displayLocations.map((location, index) => (
+            <TouchableOpacity
+              key={location.id || `more-${index}`}
+              style={styles.categoryRowItem}
+              onPress={() => handleLocationPress(location)}
+              activeOpacity={0.9}
+            >
+              <Image 
+                source={{ uri: location.imageUrl }} 
+                style={styles.categoryRowImage}
+                resizeMode="cover"
+              />
+              <View style={styles.categoryRowOverlay}>
+                <Text style={styles.categoryRowName} numberOfLines={2}>
+                  {location.abbreviatedName}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     );
@@ -702,6 +698,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         return renderAdBanner('adBanner2');
       case 'adBanner3':
         return renderAdBanner('adBanner3');
+      case 'adBanner4':
+        return renderAdBanner('adBanner4');
       case 'categories':
         return renderCategories();
       case 'moreHangouts':
@@ -723,6 +721,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       showsVerticalScrollIndicator={false}
     >
       {layoutOrder.map(sectionId => renderSection(sectionId))}
+
+      <TouchableOpacity style={styles.refreshButton} onPress={onRefresh} activeOpacity={0.8}>
+        <Ionicons name="refresh" size={18} color={Colors.white} />
+        <Text style={styles.refreshButtonText}>Refresh</Text>
+      </TouchableOpacity>
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -790,18 +793,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   suggestedCard: {
-    flex: 1,
-    height: 180,
+    width: '100%',
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 16,
   },
   featuredLocationCard: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 16,
   },
   suggestedImage: {
@@ -857,7 +859,7 @@ const styles = StyleSheet.create({
   },
   hangoutCard: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
@@ -945,10 +947,9 @@ const styles = StyleSheet.create({
   },
   trendingEventCard: {
     width: '48%',
-    height: 140,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   trendingEventImage: {
     width: '100%',
@@ -995,8 +996,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
   },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.secondary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    marginVertical: 20,
+    gap: 8,
+    alignSelf: 'center',
+  },
+  refreshButtonText: {
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
   bottomPadding: {
-    height: 100,
+    height: 80,
   },
   sharedPhotosSection: {
     marginBottom: 20,
@@ -1021,12 +1039,11 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   sharedPhotoCard: {
-    width: 160,
-    height: 200,
+    width: 140,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 12,
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   sharedPhotoImage: {
     width: '100%',
@@ -1112,10 +1129,9 @@ const styles = StyleSheet.create({
   },
   placeCard: {
     width: '48%',
-    height: 130,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   placeImage: {
     width: '100%',
@@ -1151,11 +1167,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   smallHangoutCard: {
-    width: '48%',
-    height: 120,
+    width: 140,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   smallHangoutImage: {
     width: '100%',
@@ -1202,19 +1217,13 @@ const styles = StyleSheet.create({
   categorySection: {
     marginBottom: 20,
   },
-  categoryGlassBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 16,
-    padding: 8,
-    overflow: 'hidden',
-  },
   categoryRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   categoryRowItem: {
     flex: 1,
-    aspectRatio: 0.85,
+    aspectRatio: 1,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -1256,11 +1265,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   categoryCard: {
-    width: 150,
-    height: 140,
+    width: 140,
+    aspectRatio: 1,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   categoryCardImage: {
     width: '100%',
