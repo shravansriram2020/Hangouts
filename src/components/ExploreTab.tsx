@@ -946,13 +946,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
-  const renderedSections = React.useMemo(() => {
-    return layoutOrder.map(sectionId => ({
-      sectionId,
-      content: renderSection(sectionId),
-      isAdBanner: sectionId.startsWith('adBanner'),
-    })).filter(section => section.content !== null);
-  }, [layoutOrder, suggestedLocations, userHangouts, sharedPhotos, trendingEvents, categorySections]);
+  const renderedSections = layoutOrder.map(sectionId => ({
+    sectionId,
+    content: renderSection(sectionId),
+    isAdBanner: sectionId.startsWith('adBanner'),
+  })).filter(section => section.content !== null);
 
   return (
     <ScrollView
