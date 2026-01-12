@@ -266,50 +266,48 @@ export default function EventPhotosTab({ eventId }: Props) {
                   </View>
                 </View>
 
-                {selectedPhoto.uploader_id === user?.id && (
-                  <TouchableOpacity
-                    style={styles.shareToExploreRow}
-                    onPress={async () => {
-                      try {
-                        const newValue = !selectedPhoto.share_to_explore;
-                        const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
-                        const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
-                        setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
-                        setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
-                      } catch (error) {
-                        Alert.alert('Error', 'Failed to update sharing preference');
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.checkbox,
-                      selectedPhoto.share_to_explore && styles.checkboxChecked,
-                      selectedPhoto.moderation_status === 'approved' && styles.checkboxApproved,
-                      selectedPhoto.moderation_status === 'rejected' && styles.checkboxRejected,
+                <TouchableOpacity
+                  style={styles.shareToExploreRow}
+                  onPress={async () => {
+                    try {
+                      const newValue = !selectedPhoto.share_to_explore;
+                      const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
+                      const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
+                      setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
+                      setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
+                    } catch (error) {
+                      Alert.alert('Error', 'Failed to update sharing preference');
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    selectedPhoto.share_to_explore && styles.checkboxChecked,
+                    selectedPhoto.moderation_status === 'approved' && styles.checkboxApproved,
+                    selectedPhoto.moderation_status === 'rejected' && styles.checkboxRejected,
+                  ]}>
+                    {selectedPhoto.share_to_explore && (
+                      <Ionicons name="checkmark" size={18} color={Colors.white} />
+                    )}
+                  </View>
+                  <View style={styles.shareTextContainer}>
+                    <Text style={styles.shareToExploreLabel}>Share to Explore page</Text>
+                    <Text style={[
+                      styles.shareStatus,
+                      selectedPhoto.moderation_status === 'approved' && styles.shareStatusApproved,
+                      selectedPhoto.moderation_status === 'rejected' && styles.shareStatusRejected,
                     ]}>
-                      {selectedPhoto.share_to_explore && (
-                        <Ionicons name="checkmark" size={18} color={Colors.white} />
-                      )}
-                    </View>
-                    <View style={styles.shareTextContainer}>
-                      <Text style={styles.shareToExploreLabel}>Share to Explore page</Text>
-                      <Text style={[
-                        styles.shareStatus,
-                        selectedPhoto.moderation_status === 'approved' && styles.shareStatusApproved,
-                        selectedPhoto.moderation_status === 'rejected' && styles.shareStatusRejected,
-                      ]}>
-                        {selectedPhoto.share_to_explore
-                          ? selectedPhoto.moderation_status === 'approved'
-                            ? 'Live on Explore!'
-                            : selectedPhoto.moderation_status === 'rejected'
-                            ? 'Not approved'
-                            : 'Pending review'
-                          : 'Let others discover this location'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
+                      {selectedPhoto.share_to_explore
+                        ? selectedPhoto.moderation_status === 'approved'
+                          ? 'Live on Explore!'
+                          : selectedPhoto.moderation_status === 'rejected'
+                          ? 'Not approved'
+                          : 'Pending review'
+                        : 'Let others discover this location'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
           )}
