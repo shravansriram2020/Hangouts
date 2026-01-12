@@ -374,14 +374,16 @@ const OPTIONAL_CATEGORIES = [
   { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
 ];
 
-const REQUIRED_ADS = ['topAdBox', 'adBox1', 'adBox2'];
+const REQUIRED_ADS = ['adBanner1', 'adBanner2', 'adBanner3'];
 const CONTENT_SECTIONS = [
-  'featuredLocation',
+  'suggestedLocation1',
   'featuredHangout', 
   'sharedPhotos',
+  'suggestedLocation2',
   'hangoutBanner1',
   'trending',
   'categories',
+  'suggestedLocation3',
   'hangoutBanner2',
   'moreHangouts',
   'discoverMore',
@@ -437,7 +439,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
     const categoryPromises = shuffledCategories.map(section => 
       searchNearbyPlaces(userLat, userLng, section.codes, 8).then(locations => ({
         ...section,
-        locations: sampleAcrossRadius(locations, 6),
+        locations: sampleAcrossRadius(locations, 4),
       }))
     );
     

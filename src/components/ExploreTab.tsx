@@ -261,7 +261,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const handleLocationPress = (location: SuggestedLocation) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectLocation({
-      name: location.name,
+      name: location.address || location.name,
       address: location.address,
       lat: location.lat,
       lng: location.lng,
@@ -277,47 +277,41 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const renderCategorySection = (section: CategorySection) => {
     if (!section.locations || section.locations.length === 0) return null;
+    const displayLocations = section.locations.slice(0, 4);
     return (
       <View key={section.id} style={styles.categorySection}>
         <View style={styles.centeredSectionHeader}>
           <Text style={styles.categoryEmoji}>{section.emoji}</Text>
           <Text style={styles.centeredSectionTitle}>{section.name}</Text>
         </View>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {section.locations.map((location, index) => (
-            <TouchableOpacity
-              key={location.id || `${section.id}-${index}`}
-              style={styles.categoryCard}
-              onPress={() => handleLocationPress(location)}
-              activeOpacity={0.9}
-            >
-              <Image 
-                source={{ uri: location.imageUrl }} 
-                style={styles.categoryCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.categoryCardOverlay}>
-                <Text style={styles.categoryCardName} numberOfLines={2}>
-                  {location.abbreviatedName}
-                </Text>
-                {location.address && (
-                  <Text style={styles.categoryCardAddress} numberOfLines={1}>
-                    {location.address}
+        <View style={styles.categoryGlassBox}>
+          <View style={styles.categoryGrid}>
+            {displayLocations.map((location, index) => (
+              <TouchableOpacity
+                key={location.id || `${section.id}-${index}`}
+                style={styles.categoryGridItem}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: location.imageUrl }} 
+                  style={styles.categoryGridImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.categoryGridOverlay}>
+                  <Text style={styles.categoryGridName} numberOfLines={1}>
+                    {location.abbreviatedName}
                   </Text>
-                )}
-                {location.distance !== undefined && (
-                  <Text style={styles.categoryCardDistance}>
-                    {formatDistance(location.distance)}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                  {location.distance !== undefined && (
+                    <Text style={styles.categoryGridDistance}>
+                      {formatDistance(location.distance)}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </View>
     );
   };
@@ -509,12 +503,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   };
 
-  const renderAdBox = (key: string) => (
-    <View key={key} style={styles.midAdWrapper}>
-      <AdBox unitId={ADMOB_BOX_ID} />
-    </View>
-  );
-
   const renderAdBanner = (key: string) => (
     <View key={key} style={styles.bannerWrapper}>
       <AdBanner unitId={ADMOB_BANNER_ID} />
@@ -621,58 +609,91 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   };
 
   const renderDiscoverMore = () => {
-    if (suggestedLocations.length <= 7) return null;
+    if (suggestedLocations.length <= 3) return null;
+    const displayLocations = suggestedLocations.slice(3, 7);
     return (
       <View key="discoverMore" style={styles.evenMoreSection}>
         <View style={styles.centeredSectionHeader}>
           <Ionicons name="sparkles" size={18} color={Colors.secondary} />
           <Text style={styles.centeredSectionTitle}>Discover More Nearby</Text>
         </View>
-        <View style={styles.placesGrid}>
-          {suggestedLocations.slice(7, 13).map((location, index) => (
-            <TouchableOpacity
-              key={location.id || `more-${index}`}
-              style={styles.placeCard}
-              onPress={() => handleLocationPress(location)}
-              activeOpacity={0.9}
-            >
-              <Image 
-                source={{ uri: location.imageUrl }} 
-                style={styles.placeImage}
-                resizeMode="cover"
-              />
-              <View style={styles.placeOverlay}>
-                <Text style={styles.placeName} numberOfLines={2}>
-                  {location.abbreviatedName}
-                </Text>
-                {location.address && (
-                  <Text style={styles.placeAddress} numberOfLines={2}>
-                    {location.address}
+        <View style={styles.categoryGlassBox}>
+          <View style={styles.categoryGrid}>
+            {displayLocations.map((location, index) => (
+              <TouchableOpacity
+                key={location.id || `more-${index}`}
+                style={styles.categoryGridItem}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: location.imageUrl }} 
+                  style={styles.categoryGridImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.categoryGridOverlay}>
+                  <Text style={styles.categoryGridName} numberOfLines={1}>
+                    {location.abbreviatedName}
                   </Text>
-                )}
-                {location.distance !== undefined && (
-                  <Text style={styles.placeDistance}>
-                    {formatDistance(location.distance)}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+                  {location.distance !== undefined && (
+                    <Text style={styles.categoryGridDistance}>
+                      {formatDistance(location.distance)}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
     );
   };
 
+  const renderSuggestedLocation = (index: number) => {
+    const location = suggestedLocations[index];
+    if (!location) return null;
+    return (
+      <TouchableOpacity
+        key={`suggested-${index}`}
+        style={styles.suggestedCard}
+        onPress={() => handleLocationPress(location)}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{ uri: location.imageUrl }} 
+          style={styles.suggestedImage}
+          resizeMode="cover"
+        />
+        <View style={styles.suggestedOverlay}>
+          <Text style={styles.suggestedLabel}>Suggested Nearby</Text>
+          <View style={styles.suggestedNameRow}>
+            <Text style={styles.suggestedName} numberOfLines={1}>
+              {location.abbreviatedName}
+            </Text>
+          </View>
+          {location.address && (
+            <Text style={styles.suggestedAddress} numberOfLines={1}>
+              {location.address}
+            </Text>
+          )}
+          {location.distance !== undefined && (
+            <Text style={styles.suggestedDistance}>
+              {formatDistance(location.distance)}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderSection = (sectionId: string) => {
     switch (sectionId) {
-      case 'topAdBox':
-        return (
-          <View key="topAdBox" style={styles.midAdWrapper}>
-            <AdBox unitId={ADMOB_BOX_ID} />
-          </View>
-        );
-      case 'featuredLocation':
-        return renderFeaturedLocation();
+      case 'suggestedLocation1':
+        return renderSuggestedLocation(0);
+      case 'suggestedLocation2':
+        return renderSuggestedLocation(1);
+      case 'suggestedLocation3':
+        return renderSuggestedLocation(2);
       case 'featuredHangout':
         return renderFeaturedHangout();
       case 'sharedPhotos':
@@ -685,12 +706,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         return renderHangoutBanner(3);
       case 'trending':
         return renderTrending();
-      case 'adBox1':
-        return renderAdBox('adBox1');
-      case 'adBox2':
-        return renderAdBox('adBox2');
       case 'adBanner1':
         return renderAdBanner('adBanner1');
+      case 'adBanner2':
+        return renderAdBanner('adBanner2');
+      case 'adBanner3':
+        return renderAdBanner('adBanner3');
       case 'categories':
         return renderCategories();
       case 'moreHangouts':
@@ -829,6 +850,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Regular',
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
+  },
+  suggestedDistance: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 4,
   },
   chevronCircle: {
     width: 28,
@@ -1184,6 +1211,45 @@ const styles = StyleSheet.create({
   },
   categorySection: {
     marginBottom: 20,
+  },
+  categoryGlassBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 16,
+    padding: 8,
+    overflow: 'hidden',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryGridItem: {
+    width: '48%',
+    aspectRatio: 1.2,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  categoryGridImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  categoryGridOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  categoryGridName: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
+  categoryGridDistance: {
+    fontSize: 10,
+    fontFamily: 'Prompt-Medium',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
   },
   centeredSectionHeader: {
     flexDirection: 'row',
