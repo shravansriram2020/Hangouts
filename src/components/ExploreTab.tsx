@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
@@ -21,6 +22,56 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ADMOB_BOX_ID = 'ca-app-pub-6700271097724179/7640768902';
 const ADMOB_BANNER_ID = 'ca-app-pub-6700271097724179/1798427047';
+
+const CATEGORY_ICONS: { [key: string]: { icon: string; colors: string[] } } = {
+  'restaurant': { icon: 'restaurant', colors: ['#FF6B6B', '#EE5A5A'] },
+  'cafe': { icon: 'cafe', colors: ['#8B4513', '#A0522D'] },
+  'bar': { icon: 'wine', colors: ['#9B59B6', '#8E44AD'] },
+  'park': { icon: 'leaf', colors: ['#27AE60', '#2ECC71'] },
+  'gym': { icon: 'fitness', colors: ['#E74C3C', '#C0392B'] },
+  'shopping': { icon: 'cart', colors: ['#3498DB', '#2980B9'] },
+  'entertainment': { icon: 'game-controller', colors: ['#F39C12', '#E67E22'] },
+  'movie': { icon: 'film', colors: ['#34495E', '#2C3E50'] },
+  'sports': { icon: 'football', colors: ['#16A085', '#1ABC9C'] },
+  'music': { icon: 'musical-notes', colors: ['#9B59B6', '#8E44AD'] },
+  'art': { icon: 'color-palette', colors: ['#E91E63', '#C2185B'] },
+  'beach': { icon: 'sunny', colors: ['#00BCD4', '#0097A7'] },
+  'hotel': { icon: 'bed', colors: ['#607D8B', '#455A64'] },
+  'default': { icon: 'location', colors: ['#FF6B6B', '#EE5A5A'] },
+};
+
+const getIconForCategory = (category?: string, name?: string): { icon: string; colors: string[] } => {
+  if (category) {
+    const lowerCategory = category.toLowerCase();
+    for (const [key, value] of Object.entries(CATEGORY_ICONS)) {
+      if (lowerCategory.includes(key)) return value;
+    }
+  }
+  if (name) {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('restaurant') || lowerName.includes('grill') || lowerName.includes('kitchen')) 
+      return CATEGORY_ICONS.restaurant;
+    if (lowerName.includes('cafe') || lowerName.includes('coffee')) 
+      return CATEGORY_ICONS.cafe;
+    if (lowerName.includes('bar') || lowerName.includes('pub') || lowerName.includes('tavern')) 
+      return CATEGORY_ICONS.bar;
+    if (lowerName.includes('park') || lowerName.includes('garden')) 
+      return CATEGORY_ICONS.park;
+    if (lowerName.includes('gym') || lowerName.includes('fitness')) 
+      return CATEGORY_ICONS.gym;
+    if (lowerName.includes('mall') || lowerName.includes('shop') || lowerName.includes('store')) 
+      return CATEGORY_ICONS.shopping;
+    if (lowerName.includes('theater') || lowerName.includes('cinema') || lowerName.includes('movie')) 
+      return CATEGORY_ICONS.movie;
+    if (lowerName.includes('beach') || lowerName.includes('ocean')) 
+      return CATEGORY_ICONS.beach;
+  }
+  return CATEGORY_ICONS.default;
+};
+
+const shouldShowIcon = (index: number): boolean => {
+  return index % 3 === 1;
+};
 
 interface SuggestedLocation {
   id: string;
@@ -77,6 +128,150 @@ interface ExploreTabProps {
     lng: number;
   }) => void;
 }
+
+function IconCard({ location, onPress, isBanner = false }: { location: SuggestedLocation; onPress: () => void; isBanner?: boolean }) {
+  const iconData = getIconForCategory(location.category, location.name);
+  
+  return (
+    <TouchableOpacity 
+      style={isBanner ? bannerCardStyles.card : iconCardStyles.card}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={iconData.colors as [string, string]}
+        style={iconCardStyles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name={iconData.icon as any} size={isBanner ? 48 : 64} color="rgba(255,255,255,0.9)" />
+      </LinearGradient>
+      <View style={iconCardStyles.overlay}>
+        <Text style={iconCardStyles.name} numberOfLines={2}>
+          {location.abbreviatedName || location.name}
+        </Text>
+        {location.address && (
+          <Text style={iconCardStyles.address} numberOfLines={1}>
+            {location.address}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const iconCardStyles = StyleSheet.create({
+  card: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  name: {
+    fontSize: 14,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
+  address: {
+    fontSize: 11,
+    fontFamily: 'Prompt-Regular',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+});
+
+function BannerCard({ location, onPress, showIcon = false }: { location: SuggestedLocation; onPress: () => void; showIcon?: boolean }) {
+  const iconData = getIconForCategory(location.category, location.name);
+  
+  return (
+    <TouchableOpacity 
+      style={bannerCardStyles.card}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      {showIcon ? (
+        <LinearGradient
+          colors={iconData.colors as [string, string]}
+          style={bannerCardStyles.iconBackground}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons name={iconData.icon as any} size={40} color="rgba(255,255,255,0.9)" />
+        </LinearGradient>
+      ) : (
+        <Image 
+          source={location.imageUrl}
+          style={bannerCardStyles.image}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="disk"
+        />
+      )}
+      <View style={bannerCardStyles.overlay}>
+        <Text style={bannerCardStyles.name} numberOfLines={1}>
+          {location.abbreviatedName || location.name}
+        </Text>
+        {location.address && (
+          <Text style={bannerCardStyles.address} numberOfLines={1}>
+            {location.address}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const bannerCardStyles = StyleSheet.create({
+  card: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  iconBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  name: {
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
+  address: {
+    fontSize: 11,
+    fontFamily: 'Prompt-Regular',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+});
 
 function LargeHangoutCard({ hangout, onPress }: { hangout: SuggestedLocation; onPress: () => void }) {
   return (
@@ -444,10 +639,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     const hangout = userHangouts[bannerNumber];
     if (!hangout) return null;
     return (
-      <LargeHangoutCard 
+      <BannerCard 
         key={`hangoutBanner${bannerNumber}`}
-        hangout={hangout} 
-        onPress={() => handleLocationPress(hangout)} 
+        location={hangout} 
+        onPress={() => handleLocationPress(hangout)}
+        showIcon={shouldShowIcon(bannerNumber)}
       />
     );
   };
@@ -653,39 +849,14 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderSuggestedLocation = (index: number) => {
     const location = suggestedLocations[index];
     if (!location) return null;
+    
     return (
-      <TouchableOpacity
+      <BannerCard 
         key={`suggested-${index}`}
-        style={styles.suggestedCard}
+        location={location}
         onPress={() => handleLocationPress(location)}
-        activeOpacity={0.9}
-      >
-        <Image 
-          source={location.imageUrl}
-                cachePolicy="disk"
-                transition={200} 
-          style={styles.suggestedImage}
-          contentFit="cover"
-        />
-        <View style={styles.suggestedOverlay}>
-          <Text style={styles.suggestedLabel}>Suggested Nearby</Text>
-          <View style={styles.suggestedNameRow}>
-            <Text style={styles.suggestedName} numberOfLines={1}>
-              {location.abbreviatedName}
-            </Text>
-          </View>
-          {location.address && (
-            <Text style={styles.suggestedAddress} numberOfLines={1}>
-              {location.address}
-            </Text>
-          )}
-          {location.distance !== undefined && (
-            <Text style={styles.suggestedDistance}>
-              {formatDistance(location.distance)}
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
+        showIcon={shouldShowIcon(index)}
+      />
     );
   };
 
@@ -1039,9 +1210,9 @@ const styles = StyleSheet.create({
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginHorizontal: 0,
+    marginVertical: 16,
   },
   sharedPhotosSection: {
     marginBottom: 20,
