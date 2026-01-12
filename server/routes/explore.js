@@ -192,7 +192,33 @@ const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital
 
 const EXCLUDED_CATEGORIES = ['city', 'town', 'municipality', 'administrative', 'geographic', 'neighbourhood', 'hamlet', 'village', 'suburb', 'borough', 'district'];
 
-function isFunLocation(name, category) {
+const STREET_ADDRESS_PATTERN = /^\d+\s+[a-zA-Z]/;
+const STREET_SUFFIXES = ['street', 'st', 'avenue', 'ave', 'road', 'rd', 'lane', 'ln', 'drive', 'dr', 'court', 'ct', 'place', 'pl', 'boulevard', 'blvd', 'way', 'circle', 'cir', 'terrace', 'ter', 'trail', 'trl', 'parkway', 'pkwy', 'highway', 'hwy'];
+
+function isStreetAddress(name) {
+  const lowerName = name.toLowerCase().trim();
+  if (STREET_ADDRESS_PATTERN.test(lowerName)) {
+    return true;
+  }
+  const words = lowerName.split(/\s+/);
+  const lastWord = words[words.length - 1];
+  if (STREET_SUFFIXES.includes(lastWord) && words.length <= 5) {
+    return true;
+  }
+  return false;
+}
+
+function isFunLocation(name, category, categorySet) {
+  if (isStreetAddress(name)) {
+    return false;
+  }
+  if (categorySet && categorySet.length > 0) {
+    const allowedCodes = ALL_FUN_CODES.split(',').map(c => parseInt(c));
+    const hasAllowedCategory = categorySet.some(cat => allowedCodes.includes(cat.id));
+    if (!hasAllowedCategory) {
+      return false;
+    }
+  }
   const combined = `${name} ${category}`.toLowerCase();
   if (EXCLUDED_CATEGORIES.some(excluded => combined.includes(excluded))) {
     return false;
@@ -249,8 +275,9 @@ async function searchNearbyPlaces(lat, lng, categoryCodes, limit = 10) {
         
         const name = result.poi.name;
         const poiCategory = result.poi?.categories?.[0] || '';
+        const categorySet = result.poi?.categorySet || [];
         
-        if (!isFunLocation(name, poiCategory)) {
+        if (!isFunLocation(name, poiCategory, categorySet)) {
           return null;
         }
         
@@ -323,8 +350,14 @@ async function searchPlacesByCategory(lat, lng, categoryCodes, limit = 5) {
           return null;
         }
         
-        const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
         const poiCategory = result.poi?.categories?.[0] || '';
+        const categorySet = result.poi?.categorySet || [];
+        
+        if (!isFunLocation(name, poiCategory, categorySet)) {
+          return null;
+        }
+        
+        const abbreviatedName = name.length > 25 ? name.substring(0, 22) + '...' : name;
         
         return {
           id: result.id,
