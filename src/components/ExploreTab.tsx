@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Modal,
+  FlatList,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,87 +19,42 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { api } from '../../services/api';
-import { AdBox, AdBanner } from './AdComponents';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH - 64;
+const CARD_HEIGHT = 280;
 
-const ADMOB_BOX_ID = 'ca-app-pub-6700271097724179/7640768902';
-const ADMOB_BANNER_ID = 'ca-app-pub-6700271097724179/1798427047';
-
-const CATEGORY_ICONS: { [key: string]: { icon: string; color: string } } = {
-  'restaurant': { icon: 'restaurant', color: '#FF6B6B' },
-  'cafe': { icon: 'cafe', color: '#8B4513' },
-  'bar': { icon: 'wine', color: '#9B59B6' },
-  'park': { icon: 'leaf', color: '#27AE60' },
-  'gym': { icon: 'fitness', color: '#E74C3C' },
-  'shopping': { icon: 'cart', color: '#3498DB' },
-  'entertainment': { icon: 'game-controller', color: '#F39C12' },
-  'movie': { icon: 'film', color: '#34495E' },
-  'sports': { icon: 'football', color: '#16A085' },
-  'music': { icon: 'musical-notes', color: '#9B59B6' },
-  'art': { icon: 'color-palette', color: '#E91E63' },
-  'beach': { icon: 'sunny', color: '#00BCD4' },
-  'default': { icon: 'location', color: '#FF6B6B' },
-};
-
-const getIconForCategory = (category?: string, name?: string): { icon: string; color: string } => {
-  if (category) {
-    const lowerCategory = category.toLowerCase();
-    for (const [key, value] of Object.entries(CATEGORY_ICONS)) {
-      if (lowerCategory.includes(key)) return value;
-    }
-  }
-  if (name) {
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('restaurant') || lowerName.includes('grill') || lowerName.includes('kitchen')) 
-      return CATEGORY_ICONS.restaurant;
-    if (lowerName.includes('cafe') || lowerName.includes('coffee')) 
-      return CATEGORY_ICONS.cafe;
-    if (lowerName.includes('bar') || lowerName.includes('pub') || lowerName.includes('tavern')) 
-      return CATEGORY_ICONS.bar;
-    if (lowerName.includes('park') || lowerName.includes('garden')) 
-      return CATEGORY_ICONS.park;
-    if (lowerName.includes('gym') || lowerName.includes('fitness')) 
-      return CATEGORY_ICONS.gym;
-    if (lowerName.includes('mall') || lowerName.includes('shop') || lowerName.includes('store')) 
-      return CATEGORY_ICONS.shopping;
-    if (lowerName.includes('theater') || lowerName.includes('cinema') || lowerName.includes('movie')) 
-      return CATEGORY_ICONS.movie;
-    if (lowerName.includes('beach') || lowerName.includes('ocean')) 
-      return CATEGORY_ICONS.beach;
-  }
-  return CATEGORY_ICONS.default;
-};
-
-interface SharedPhoto {
+interface ExplorePost {
   id: string;
   imageUrl: string;
   username: string;
   userAvatar?: string;
   locationName: string;
-  locationAddress: string;
   lat: number;
   lng: number;
   likeCount: number;
   isLiked: boolean;
+  distance: number;
+  createdAt: string;
 }
 
-interface SuggestedLocation {
-  id: string;
-  name: string;
-  abbreviatedName: string;
-  address: string;
-  imageUrl?: string;
-  lat: number;
-  lng: number;
-  category?: string;
+interface CategoryFeed {
+  category: string;
+  posts: ExplorePost[];
 }
 
-interface CategorySection {
+interface EventWithPhotos {
   id: string;
-  name: string;
-  emoji: string;
-  locations: SuggestedLocation[];
+  title: string;
+  location_name: string;
+  location_lat: number;
+  location_lng: number;
+  event_date: string;
+  photos: Array<{
+    id: string;
+    photo_url: string;
+    created_at: string;
+  }>;
 }
 
 interface ExploreTabProps {
@@ -108,385 +66,436 @@ interface ExploreTabProps {
   }) => void;
 }
 
-function SharedPhotoCard({ 
-  photo, 
-  onPress, 
-  onLike 
-}: { 
-  photo: SharedPhoto; 
-  onPress: () => void; 
-  onLike: () => void;
-}) {
-  return (
-    <View style={photoCardStyles.container}>
-      <TouchableOpacity 
-        style={photoCardStyles.card}
-        onPress={onPress}
-        activeOpacity={0.95}
-      >
-        <Image 
-          source={{ uri: photo.imageUrl }}
-          style={photoCardStyles.image}
-          contentFit="cover"
-          cachePolicy="disk"
-          transition={200}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={photoCardStyles.gradient}
-        >
-          <View style={photoCardStyles.infoContainer}>
-            <View style={photoCardStyles.userRow}>
-              {photo.userAvatar ? (
-                <Image 
-                  source={{ uri: photo.userAvatar }}
-                  style={photoCardStyles.avatar}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={photoCardStyles.avatarPlaceholder}>
-                  <Ionicons name="person" size={16} color={Colors.grayMedium} />
-                </View>
-              )}
-              <View style={photoCardStyles.locationInfo}>
-                <Text style={photoCardStyles.username}>{photo.username}</Text>
-                <Text style={photoCardStyles.label}>Hangout Location</Text>
-                <Text style={photoCardStyles.locationName} numberOfLines={1}>
-                  {photo.locationName}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity 
-              style={photoCardStyles.likeButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                onLike();
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name={photo.isLiked ? 'heart' : 'heart-outline'} 
-                size={24} 
-                color={photo.isLiked ? '#FF4757' : 'rgba(255,255,255,0.9)'} 
-              />
-              <Text style={photoCardStyles.likeCount}>{photo.likeCount}</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-}
+const CATEGORY_COLORS: { [key: string]: string[] } = {
+  'Food & Dining': ['#FF6B6B', '#FF8E53'],
+  'Bars & Nightlife': ['#9B59B6', '#8E44AD'],
+  'Entertainment': ['#3498DB', '#2980B9'],
+  'Outdoors': ['#27AE60', '#2ECC71'],
+  'Other': ['#95A5A6', '#7F8C8D'],
+};
 
-const photoCardStyles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  card: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    flex: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 13,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.white,
-    marginBottom: 2,
-  },
-  label: {
-    fontSize: 10,
-    fontFamily: 'Prompt-Regular',
-    color: 'rgba(255,255,255,0.7)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  locationName: {
-    fontSize: 16,
-    fontFamily: 'Prompt-Bold',
-    color: Colors.white,
-  },
-  likeButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(138, 111, 234, 0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 25,
-    flexDirection: 'row',
-    gap: 6,
-  },
-  likeCount: {
-    fontSize: 15,
-    fontFamily: 'Prompt-Bold',
-    color: Colors.white,
-  },
-});
+const CATEGORY_ICONS: { [key: string]: string } = {
+  'Food & Dining': 'restaurant',
+  'Bars & Nightlife': 'wine',
+  'Entertainment': 'game-controller',
+  'Outdoors': 'leaf',
+  'Other': 'location',
+};
 
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
-  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [sharedPhotos, setSharedPhotos] = useState<SharedPhoto[]>([]);
-  const [categorySections, setCategorySections] = useState<CategorySection[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [categories, setCategories] = useState<CategoryFeed[]>([]);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareStep, setShareStep] = useState<'events' | 'photos'>('events');
+  const [eventsWithPhotos, setEventsWithPhotos] = useState<EventWithPhotos[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<EventWithPhotos | null>(null);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  useEffect(() => {
-    requestLocationAndFetch();
-  }, []);
+  const lastTapRef = useRef<{ [key: string]: number }>({});
 
-  const requestLocationAndFetch = async () => {
+  const fetchLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationError('Location permission is required to explore nearby places');
-        setLoading(false);
-        return;
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        return { lat: loc.coords.latitude, lng: loc.coords.longitude };
       }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      
-      const coords = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
-      setUserLocation(coords);
-      setLocationError(null);
-      await fetchExploreData(coords);
     } catch (error) {
-      console.error('Location error:', error);
-      setLocationError('Unable to get your location. Please enable location services.');
-      setLoading(false);
+      console.log('Location error:', error);
     }
+    return null;
   };
 
-  const fetchExploreData = async (coords: { lat: number; lng: number }) => {
+  const fetchFeed = async (loc?: { lat: number; lng: number } | null) => {
     try {
-      const params = new URLSearchParams({
-        lat: coords.lat.toString(),
-        lng: coords.lng.toString(),
-      });
-
-      const [feedData, photosData] = await Promise.all([
-        api.get(`/explore/feed?${params}`),
-        api.get(`/explore/shared-photos?${params}`),
-      ]);
-      
-      setSharedPhotos(photosData || []);
-      setCategorySections(feedData.categorySections || []);
+      const coords = loc || location || { lat: 0, lng: 0 };
+      const response = await api.get(`/explore/user-feed?lat=${coords.lat}&lng=${coords.lng}`);
+      setCategories(response.categories || []);
     } catch (error) {
-      console.error('Failed to fetch explore data:', error);
+      console.error('Feed error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    const init = async () => {
+      const loc = await fetchLocation();
+      await fetchFeed(loc);
+    };
+    init();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (userLocation) {
-      await fetchExploreData(userLocation);
-    }
-    setRefreshing(false);
-  }, [userLocation]);
+    await fetchFeed();
+  }, [location]);
 
-  const handleLocationPress = (location: { name: string; address: string; lat: number; lng: number }) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSelectLocation(location);
+  const handleOpenShareModal = async () => {
+    setShowShareModal(true);
+    setShareStep('events');
+    setSelectedEvent(null);
+    setLoadingEvents(true);
+    
+    try {
+      const events = await api.get('/explore/my-events-with-photos');
+      setEventsWithPhotos(events);
+    } catch (error) {
+      console.error('Fetch events error:', error);
+      Alert.alert('Error', 'Failed to load your events');
+    } finally {
+      setLoadingEvents(false);
+    }
   };
 
-  const handleLikePhoto = async (photoId: string) => {
+  const handleSelectEvent = (event: EventWithPhotos) => {
+    setSelectedEvent(event);
+    setShareStep('photos');
+  };
+
+  const handleSharePhoto = async (photoId: string) => {
+    if (!selectedEvent || sharing) return;
+    
+    setSharing(true);
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const response = await api.post(`/explore/photos/${photoId}/like`, {});
-      setSharedPhotos(prev => prev.map(p => 
-        p.id === photoId 
-          ? { ...p, likeCount: response.likeCount, isLiked: response.isLiked }
-          : p
-      ));
-    } catch (error) {
-      console.error('Failed to like photo:', error);
+      await api.post('/explore/share', {
+        eventId: selectedEvent.id,
+        photoId: photoId,
+      });
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Shared!', 'Your photo will appear on Explore after review.');
+      setShowShareModal(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to share photo');
+    } finally {
+      setSharing(false);
     }
+  };
+
+  const handleDoubleTap = async (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current[post.id] || 0;
+    
+    if (now - lastTap < 300) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      try {
+        const response = await api.post(`/explore/photos/${post.id}/like`);
+        
+        setCategories(prev => prev.map((cat, ci) => {
+          if (ci !== categoryIndex) return cat;
+          return {
+            ...cat,
+            posts: cat.posts.map((p, pi) => {
+              if (pi !== postIndex) return p;
+              return { ...p, isLiked: response.isLiked, likeCount: response.likeCount };
+            }),
+          };
+        }));
+      } catch (error) {
+        console.error('Like error:', error);
+      }
+    } else {
+      lastTapRef.current[post.id] = now;
+    }
+  };
+
+  const handleSingleTap = (post: ExplorePost) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current[post.id] || 0;
+    
+    if (now - lastTap > 300) {
+      setTimeout(() => {
+        const currentLast = lastTapRef.current[post.id] || 0;
+        if (now === currentLast) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onSelectLocation({
+            name: post.locationName,
+            address: '',
+            lat: post.lat,
+            lng: post.lng,
+          });
+        }
+      }, 300);
+    }
+    lastTapRef.current[post.id] = now;
+  };
+
+  const renderPost = (post: ExplorePost, categoryIndex: number, postIndex: number) => (
+    <TouchableOpacity
+      key={post.id}
+      style={styles.card}
+      activeOpacity={0.95}
+      onPress={() => {
+        handleDoubleTap(post, categoryIndex, postIndex);
+        handleSingleTap(post);
+      }}
+    >
+      <Image
+        source={{ uri: post.imageUrl }}
+        style={styles.cardImage}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+      />
+      
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={styles.cardGradient}
+      >
+        <View style={styles.cardContent}>
+          <View style={styles.userRow}>
+            {post.userAvatar ? (
+              <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Ionicons name="person" size={14} color={Colors.white} />
+              </View>
+            )}
+            <Text style={styles.username}>{post.username}</Text>
+          </View>
+          
+          <View style={styles.locationRow}>
+            <Ionicons name="location" size={16} color={Colors.white} />
+            <Text style={styles.locationName} numberOfLines={1}>{post.locationName}</Text>
+          </View>
+          
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Ionicons 
+                name={post.isLiked ? "heart" : "heart-outline"} 
+                size={18} 
+                color={post.isLiked ? '#FF6B6B' : Colors.white} 
+              />
+              <Text style={styles.statText}>{post.likeCount}</Text>
+            </View>
+            {post.distance > 0 && (
+              <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
+            )}
+          </View>
+        </View>
+      </LinearGradient>
+      
+      <View style={styles.tapHint}>
+        <Ionicons name="add-circle" size={20} color="rgba(255,255,255,0.8)" />
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderCategory = (category: CategoryFeed, index: number) => {
+    const colors = CATEGORY_COLORS[category.category] || CATEGORY_COLORS['Other'];
+    const icon = CATEGORY_ICONS[category.category] || 'location';
+    
+    return (
+      <View key={category.category} style={styles.categorySection}>
+        <View style={styles.categoryHeader}>
+          <LinearGradient
+            colors={colors as any}
+            style={styles.categoryIconBg}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name={icon as any} size={18} color={Colors.white} />
+          </LinearGradient>
+          <Text style={styles.categoryTitle}>{category.category}</Text>
+          <Text style={styles.categoryCount}>{category.posts.length}</Text>
+        </View>
+        
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+          decelerationRate="fast"
+          snapToInterval={CARD_WIDTH + 16}
+        >
+          {category.posts.map((post, postIndex) => renderPost(post, index, postIndex))}
+        </ScrollView>
+      </View>
+    );
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.secondary} />
-        <Text style={styles.loadingText}>Finding places near you...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Loading explore...</Text>
       </View>
     );
   }
-
-  if (locationError) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="location-outline" size={48} color={Colors.grayMedium} />
-        <Text style={styles.errorTitle}>Location Required</Text>
-        <Text style={styles.errorText}>{locationError}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={requestLocationAndFetch}>
-          <Text style={styles.retryButtonText}>Enable Location</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const renderCategorySection = (section: CategorySection, index: number) => {
-    if (!section.locations || section.locations.length === 0) return null;
-    const displayLocations = section.locations.slice(0, 3);
-    
-    return (
-      <View key={section.id} style={styles.categorySection}>
-        <View style={styles.categoryHeader}>
-          <Text style={styles.categoryEmoji}>{section.emoji}</Text>
-          <Text style={styles.categoryTitle}>{section.name}</Text>
-        </View>
-        <View style={styles.categoryGrid}>
-          {displayLocations.map((location, locIndex) => {
-            const iconData = getIconForCategory(location.category, location.name);
-            return (
-              <TouchableOpacity
-                key={location.id || `${section.id}-${locIndex}`}
-                style={styles.categoryItem}
-                onPress={() => handleLocationPress({
-                  name: location.name,
-                  address: location.address,
-                  lat: location.lat,
-                  lng: location.lng,
-                })}
-                activeOpacity={0.8}
-              >
-                <View style={styles.categoryIconWrapper}>
-                  <Ionicons name={iconData.icon as any} size={32} color={iconData.color} />
-                </View>
-                <Text style={styles.categoryItemName} numberOfLines={2}>
-                  {location.abbreviatedName}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-    );
-  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.secondary}
-          colors={[Colors.secondary]}
-        />
-      }
-    >
-      {sharedPhotos.length > 0 && (
-        <>
-          {sharedPhotos.map((photo, index) => (
-            <React.Fragment key={photo.id}>
-              <SharedPhotoCard
-                photo={photo}
-                onPress={() => handleLocationPress({
-                  name: photo.locationName,
-                  address: photo.locationAddress,
-                  lat: photo.lat,
-                  lng: photo.lng,
-                })}
-                onLike={() => handleLikePhoto(photo.id)}
-              />
-              {index === 0 && (
-                <View style={styles.adSection}>
-                  <Text style={styles.sponsoredLabel}>SPONSORED</Text>
-                  <AdBanner unitId={ADMOB_BANNER_ID} />
-                </View>
-              )}
-            </React.Fragment>
-          ))}
-        </>
-      )}
-
-      {sharedPhotos.length === 0 && (
-        <View style={styles.noPhotosSection}>
-          <Ionicons name="images-outline" size={48} color={Colors.grayMedium} />
-          <Text style={styles.noPhotosTitle}>No Shared Photos Yet</Text>
-          <Text style={styles.noPhotosText}>
-            Be the first to share a photo from your hangout! Upload photos to your events and tap Share to feature them here.
-          </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Explore</Text>
+          <Text style={styles.headerSubtitle}>Discover hangout spots near you</Text>
         </View>
-      )}
+        
+        <TouchableOpacity 
+          style={styles.shareButton}
+          onPress={handleOpenShareModal}
+        >
+          <LinearGradient
+            colors={[Colors.primary, Colors.secondary]}
+            style={styles.shareButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="add" size={20} color={Colors.white} />
+            <Text style={styles.shareButtonText}>Share</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
 
-      {categorySections.length > 0 && (
-        <>
-          <View style={styles.adSection}>
-            <Text style={styles.sponsoredLabel}>SPONSORED</Text>
-            <AdBox unitId={ADMOB_BOX_ID} />
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {categories.length === 0 ? (
+          <View style={styles.emptyState}>
+            <LinearGradient
+              colors={['rgba(255,107,107,0.1)', 'rgba(255,142,83,0.1)']}
+              style={styles.emptyIconBg}
+            >
+              <Ionicons name="images-outline" size={48} color={Colors.primary} />
+            </LinearGradient>
+            <Text style={styles.emptyTitle}>No hangouts shared yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Be the first to share a spot! Tap the Share button above to share photos from your events.
+            </Text>
+            <Text style={styles.emptyHint}>
+              Tip: Double-tap posts to like, single-tap to use the location
+            </Text>
           </View>
-          
-          {categorySections.map((section, index) => (
-            <React.Fragment key={section.id}>
-              {renderCategorySection(section, index)}
-              {index === 0 && categorySections.length > 1 && (
-                <View style={styles.adSection}>
-                  <Text style={styles.sponsoredLabel}>SPONSORED</Text>
-                  <AdBanner unitId={ADMOB_BANNER_ID} />
-                </View>
-              )}
-            </React.Fragment>
-          ))}
-        </>
-      )}
+        ) : (
+          <>
+            <View style={styles.hintBanner}>
+              <Ionicons name="information-circle" size={18} color={Colors.primary} />
+              <Text style={styles.hintText}>
+                Double-tap to like • Single-tap to use location
+              </Text>
+            </View>
+            
+            {categories.map((category, index) => renderCategory(category, index))}
+          </>
+        )}
+        
+        <View style={{ height: 100 }} />
+      </ScrollView>
 
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+      <Modal
+        visible={showShareModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowShareModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                style={styles.modalBack}
+                onPress={() => {
+                  if (shareStep === 'photos') {
+                    setShareStep('events');
+                    setSelectedEvent(null);
+                  } else {
+                    setShowShareModal(false);
+                  }
+                }}
+              >
+                <Ionicons 
+                  name={shareStep === 'photos' ? "arrow-back" : "close"} 
+                  size={24} 
+                  color={Colors.text} 
+                />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>
+                {shareStep === 'events' ? 'Select an Event' : 'Select a Photo'}
+              </Text>
+              <View style={{ width: 40 }} />
+            </View>
+
+            {loadingEvents ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : shareStep === 'events' ? (
+              eventsWithPhotos.length === 0 ? (
+                <View style={styles.modalEmpty}>
+                  <Ionicons name="camera-outline" size={48} color={Colors.textSecondary} />
+                  <Text style={styles.modalEmptyText}>No events with photos</Text>
+                  <Text style={styles.modalEmptySubtext}>
+                    Add photos to your events first, then share them here!
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={eventsWithPhotos}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.eventItem}
+                      onPress={() => handleSelectEvent(item)}
+                    >
+                      <View style={styles.eventInfo}>
+                        <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
+                        <View style={styles.eventLocation}>
+                          <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+                          <Text style={styles.eventLocationText} numberOfLines={1}>
+                            {item.location_name || 'No location'}
+                          </Text>
+                        </View>
+                        <Text style={styles.eventPhotoCount}>
+                          {item.photos.length} photo{item.photos.length !== 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                  contentContainerStyle={styles.eventsList}
+                />
+              )
+            ) : (
+              <View style={styles.photosGrid}>
+                <FlatList
+                  data={selectedEvent?.photos || []}
+                  numColumns={2}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.photoGridItem}
+                      onPress={() => handleSharePhoto(item.id)}
+                      disabled={sharing}
+                    >
+                      <Image
+                        source={{ uri: item.photo_url }}
+                        style={styles.photoGridImage}
+                        contentFit="cover"
+                      />
+                      {sharing && (
+                        <View style={styles.photoOverlay}>
+                          <ActivityIndicator color={Colors.white} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                  contentContainerStyle={styles.photosGridContent}
+                />
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -494,9 +503,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  content: {
-    padding: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -506,118 +512,320 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
+    color: Colors.textSecondary,
     fontSize: 14,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.grayMedium,
   },
-  errorContainer: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  shareButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  shareButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  shareButtonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scrollView: {
     flex: 1,
+  },
+  hintBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,107,107,0.1)',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  hintText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  emptyIconBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    padding: 24,
+    marginBottom: 20,
   },
-  errorTitle: {
-    fontSize: 18,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.white,
-    marginTop: 16,
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
     marginBottom: 8,
   },
-  errorText: {
+  emptySubtitle: {
     fontSize: 14,
-    fontFamily: 'Prompt-Regular',
-    color: Colors.grayMedium,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  retryButton: {
-    backgroundColor: Colors.secondary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    fontSize: 14,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.white,
-  },
-  adSection: {
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  sponsoredLabel: {
-    fontSize: 10,
-    fontFamily: 'Prompt-Medium',
-    color: Colors.grayMedium,
-    marginBottom: 8,
-    letterSpacing: 1,
-  },
-  noPhotosSection: {
-    alignItems: 'center',
-    padding: 32,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    marginBottom: 16,
-  },
-  noPhotosTitle: {
-    fontSize: 18,
-    fontFamily: 'Prompt-SemiBold',
-    color: Colors.white,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  noPhotosText: {
-    fontSize: 14,
-    fontFamily: 'Prompt-Regular',
-    color: Colors.grayMedium,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  emptyHint: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontWeight: '500',
   },
   categorySection: {
-    marginBottom: 20,
-    backgroundColor: 'rgba(180, 150, 255, 0.15)',
-    borderRadius: 20,
-    padding: 16,
+    marginBottom: 24,
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
-  categoryEmoji: {
-    fontSize: 24,
-    marginRight: 10,
+  categoryIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryTitle: {
     fontSize: 18,
-    fontFamily: 'Prompt-Bold',
-    color: Colors.white,
+    fontWeight: '600',
+    color: Colors.text,
+    marginLeft: 10,
+    flex: 1,
   },
-  categoryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  categoryCount: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
-  categoryItem: {
-    width: (SCREEN_WIDTH - 80) / 3,
-    alignItems: 'center',
+  carousel: {
+    paddingLeft: 20,
+    paddingRight: 4,
   },
-  categoryIconWrapper: {
-    width: 70,
-    height: 70,
+  card: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+    marginRight: 16,
+    backgroundColor: Colors.cardBackground,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    justifyContent: 'flex-end',
+    padding: 16,
+  },
+  cardContent: {
+    gap: 8,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  avatarPlaceholder: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  categoryItemName: {
-    fontSize: 12,
-    fontFamily: 'Prompt-Medium',
+  username: {
+    fontSize: 14,
+    fontWeight: '600',
     color: Colors.white,
-    textAlign: 'center',
   },
-  bottomPadding: {
-    height: 100,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  locationName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.white,
+    flex: 1,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 14,
+    color: Colors.white,
+    fontWeight: '500',
+  },
+  distanceText: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  tapHint: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    opacity: 0.8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    minHeight: '50%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  modalBack: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  modalLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+  },
+  modalEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    minHeight: 200,
+  },
+  modalEmptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginTop: 16,
+  },
+  modalEmptySubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  eventsList: {
+    padding: 16,
+  },
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.cardBackground,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  eventInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  eventLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  eventLocationText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    flex: 1,
+  },
+  eventPhotoCount: {
+    fontSize: 12,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  photosGrid: {
+    flex: 1,
+  },
+  photosGridContent: {
+    padding: 16,
+  },
+  photoGridItem: {
+    width: (SCREEN_WIDTH - 48) / 2,
+    height: (SCREEN_WIDTH - 48) / 2,
+    margin: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  photoGridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
