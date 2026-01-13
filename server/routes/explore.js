@@ -172,6 +172,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 const MAX_DISTANCE_MILES = 30;
 const MAX_RADIUS_METERS = 48000;
+const SHARED_PHOTOS_MAX_MILES = 60;
 
 const EXPLORE_CATEGORIES = [
   { name: 'Food & Dining', emoji: '🍽️', codes: '7315' },
@@ -684,27 +685,53 @@ router.get('/feed', authenticateToken, async (req, res) => {
 });
 
 router.get('/shared-photos', authenticateToken, async (req, res) => {
+  const { lat, lng } = req.query;
+  const userLat = parseFloat(lat) || 0;
+  const userLng = parseFloat(lng) || 0;
+  
   try {
     const result = await pool.query(`
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
         COALESCE(u.username, 'User') as username,
+        u.profile_photo as "userAvatar",
         e.location_name as "locationName",
         e.location_address as "locationAddress",
         e.location_lat as lat,
         e.location_lng as lng,
-        ep.created_at as "createdAt"
+        COALESCE(ep.like_count, 0) as "likeCount",
+        ep.created_at as "createdAt",
+        EXISTS(
+          SELECT 1 FROM photo_likes pl 
+          WHERE pl.photo_id = ep.id AND pl.user_id = $3
+        ) as "isLiked",
+        (
+          3959 * acos(
+            cos(radians($1)) * cos(radians(e.location_lat)) *
+            cos(radians(e.location_lng) - radians($2)) +
+            sin(radians($1)) * sin(radians(e.location_lat))
+          )
+        ) as distance
       FROM event_photos ep
       JOIN events e ON ep.event_id = e.id
       JOIN users u ON ep.uploader_id = u.id
       WHERE ep.share_to_explore = true
         AND ep.moderation_status = 'approved'
         AND e.location_lat IS NOT NULL
-      ORDER BY ep.created_at DESC
-      LIMIT 20
-    `);
+        AND e.location_lng IS NOT NULL
+        AND (
+          3959 * acos(
+            cos(radians($1)) * cos(radians(e.location_lat)) *
+            cos(radians(e.location_lng) - radians($2)) +
+            sin(radians($1)) * sin(radians(e.location_lat))
+          )
+        ) <= $4
+      ORDER BY ep.like_count DESC, ep.created_at DESC
+      LIMIT 3
+    `, [userLat, userLng, req.user.id, SHARED_PHOTOS_MAX_MILES]);
     
+    console.log('[Explore] Shared photos found:', result.rows.length, 'within', SHARED_PHOTOS_MAX_MILES, 'miles');
     res.json(result.rows);
   } catch (error) {
     console.error('Shared photos error:', error);
