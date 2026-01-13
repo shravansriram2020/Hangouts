@@ -17,8 +17,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
+import GlassModal from './GlassModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -170,7 +171,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       });
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Shared!', 'Your photo will appear on Explore after review.');
+      Alert.alert('Shared!', 'Your photo is now live on Explore.');
       setShowShareModal(false);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to share photo');
@@ -332,24 +333,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Explore</Text>
-          <Text style={styles.headerSubtitle}>Discover hangout spots near you</Text>
-        </View>
-        
         <TouchableOpacity 
           style={styles.shareButton}
           onPress={handleOpenShareModal}
         >
-          <LinearGradient
-            colors={[Colors.primary, Colors.secondary]}
-            style={styles.shareButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="add" size={20} color={Colors.white} />
-            <Text style={styles.shareButtonText}>Share</Text>
-          </LinearGradient>
+          <Ionicons name="add-circle-outline" size={22} color={Colors.secondary} />
+          <Text style={styles.shareButtonText}>Share a Hangout Spot</Text>
         </TouchableOpacity>
       </View>
 

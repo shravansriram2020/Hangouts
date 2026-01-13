@@ -853,25 +853,25 @@ router.post('/share', authenticateToken, async (req, res) => {
     const photo = photoCheck.rows[0];
 
     // Check if already shared
-    if (photo.share_to_explore && photo.moderation_status) {
+    if (photo.share_to_explore && photo.moderation_status === 'approved') {
       return res.status(400).json({ 
         error: 'This photo has already been shared',
         status: photo.moderation_status 
       });
     }
 
-    // Share the photo (set to pending moderation)
+    // Share the photo (auto-approve - instantly live)
     await pool.query(
       `UPDATE event_photos 
-       SET share_to_explore = true, moderation_status = 'pending'
+       SET share_to_explore = true, moderation_status = 'approved'
        WHERE id = $1`,
       [photoId]
     );
 
     res.json({ 
       success: true, 
-      message: 'Photo shared! It will appear on Explore after review.',
-      status: 'pending'
+      message: 'Shared! Your photo is now live on Explore.',
+      status: 'approved'
     });
   } catch (error) {
     console.error('Share to explore error:', error);

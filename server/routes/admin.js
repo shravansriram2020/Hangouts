@@ -1000,35 +1000,21 @@ router.post('/upload/email', authenticateAdmin, (req, res, next) => {
   }
 });
 
-// Photo moderation endpoints
-router.get('/photos/pending', authenticateAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT ep.*, 
-              u.first_name as uploader_name, u.email as uploader_email,
-              e.title as event_title
-       FROM event_photos ep
-       JOIN users u ON ep.uploader_id = u.id
-       JOIN events e ON ep.event_id = e.id
-       WHERE ep.share_to_explore = true 
-         AND ep.moderation_status = 'pending'
-       ORDER BY ep.created_at DESC`
-    );
-    
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get pending photos error:', error);
-    res.status(500).json({ error: 'Failed to get pending photos' });
-  }
-});
+// Explore posts management endpoints
+const EXPLORE_CATEGORIES = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
 
 router.get('/photos/all', authenticateAdmin, async (req, res) => {
   try {
     const { status } = req.query;
     let query = `
       SELECT ep.*, 
-             u.first_name as uploader_name, u.email as uploader_email,
-             e.title as event_title
+             u.first_name as uploader_name, 
+             u.username,
+             u.email as uploader_email,
+             u.profile_photo as user_avatar,
+             e.title as event_title,
+             e.location_name,
+             e.location_address
       FROM event_photos ep
       JOIN users u ON ep.uploader_id = u.id
       JOIN events e ON ep.event_id = e.id
@@ -1036,9 +1022,11 @@ router.get('/photos/all', authenticateAdmin, async (req, res) => {
     `;
     
     const params = [];
-    if (status && status !== 'all') {
+    if (status && status !== 'all' && status !== 'approved') {
       params.push(status);
       query += ` AND ep.moderation_status = $1`;
+    } else if (status === 'approved') {
+      query += ` AND ep.moderation_status = 'approved'`;
     }
     
     query += ` ORDER BY ep.created_at DESC`;
@@ -1051,33 +1039,87 @@ router.get('/photos/all', authenticateAdmin, async (req, res) => {
   }
 });
 
-router.post('/photos/:id/moderate', authenticateAdmin, async (req, res) => {
-  const { action } = req.body;
+router.patch('/photos/:id/category', authenticateAdmin, async (req, res) => {
+  const { category, restore } = req.body;
   
-  if (!['approved', 'rejected'].includes(action)) {
-    return res.status(400).json({ error: 'Invalid action. Use "approved" or "rejected".' });
+  // Handle restore request
+  if (restore) {
+    try {
+      const result = await pool.query(
+        `UPDATE event_photos 
+         SET share_to_explore = true, moderation_status = 'approved'
+         WHERE id = $1
+         RETURNING *`,
+        [req.params.id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Photo not found' });
+      }
+      
+      await logAction(req.admin.id, 'restore_explore_photo', null, { photoId: req.params.id });
+      
+      console.log('[Admin] Photo restored to Explore by', req.admin.email);
+      return res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Restore photo error:', error);
+      return res.status(500).json({ error: 'Failed to restore photo' });
+    }
+  }
+  
+  if (!EXPLORE_CATEGORIES.includes(category)) {
+    return res.status(400).json({ 
+      error: 'Invalid category. Must be one of: ' + EXPLORE_CATEGORIES.join(', ')
+    });
   }
   
   try {
     const result = await pool.query(
       `UPDATE event_photos 
-       SET moderation_status = $1
+       SET explore_category = $1
        WHERE id = $2
        RETURNING *`,
-      [action, req.params.id]
+      [category, req.params.id]
     );
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Photo not found' });
     }
     
-    await logAction(req.admin.id, `${action}_photo`, null, { photoId: req.params.id });
+    await logAction(req.admin.id, 'update_photo_category', null, { 
+      photoId: req.params.id, 
+      category 
+    });
     
-    console.log('[Admin] Photo', action, 'by', req.admin.email);
+    console.log('[Admin] Photo category updated to', category, 'by', req.admin.email);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Moderate photo error:', error);
-    res.status(500).json({ error: 'Failed to moderate photo' });
+    console.error('Update photo category error:', error);
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+router.delete('/photos/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE event_photos 
+       SET share_to_explore = false, moderation_status = 'removed'
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+    
+    await logAction(req.admin.id, 'remove_explore_photo', null, { photoId: req.params.id });
+    
+    console.log('[Admin] Photo removed from Explore by', req.admin.email);
+    res.json({ success: true, message: 'Photo removed from Explore' });
+  } catch (error) {
+    console.error('Remove photo error:', error);
+    res.status(500).json({ error: 'Failed to remove photo' });
   }
 });
 

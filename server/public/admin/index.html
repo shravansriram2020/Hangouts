@@ -550,7 +550,7 @@
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="users">Users</button>
-        <button class="tab" data-tab="moderation">Photo Moderation</button>
+        <button class="tab" data-tab="moderation">Explore Posts</button>
         <button class="tab" data-tab="stats">Statistics</button>
         <button class="tab" data-tab="news">News</button>
         <button class="tab" data-tab="broadcast">Push Notifications</button>
@@ -585,19 +585,18 @@
         </div>
       </div>
       
-      <!-- Photo Moderation Tab -->
+      <!-- Explore Posts Management Tab -->
       <div class="tab-content" id="tab-moderation">
         <div class="card">
-          <h2>Photo Moderation</h2>
-          <p style="color: var(--text-light); margin-bottom: 24px;">Review photos shared to Explore. Approved photos will be visible to all users on the Explore page.</p>
+          <h2>Manage Explore Posts</h2>
+          <p style="color: var(--text-light); margin-bottom: 24px;">Manage photos shared to Explore. Posts are live immediately. You can change categories or remove inappropriate content.</p>
           <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
-            <button class="btn btn-primary btn-small" onclick="loadModerationPhotos('pending')" id="filterPending">Pending</button>
-            <button class="btn btn-small" onclick="loadModerationPhotos('approved')" id="filterApproved">Approved</button>
-            <button class="btn btn-small" onclick="loadModerationPhotos('rejected')" id="filterRejected">Rejected</button>
-            <button class="btn btn-small" onclick="loadModerationPhotos('all')" id="filterAll">All</button>
+            <button class="btn btn-primary btn-small" onclick="loadModerationPhotos('all')" id="filterAll">All Posts</button>
+            <button class="btn btn-small" onclick="loadModerationPhotos('approved')" id="filterApproved">Live</button>
+            <button class="btn btn-small" onclick="loadModerationPhotos('removed')" id="filterRemoved">Removed</button>
           </div>
           <div id="moderationStats" style="margin-bottom: 24px;">
-            <span style="color: var(--text-light);">Loading stats...</span>
+            <span style="color: var(--text-light);">Loading...</span>
           </div>
           <div id="moderationGrid" class="moderation-grid">
             <p style="color: var(--text-light);">Loading photos...</p>
@@ -982,7 +981,7 @@
         document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
         
         if (tab.dataset.tab === 'moderation') {
-          loadModerationPhotos('pending');
+          loadModerationPhotos('all');
         }
       });
     });
@@ -1055,91 +1054,170 @@
       }).join('');
     }
     
-    // Photo Moderation
-    let currentModerationFilter = 'pending';
+    // Explore Posts Management
+    let currentModerationFilter = 'all';
+    const EXPLORE_CATEGORIES = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
     
-    async function loadModerationPhotos(filter = 'pending') {
+    function getCategoryFromLocation(locationName) {
+      const loc = (locationName || '').toLowerCase();
+      if (loc.match(/restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi/)) {
+        return 'Food & Dining';
+      } else if (loc.match(/bar|pub|brewery|lounge|club|nightclub/)) {
+        return 'Bars & Nightlife';
+      } else if (loc.match(/movie|theater|cinema|bowling|arcade|entertainment|game|amusement|park.*theme/)) {
+        return 'Entertainment';
+      } else if (loc.match(/park|beach|trail|lake|mountain|garden|outdoor|nature|hike/)) {
+        return 'Outdoors';
+      }
+      return 'Other';
+    }
+    
+    async function loadModerationPhotos(filter = 'all') {
       currentModerationFilter = filter;
       const grid = document.getElementById('moderationGrid');
       grid.innerHTML = '<p style="color: var(--text-light);">Loading photos...</p>';
       
-      ['Pending', 'Approved', 'Rejected', 'All'].forEach(f => {
+      ['All', 'Approved', 'Removed'].forEach(f => {
         const btn = document.getElementById('filter' + f);
         if (btn) btn.classList.remove('btn-primary');
       });
-      document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('btn-primary');
+      const filterBtn = document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1));
+      if (filterBtn) filterBtn.classList.add('btn-primary');
       
       try {
-        const [photosRes, pendingRes] = await Promise.all([
-          fetch(`${API_BASE}${filter === 'pending' ? '/photos/pending' : `/photos/all?status=${filter}`}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }),
-          filter === 'pending' ? Promise.resolve(null) : fetch(`${API_BASE}/photos/pending`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-        ]);
+        const photosRes = await fetch(`${API_BASE}/photos/all?status=${filter}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         
         const photos = await photosRes.json();
-        const pendingPhotos = pendingRes ? await pendingRes.json() : photos;
+        const liveCount = photos.filter(p => p.moderation_status === 'approved').length;
         
         document.getElementById('moderationStats').innerHTML = `
-          <span style="background: #FEF3C7; color: #D97706; padding: 6px 14px; border-radius: 20px; font-weight: 600;">
-            ${filter === 'pending' ? photos.length : pendingPhotos.length} pending review
+          <span style="background: #C6F6D5; color: #38A169; padding: 6px 14px; border-radius: 20px; font-weight: 600;">
+            ${filter === 'all' ? photos.length : liveCount} posts ${filter === 'all' ? 'total' : 'live'}
           </span>
         `;
         
         if (photos.length === 0) {
-          grid.innerHTML = '<p style="color: var(--text-light);">No photos found with this filter.</p>';
+          grid.innerHTML = '<p style="color: var(--text-light);">No posts found.</p>';
           return;
         }
         
-        grid.innerHTML = photos.map(photo => `
-          <div class="moderation-card">
-            <img src="${photo.photo_url}" alt="Photo" onclick="window.open('${photo.photo_url}', '_blank')">
+        grid.innerHTML = photos.map(photo => {
+          const currentCategory = photo.explore_category || getCategoryFromLocation(photo.location_name);
+          const isRemoved = photo.moderation_status === 'removed';
+          return `
+          <div class="moderation-card" style="${isRemoved ? 'opacity: 0.6;' : ''}">
+            <img src="${photo.photo_url}" alt="Photo" onclick="window.open('${photo.photo_url}', '_blank')" style="cursor: pointer;">
             <div class="moderation-card-content">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h4>${photo.event_title || 'Unknown Event'}</h4>
-                <span class="moderation-status ${photo.moderation_status}">${photo.moderation_status}</span>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; overflow: hidden;">
+                    ${photo.user_avatar ? `<img src="${photo.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (photo.username || photo.uploader_name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style="font-weight: 600; font-size: 14px;">${photo.username || photo.uploader_name || 'Unknown'}</div>
+                    <div style="font-size: 12px; color: var(--text-light);">${photo.uploader_email}</div>
+                  </div>
+                </div>
+                <span class="moderation-status ${photo.moderation_status}">${isRemoved ? 'removed' : 'live'}</span>
               </div>
-              <p><strong>Uploaded by:</strong> ${photo.uploader_name} (${photo.uploader_email})</p>
-              <p><strong>Date:</strong> ${new Date(photo.created_at).toLocaleString()}</p>
-              ${photo.moderation_status === 'pending' ? `
-                <div class="moderation-card-actions">
-                  <button class="btn btn-success btn-small" onclick="moderatePhoto('${photo.id}', 'approved')">Approve</button>
-                  <button class="btn btn-danger btn-small" onclick="moderatePhoto('${photo.id}', 'rejected')">Reject</button>
+              
+              <div style="background: #f7fafc; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <strong style="font-size: 14px;">${photo.location_name || 'No location'}</strong>
                 </div>
-              ` : `
-                <div class="moderation-card-actions">
-                  <button class="btn btn-small" onclick="moderatePhoto('${photo.id}', '${photo.moderation_status === 'approved' ? 'rejected' : 'approved'}')">
-                    ${photo.moderation_status === 'approved' ? 'Reject' : 'Approve'}
-                  </button>
-                </div>
-              `}
+                ${photo.location_address ? `<div style="font-size: 12px; color: var(--text-light); margin-left: 22px;">${photo.location_address}</div>` : ''}
+              </div>
+              
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 500; color: var(--text-light); display: block; margin-bottom: 4px;">Category</label>
+                <select 
+                  style="width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; cursor: pointer;"
+                  onchange="updatePhotoCategory('${photo.id}', this.value)"
+                  ${isRemoved ? 'disabled' : ''}
+                >
+                  ${EXPLORE_CATEGORIES.map(cat => `<option value="${cat}" ${currentCategory === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                </select>
+              </div>
+              
+              <div style="font-size: 12px; color: var(--text-light); margin-bottom: 12px;">
+                Shared ${new Date(photo.created_at).toLocaleDateString()} at ${new Date(photo.created_at).toLocaleTimeString()}
+              </div>
+              
+              <div class="moderation-card-actions">
+                ${isRemoved ? `
+                  <button class="btn btn-success btn-small" onclick="restorePhoto('${photo.id}')">Restore</button>
+                ` : `
+                  <button class="btn btn-danger btn-small" onclick="removePhoto('${photo.id}')">Remove from Explore</button>
+                `}
+              </div>
             </div>
           </div>
-        `).join('');
+        `}).join('');
       } catch (e) {
-        console.error('Failed to load moderation photos:', e);
+        console.error('Failed to load photos:', e);
         grid.innerHTML = '<p style="color: var(--danger);">Failed to load photos.</p>';
       }
     }
     
-    async function moderatePhoto(photoId, action) {
+    async function updatePhotoCategory(photoId, category) {
       try {
-        const res = await fetch(`${API_BASE}/photos/${photoId}/moderate`, {
-          method: 'POST',
+        const res = await fetch(`${API_BASE}/photos/${photoId}/category`, {
+          method: 'PATCH',
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ action })
+          body: JSON.stringify({ category })
+        });
+        
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error || 'Failed to update category');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    }
+    
+    async function removePhoto(photoId) {
+      if (!confirm('Remove this photo from Explore? It will no longer be visible to users.')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/photos/${photoId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (res.ok) {
           loadModerationPhotos(currentModerationFilter);
         } else {
           const data = await res.json();
-          alert(data.error || 'Failed to moderate photo');
+          alert(data.error || 'Failed to remove photo');
+        }
+      } catch (e) {
+        alert('Network error');
+      }
+    }
+    
+    async function restorePhoto(photoId) {
+      try {
+        const res = await fetch(`${API_BASE}/photos/${photoId}/category`, {
+          method: 'PATCH',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ restore: true })
+        });
+        
+        if (res.ok) {
+          loadModerationPhotos(currentModerationFilter);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to restore photo');
         }
       } catch (e) {
         alert('Network error');
