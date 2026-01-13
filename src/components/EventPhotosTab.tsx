@@ -240,33 +240,6 @@ export default function EventPhotosTab({ eventId }: Props) {
                   <Ionicons name="download-outline" size={22} color={Colors.white} />
                   <Text style={styles.bottomActionText}>Download</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.bottomActionButton, 
-                    styles.shareButton,
-                    selectedPhoto.share_to_explore && styles.shareButtonActive
-                  ]}
-                  onPress={async () => {
-                    try {
-                      const newValue = !selectedPhoto.share_to_explore;
-                      const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
-                      const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
-                      setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
-                      setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
-                    } catch (error) {
-                      Alert.alert('Error', 'Failed to update sharing preference');
-                    }
-                  }}
-                >
-                  <Ionicons 
-                    name={selectedPhoto.share_to_explore ? "checkmark-circle" : "globe-outline"} 
-                    size={22} 
-                    color={Colors.white} 
-                  />
-                  <Text style={styles.bottomActionText}>
-                    {selectedPhoto.share_to_explore ? 'Shared' : 'Share'}
-                  </Text>
-                </TouchableOpacity>
                 {selectedPhoto.uploader_id === user?.id && (
                   <TouchableOpacity
                     style={[styles.bottomActionButton, styles.deleteButton]}
