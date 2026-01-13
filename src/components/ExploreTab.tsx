@@ -10,7 +10,6 @@ import {
   Dimensions,
   FlatList,
   Alert,
-  Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +18,7 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Colors, Fonts, Shadows } from '../../constants/theme';
 import { api } from '../../services/api';
+import GlassModal from './GlassModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -30,6 +30,7 @@ interface ExplorePost {
   username: string;
   userAvatar?: string;
   locationName: string;
+  locationAddress: string;
   lat: number;
   lng: number;
   likeCount: number;
@@ -47,6 +48,7 @@ interface HangoutWithPhotos {
   id: string;
   title: string;
   location_name: string;
+  location_address: string;
   location_lat: number;
   location_lng: number;
   event_date: string;
@@ -253,7 +255,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectLocation({
       name: post.locationName,
-      address: '',
+      address: post.locationAddress || '',
       lat: post.lat,
       lng: post.lng,
     });
@@ -350,6 +352,132 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   };
 
+  const renderModalContent = () => {
+    if (loadingHangouts) {
+      return (
+        <View style={styles.modalLoading}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      );
+    }
+
+    if (shareStep === 'hangouts') {
+      return (
+        <View>
+          <View style={styles.modalNote}>
+            <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
+            <Text style={styles.modalNoteText}>
+              Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
+            </Text>
+          </View>
+          
+          {hangoutsWithPhotos.length === 0 ? (
+            <View style={styles.modalEmpty}>
+              <Ionicons name="camera-outline" size={48} color={Colors.grayMedium} />
+              <Text style={styles.modalEmptyText}>No hangouts with photos</Text>
+              <Text style={styles.modalEmptySubtext}>
+                Add photos to your hangouts first, then share them here!
+              </Text>
+            </View>
+          ) : (
+            hangoutsWithPhotos.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.hangoutItem}
+                onPress={() => handleSelectHangout(item)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.hangoutInfo}>
+                  <Text style={styles.hangoutTitle} numberOfLines={1}>{item.title}</Text>
+                  <View style={styles.hangoutLocation}>
+                    <Ionicons name="location-outline" size={14} color={Colors.grayMedium} />
+                    <Text style={styles.hangoutLocationText} numberOfLines={1}>
+                      {item.location_name || 'No location'}
+                    </Text>
+                  </View>
+                  <Text style={styles.hangoutPhotoCount}>
+                    {item.photos.length} photo{item.photos.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.grayMedium} />
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      );
+    }
+
+    if (shareStep === 'photos') {
+      return (
+        <View>
+          <View style={styles.modalNote}>
+            <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
+            <Text style={styles.modalNoteText}>
+              Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
+            </Text>
+          </View>
+          
+          <View style={styles.photosGrid}>
+            {(selectedHangout?.photos || []).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.photoGridItem}
+                onPress={() => handleSelectPhoto(item)}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={{ uri: item.photo_url }}
+                  style={styles.photoGridImage}
+                  contentFit="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.previewContainer}>
+        <View style={styles.modalNote}>
+          <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
+          <Text style={styles.modalNoteText}>
+            Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
+          </Text>
+        </View>
+        
+        <Image
+          source={{ uri: selectedPhoto?.photo_url }}
+          style={styles.previewImage}
+          contentFit="cover"
+        />
+        <View style={styles.previewInfo}>
+          <View style={styles.previewLocation}>
+            <Ionicons name="location" size={18} color={Colors.secondary} />
+            <Text style={styles.previewLocationText} numberOfLines={1}>
+              {selectedHangout?.location_name || 'Unknown location'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.shareConfirmButton}
+          onPress={handleSharePhoto}
+          disabled={sharing}
+          activeOpacity={0.7}
+        >
+          {sharing ? (
+            <ActivityIndicator color={Colors.white} />
+          ) : (
+            <>
+              <Ionicons name="share-outline" size={20} color={Colors.white} />
+              <Text style={styles.shareConfirmButtonText}>Share to Explore</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -398,132 +526,14 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <Modal
+      <GlassModal
         visible={showShareModal}
-        animationType="slide"
-        transparent
-        onRequestClose={handleCloseModal}
+        onClose={handleCloseModal}
+        title={getModalTitle()}
+        fullHeight
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity 
-                style={styles.modalCloseButton}
-                onPress={handleCloseModal}
-              >
-                <Ionicons 
-                  name={shareStep === 'hangouts' ? "close" : "arrow-back"} 
-                  size={24} 
-                  color={Colors.secondary} 
-                />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>{getModalTitle()}</Text>
-              <View style={{ width: 40 }} />
-            </View>
-
-            <View style={styles.modalNote}>
-              <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
-              <Text style={styles.modalNoteText}>
-                Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
-              </Text>
-            </View>
-
-            {loadingHangouts ? (
-              <View style={styles.modalLoading}>
-                <ActivityIndicator size="large" color={Colors.primary} />
-              </View>
-            ) : shareStep === 'hangouts' ? (
-              hangoutsWithPhotos.length === 0 ? (
-                <View style={styles.modalEmpty}>
-                  <Ionicons name="camera-outline" size={48} color={Colors.grayMedium} />
-                  <Text style={styles.modalEmptyText}>No hangouts with photos</Text>
-                  <Text style={styles.modalEmptySubtext}>
-                    Add photos to your hangouts first, then share them here!
-                  </Text>
-                </View>
-              ) : (
-                <FlatList
-                  data={hangoutsWithPhotos}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.hangoutItem}
-                      onPress={() => handleSelectHangout(item)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.hangoutInfo}>
-                        <Text style={styles.hangoutTitle} numberOfLines={1}>{item.title}</Text>
-                        <View style={styles.hangoutLocation}>
-                          <Ionicons name="location-outline" size={14} color={Colors.grayMedium} />
-                          <Text style={styles.hangoutLocationText} numberOfLines={1}>
-                            {item.location_name || 'No location'}
-                          </Text>
-                        </View>
-                        <Text style={styles.hangoutPhotoCount}>
-                          {item.photos.length} photo{item.photos.length !== 1 ? 's' : ''}
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color={Colors.grayMedium} />
-                    </TouchableOpacity>
-                  )}
-                  contentContainerStyle={styles.hangoutsList}
-                />
-              )
-            ) : shareStep === 'photos' ? (
-              <FlatList
-                data={selectedHangout?.photos || []}
-                numColumns={3}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.photoGridItem}
-                    onPress={() => handleSelectPhoto(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={{ uri: item.photo_url }}
-                      style={styles.photoGridImage}
-                      contentFit="cover"
-                    />
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.photosGridContent}
-              />
-            ) : (
-              <View style={styles.previewContainer}>
-                <Image
-                  source={{ uri: selectedPhoto?.photo_url }}
-                  style={styles.previewImage}
-                  contentFit="contain"
-                />
-                <View style={styles.previewInfo}>
-                  <View style={styles.previewLocation}>
-                    <Ionicons name="location" size={18} color={Colors.secondary} />
-                    <Text style={styles.previewLocationText} numberOfLines={1}>
-                      {selectedHangout?.location_name || 'Unknown location'}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.shareConfirmButton}
-                  onPress={handleSharePhoto}
-                  disabled={sharing}
-                  activeOpacity={0.7}
-                >
-                  {sharing ? (
-                    <ActivityIndicator color={Colors.white} />
-                  ) : (
-                    <>
-                      <Ionicons name="share-outline" size={20} color={Colors.white} />
-                      <Text style={styles.shareConfirmButtonText}>Share to Explore</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+        {renderModalContent()}
+      </GlassModal>
     </View>
   );
 }
@@ -642,7 +652,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 16,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     ...Shadows.medium,
   },
   cardImage: {
@@ -720,49 +730,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
-    minHeight: '50%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  modalCloseButton: {
-    width: 40,
-    height: 40,
+  modalLoading: {
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: Fonts.semiBold,
-    color: Colors.black,
+    minHeight: 200,
+    paddingVertical: 40,
   },
   modalNote: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: Colors.glassLight,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
+    backgroundColor: 'rgba(0,0,0,0.03)',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
     gap: 8,
+    marginBottom: 16,
   },
   modalNoteText: {
     flex: 1,
@@ -771,18 +753,10 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
     lineHeight: 16,
   },
-  modalLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 200,
-  },
   modalEmpty: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
-    minHeight: 200,
+    paddingVertical: 40,
   },
   modalEmptyText: {
     fontSize: 16,
@@ -797,17 +771,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
-  hangoutsList: {
-    padding: 16,
-  },
   hangoutItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.5)',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    ...Shadows.small,
   },
   hangoutInfo: {
     flex: 1,
@@ -835,13 +805,15 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginTop: 2,
   },
-  photosGridContent: {
-    padding: 12,
+  photosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
   },
   photoGridItem: {
-    width: (SCREEN_WIDTH - 48) / 3,
-    height: (SCREEN_WIDTH - 48) / 3,
-    margin: 4,
+    width: '31%',
+    aspectRatio: 1,
+    margin: '1%',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -850,14 +822,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   previewContainer: {
-    flex: 1,
-    padding: 16,
+    paddingTop: 4,
   },
   previewImage: {
-    flex: 1,
-    borderRadius: 16,
-    backgroundColor: Colors.white,
-    minHeight: 300,
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    backgroundColor: Colors.glassLight,
   },
   previewInfo: {
     marginTop: 16,
