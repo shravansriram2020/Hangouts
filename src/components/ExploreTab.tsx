@@ -187,7 +187,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       try {
-        const response = await api.post(`/explore/photos/${post.id}/like`);
+        const response = await api.post(`/explore/photos/${post.id}/like`, {});
         
         setCategories(prev => prev.map((cat, ci) => {
           if (ci !== categoryIndex) return cat;
@@ -415,7 +415,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 <Ionicons 
                   name={shareStep === 'photos' ? "arrow-back" : "close"} 
                   size={24} 
-                  color={Colors.text} 
+                  color={Colors.black} 
                 />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
@@ -431,7 +431,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             ) : shareStep === 'events' ? (
               eventsWithPhotos.length === 0 ? (
                 <View style={styles.modalEmpty}>
-                  <Ionicons name="camera-outline" size={48} color={Colors.textSecondary} />
+                  <Ionicons name="camera-outline" size={48} color={Colors.grayMedium} />
                   <Text style={styles.modalEmptyText}>No events with photos</Text>
                   <Text style={styles.modalEmptySubtext}>
                     Add photos to your events first, then share them here!
@@ -449,7 +449,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                       <View style={styles.eventInfo}>
                         <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
                         <View style={styles.eventLocation}>
-                          <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+                          <Ionicons name="location-outline" size={14} color={Colors.grayMedium} />
                           <Text style={styles.eventLocationText} numberOfLines={1}>
                             {item.location_name || 'No location'}
                           </Text>
@@ -458,7 +458,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                           {item.photos.length} photo{item.photos.length !== 1 ? 's' : ''}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                      <Ionicons name="chevron-forward" size={20} color={Colors.grayMedium} />
                     </TouchableOpacity>
                   )}
                   contentContainerStyle={styles.eventsList}
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     fontSize: 14,
   },
   header: {
@@ -526,11 +526,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.text,
+    color: Colors.black,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     marginTop: 2,
   },
   shareButton: {
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
   },
   emptyState: {
     alignItems: 'center',
@@ -583,12 +583,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.black,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 16,
@@ -618,13 +618,13 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.black,
     marginLeft: 10,
     flex: 1,
   },
   categoryCount: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     backgroundColor: 'rgba(0,0,0,0.05)',
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 16,
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: Colors.white,
   },
   cardImage: {
     width: '100%',
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.black,
   },
   modalLoading: {
     flex: 1,
@@ -761,12 +761,12 @@ const styles = StyleSheet.create({
   modalEmptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.black,
     marginTop: 16,
   },
   modalEmptySubtext: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: Colors.white,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.black,
   },
   eventLocation: {
     flexDirection: 'row',
@@ -797,7 +797,7 @@ const styles = StyleSheet.create({
   },
   eventLocationText: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: Colors.grayMedium,
     flex: 1,
   },
   eventPhotoCount: {
