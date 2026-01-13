@@ -799,7 +799,10 @@ router.get('/my-events-with-photos', authenticateToken, async (req, res) => {
         ) as photos
       FROM events e
       LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
-      WHERE (e.host_id = $1 OR ea.status = 'accepted')
+      WHERE (
+        (e.host_id = $1 AND (e.host_dismissed IS NULL OR e.host_dismissed = false))
+        OR ea.status = 'accepted'
+      )
       AND EXISTS (SELECT 1 FROM event_photos ep WHERE ep.event_id = e.id)
       ORDER BY e.event_date DESC
       LIMIT 50
