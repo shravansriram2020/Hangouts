@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Alert,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +25,7 @@ import GlassModal from './GlassModal';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
+const CATEGORIES_PER_PAGE = 5;
 
 interface ExplorePost {
   id: string;
@@ -87,8 +90,10 @@ const CATEGORY_ICONS: { [key: string]: string } = {
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState<CategoryFeed[]>([]);
+  const [allCategories, setAllCategories] = useState<CategoryFeed[]>([]);
+  const [visibleCount, setVisibleCount] = useState(CATEGORIES_PER_PAGE);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeIndices, setActiveIndices] = useState<{ [key: string]: number }>({});
   
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareStep, setShareStep] = useState<'hangouts' | 'photos' | 'preview'>('hangouts');
@@ -100,6 +105,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
+
+  const visibleCategories = allCategories.slice(0, visibleCount);
+  const hasMore = visibleCount < allCategories.length;
 
   const fetchLocation = async () => {
     try {
@@ -119,7 +127,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     try {
       const coords = loc || location || { lat: 0, lng: 0 };
       const response = await api.get(`/explore/user-feed?lat=${coords.lat}&lng=${coords.lng}`);
-      setCategories(response.categories || []);
+      setAllCategories(response.categories || []);
     } catch (error) {
       console.error('Feed error:', error);
     } finally {
@@ -138,8 +146,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setVisibleCount(CATEGORIES_PER_PAGE);
     await fetchFeed();
   }, [location]);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + CATEGORIES_PER_PAGE, allCategories.length));
+  };
 
   const handleOpenShareModal = async () => {
     setShowShareModal(true);
@@ -236,7 +249,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     try {
       const response = await api.post(`/explore/photos/${post.id}/like`, {});
       
-      setCategories(prev => prev.map((cat, ci) => {
+      setAllCategories(prev => prev.map((cat, ci) => {
         if (ci !== categoryIndex) return cat;
         return {
           ...cat,
@@ -261,12 +274,19 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     });
   };
 
-  const renderPost = (post: ExplorePost, categoryIndex: number, postIndex: number) => (
+  const handleScroll = (category: string, event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / (CARD_WIDTH + 16));
+    setActiveIndices(prev => ({ ...prev, [category]: index }));
+  };
+
+  const renderPostCard = (post: ExplorePost, categoryIndex: number, postIndex: number, isPreview = false) => (
     <TouchableOpacity
       key={post.id}
-      style={styles.card}
+      style={[styles.card, isPreview && styles.previewCard]}
       activeOpacity={0.95}
-      onPress={() => handleTap(post, categoryIndex, postIndex)}
+      onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
+      disabled={isPreview}
     >
       <Image
         source={{ uri: post.imageUrl }}
@@ -311,12 +331,28 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </View>
         </View>
       </LinearGradient>
-      
-      <View style={styles.tapHint}>
-        <Ionicons name="add-circle" size={24} color="rgba(255,255,255,0.9)" />
-      </View>
     </TouchableOpacity>
   );
+
+  const renderPaginationDots = (category: string, count: number) => {
+    if (count <= 1) return null;
+    const activeIndex = activeIndices[category] || 0;
+    
+    return (
+      <View style={styles.dotsContainer}>
+        {Array.from({ length: Math.min(count, 5) }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              i === activeIndex && styles.dotActive,
+            ]}
+          />
+        ))}
+        {count > 5 && <Text style={styles.dotsMore}>+{count - 5}</Text>}
+      </View>
+    );
+  };
 
   const renderCategory = (category: CategoryFeed, index: number) => {
     const colors = CATEGORY_COLORS[category.category] || CATEGORY_COLORS['Other'];
@@ -345,9 +381,27 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           contentContainerStyle={styles.carousel}
           decelerationRate="fast"
           snapToInterval={CARD_WIDTH + 16}
+          onScroll={(e) => handleScroll(category.category, e)}
+          scrollEventThrottle={16}
         >
-          {category.posts.map((post, postIndex) => renderPost(post, index, postIndex))}
+          {category.posts.map((post, postIndex) => renderPostCard(post, index, postIndex))}
         </ScrollView>
+        
+        {renderPaginationDots(category.category, category.posts.length)}
+      </View>
+    );
+  };
+
+  const renderAd = (key: string) => {
+    return (
+      <View key={key} style={styles.adContainer}>
+        <LinearGradient
+          colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.06)']}
+          style={styles.adPlaceholder}
+        >
+          <Ionicons name="megaphone-outline" size={20} color={Colors.grayMedium} />
+          <Text style={styles.adText}>Sponsored</Text>
+        </LinearGradient>
       </View>
     );
   };
@@ -437,6 +491,20 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       );
     }
 
+    const previewPost: ExplorePost = {
+      id: 'preview',
+      imageUrl: selectedPhoto?.photo_url || '',
+      username: 'You',
+      locationName: selectedHangout?.location_name || '',
+      locationAddress: selectedHangout?.location_address || '',
+      lat: selectedHangout?.location_lat || 0,
+      lng: selectedHangout?.location_lng || 0,
+      likeCount: 0,
+      isLiked: false,
+      distance: 0,
+      createdAt: new Date().toISOString(),
+    };
+
     return (
       <View style={styles.previewContainer}>
         <View style={styles.modalNote}>
@@ -446,19 +514,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </Text>
         </View>
         
-        <Image
-          source={{ uri: selectedPhoto?.photo_url }}
-          style={styles.previewImage}
-          contentFit="cover"
-        />
-        <View style={styles.previewInfo}>
-          <View style={styles.previewLocation}>
-            <Ionicons name="location" size={18} color={Colors.secondary} />
-            <Text style={styles.previewLocationText} numberOfLines={1}>
-              {selectedHangout?.location_name || 'Unknown location'}
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.previewLabel}>This is how your post will appear:</Text>
+        
+        {renderPostCard(previewPost, -1, -1, true)}
+        
         <TouchableOpacity
           style={styles.shareConfirmButton}
           onPress={handleSharePhoto}
@@ -507,7 +566,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         }
         showsVerticalScrollIndicator={false}
       >
-        {categories.length === 0 ? (
+        {allCategories.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconBg}>
               <Ionicons name="images-outline" size={48} color={Colors.primary} />
@@ -519,7 +578,23 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </View>
         ) : (
           <>
-            {categories.map((category, index) => renderCategory(category, index))}
+            {visibleCategories.map((category, index) => (
+              <React.Fragment key={category.category}>
+                {renderCategory(category, index)}
+                {(index + 1) % 2 === 0 && index < visibleCategories.length - 1 && renderAd(`ad-${index}`)}
+              </React.Fragment>
+            ))}
+            
+            {hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={handleLoadMore}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="refresh-outline" size={20} color={Colors.secondary} />
+                <Text style={styles.loadMoreText}>Load More Categories</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
         
@@ -652,8 +727,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.glassLight,
     ...Shadows.medium,
+  },
+  previewCard: {
+    marginRight: 0,
+    alignSelf: 'center',
   },
   cardImage: {
     width: '100%',
@@ -682,7 +761,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   avatarPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: Colors.glass,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -722,13 +801,68 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     color: 'rgba(255,255,255,0.7)',
   },
-  tapHint: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  dotActive: {
+    backgroundColor: Colors.secondary,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  dotsMore: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    color: Colors.grayMedium,
+    marginLeft: 4,
+  },
+  adContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    marginHorizontal: 20,
+  },
+  adPlaceholder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    gap: 8,
+    width: '100%',
+  },
+  adText: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    color: Colors.grayMedium,
+  },
+  loadMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: Colors.secondary,
     borderRadius: 12,
-    padding: 4,
+    paddingVertical: 14,
+    marginHorizontal: 20,
+    marginTop: 8,
+    gap: 8,
+  },
+  loadMoreText: {
+    color: Colors.secondary,
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
   },
   modalLoading: {
     justifyContent: 'center',
@@ -824,26 +958,12 @@ const styles = StyleSheet.create({
   previewContainer: {
     paddingTop: 4,
   },
-  previewImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: Colors.glassLight,
-  },
-  previewInfo: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  previewLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  previewLocationText: {
-    fontSize: 16,
+  previewLabel: {
+    fontSize: 14,
     fontFamily: Fonts.medium,
-    color: Colors.black,
-    flex: 1,
+    color: Colors.grayMedium,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   shareConfirmButton: {
     flexDirection: 'row',
@@ -852,7 +972,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     borderRadius: 12,
     paddingVertical: 16,
-    marginTop: 16,
+    marginTop: 20,
     gap: 8,
   },
   shareConfirmButtonText: {

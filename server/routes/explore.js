@@ -897,6 +897,7 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
         COALESCE(u.username, 'User') as username,
         u.profile_photo as "userAvatar",
         e.location_name as "locationName",
+        e.location_address as "locationAddress",
         e.location_lat as lat,
         e.location_lng as lng,
         COALESCE(ep.like_count, 0) as "likeCount",
