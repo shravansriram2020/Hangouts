@@ -221,54 +221,7 @@ export default function EventPhotosTab({ eventId }: Props) {
           </TouchableOpacity>
 
           {selectedPhoto && (
-            <ScrollView 
-              style={styles.modalScrollView}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <TouchableOpacity
-                style={styles.shareToExploreRow}
-                onPress={async () => {
-                  try {
-                    const newValue = !selectedPhoto.share_to_explore;
-                    const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
-                    const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
-                    setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
-                    setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
-                  } catch (error) {
-                    Alert.alert('Error', 'Failed to update sharing preference');
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.checkbox,
-                  selectedPhoto.share_to_explore && styles.checkboxChecked,
-                  selectedPhoto.moderation_status === 'approved' && styles.checkboxApproved,
-                  selectedPhoto.moderation_status === 'rejected' && styles.checkboxRejected,
-                ]}>
-                  {selectedPhoto.share_to_explore && (
-                    <Ionicons name="checkmark" size={18} color={Colors.white} />
-                  )}
-                </View>
-                <View style={styles.shareTextContainer}>
-                  <Text style={styles.shareToExploreLabel}>Share to Explore page</Text>
-                  <Text style={[
-                    styles.shareStatus,
-                    selectedPhoto.moderation_status === 'approved' && styles.shareStatusApproved,
-                    selectedPhoto.moderation_status === 'rejected' && styles.shareStatusRejected,
-                  ]}>
-                    {selectedPhoto.share_to_explore
-                      ? selectedPhoto.moderation_status === 'approved'
-                        ? 'Live on Explore!'
-                        : selectedPhoto.moderation_status === 'rejected'
-                        ? 'Not approved'
-                        : 'Pending review'
-                      : 'Let others discover this location'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
+            <View style={styles.modalContentWrapper}>
               <Image
                 source={{ uri: selectedPhoto.photo_url }}
                 style={styles.modalImage}
@@ -277,44 +230,54 @@ export default function EventPhotosTab({ eventId }: Props) {
               />
 
               <View style={styles.photoInfo}>
-                <View style={styles.photoInfoRow}>
-                  <View style={styles.uploaderInfo}>
-                    {selectedPhoto.profile_photo ? (
-                      <Image
-                        source={{ uri: selectedPhoto.profile_photo }}
-                        style={styles.uploaderPhoto}
-                      />
-                    ) : (
-                      <View style={styles.uploaderPhotoPlaceholder}>
-                        <Text style={styles.uploaderInitial}>
-                          {selectedPhoto.username?.charAt(0)?.toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <View>
-                      <Text style={styles.uploaderName}>{selectedPhoto.username}</Text>
-                      <Text style={styles.uploadTime}>
-                        {formatDate(selectedPhoto.created_at)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.photoActions}>
-                    <TouchableOpacity style={styles.photoActionButton}>
-                      <Ionicons name="download-outline" size={24} color={Colors.white} />
-                    </TouchableOpacity>
-                    {selectedPhoto.uploader_id === user?.id && (
-                      <TouchableOpacity
-                        style={styles.photoActionButton}
-                        onPress={() => handleDeletePhoto(selectedPhoto.id)}
-                      >
-                        <Ionicons name="trash-outline" size={24} color={Colors.red} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
+                <Text style={styles.uploadTime}>
+                  {formatDate(selectedPhoto.created_at)}
+                </Text>
               </View>
-            </ScrollView>
+
+              <View style={styles.bottomActions}>
+                <TouchableOpacity style={styles.bottomActionButton}>
+                  <Ionicons name="download-outline" size={22} color={Colors.white} />
+                  <Text style={styles.bottomActionText}>Download</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.bottomActionButton, 
+                    styles.shareButton,
+                    selectedPhoto.share_to_explore && styles.shareButtonActive
+                  ]}
+                  onPress={async () => {
+                    try {
+                      const newValue = !selectedPhoto.share_to_explore;
+                      const response = await api.patch(`/photos/${selectedPhoto.id}/share`, { share_to_explore: newValue });
+                      const updatedStatus = response.moderation_status || (newValue ? 'pending' : null);
+                      setSelectedPhoto({ ...selectedPhoto, share_to_explore: newValue, moderation_status: updatedStatus });
+                      setPhotos(photos.map(p => p.id === selectedPhoto.id ? { ...p, share_to_explore: newValue, moderation_status: updatedStatus } : p));
+                    } catch (error) {
+                      Alert.alert('Error', 'Failed to update sharing preference');
+                    }
+                  }}
+                >
+                  <Ionicons 
+                    name={selectedPhoto.share_to_explore ? "checkmark-circle" : "globe-outline"} 
+                    size={22} 
+                    color={Colors.white} 
+                  />
+                  <Text style={styles.bottomActionText}>
+                    {selectedPhoto.share_to_explore ? 'Shared' : 'Share'}
+                  </Text>
+                </TouchableOpacity>
+                {selectedPhoto.uploader_id === user?.id && (
+                  <TouchableOpacity
+                    style={[styles.bottomActionButton, styles.deleteButton]}
+                    onPress={() => handleDeletePhoto(selectedPhoto.id)}
+                  >
+                    <Ionicons name="trash-outline" size={22} color={Colors.white} />
+                    <Text style={styles.bottomActionText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
           )}
         </View>
       </Modal>
@@ -580,5 +543,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.white,
     fontFamily: 'Prompt-Medium',
+  },
+  modalContentWrapper: {
+    flex: 1,
+    marginTop: 100,
+    marginHorizontal: 16,
+    marginBottom: 40,
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 20,
+  },
+  bottomActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+    flex: 1,
+  },
+  deleteButton: {
+    backgroundColor: Colors.red,
+  },
+  shareButton: {
+    backgroundColor: '#2E7D32',
+  },
+  shareButtonActive: {
+    backgroundColor: '#4CAF50',
+  },
+  bottomActionText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontFamily: 'Prompt-SemiBold',
   },
 });
