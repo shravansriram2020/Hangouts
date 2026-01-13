@@ -773,6 +773,209 @@ router.post('/photos/:photoId/share', authenticateToken, async (req, res) => {
   }
 });
 
+// Get user's events that have photos (for share workflow)
+router.get('/my-events-with-photos', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        e.id,
+        e.title,
+        e.location_name,
+        e.location_address,
+        e.location_lat,
+        e.location_lng,
+        e.event_date,
+        e.is_archived,
+        e.event_image,
+        (SELECT COUNT(*) FROM event_photos ep WHERE ep.event_id = e.id) as photo_count,
+        (
+          SELECT json_agg(json_build_object(
+            'id', ep.id,
+            'photo_url', ep.photo_url,
+            'created_at', ep.created_at
+          ) ORDER BY ep.created_at DESC)
+          FROM event_photos ep
+          WHERE ep.event_id = e.id
+        ) as photos
+      FROM events e
+      LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $1
+      WHERE (e.host_id = $1 OR ea.status = 'accepted')
+      AND EXISTS (SELECT 1 FROM event_photos ep WHERE ep.event_id = e.id)
+      ORDER BY e.event_date DESC
+      LIMIT 50
+    `, [req.user.id]);
+
+    res.json(result.rows.map(event => ({
+      ...event,
+      photos: event.photos || []
+    })));
+  } catch (error) {
+    console.error('Get events with photos error:', error);
+    res.status(500).json({ error: 'Failed to get events' });
+  }
+});
+
+// Share a photo from an event to Explore
+router.post('/share', authenticateToken, async (req, res) => {
+  const { eventId, photoId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Verify user has access to the event
+    const eventCheck = await pool.query(`
+      SELECT e.id, e.location_name, e.location_lat, e.location_lng
+      FROM events e
+      LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $2
+      WHERE e.id = $1 AND (e.host_id = $2 OR ea.status = 'accepted')
+    `, [eventId, userId]);
+
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found or you do not have access' });
+    }
+
+    const event = eventCheck.rows[0];
+
+    // Check if location_name is a valid venue (not a street address)
+    if (!event.location_name || isStreetAddress(event.location_name)) {
+      return res.status(400).json({ error: 'This event location cannot be shared. Please use a venue name, not a street address.' });
+    }
+
+    // Verify the photo belongs to this event
+    const photoCheck = await pool.query(
+      'SELECT id, share_to_explore, moderation_status FROM event_photos WHERE id = $1 AND event_id = $2',
+      [photoId, eventId]
+    );
+
+    if (photoCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found in this event' });
+    }
+
+    const photo = photoCheck.rows[0];
+
+    // Check if already shared
+    if (photo.share_to_explore && photo.moderation_status) {
+      return res.status(400).json({ 
+        error: 'This photo has already been shared',
+        status: photo.moderation_status 
+      });
+    }
+
+    // Share the photo (set to pending moderation)
+    await pool.query(
+      `UPDATE event_photos 
+       SET share_to_explore = true, moderation_status = 'pending'
+       WHERE id = $1`,
+      [photoId]
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Photo shared! It will appear on Explore after review.',
+      status: 'pending'
+    });
+  } catch (error) {
+    console.error('Share to explore error:', error);
+    res.status(500).json({ error: 'Failed to share photo' });
+  }
+});
+
+// Get category-grouped user posts for Explore feed
+router.get('/user-feed', authenticateToken, async (req, res) => {
+  const { lat, lng } = req.query;
+  const userLat = parseFloat(lat) || 0;
+  const userLng = parseFloat(lng) || 0;
+
+  try {
+    // Get all approved shared photos within 60 miles, grouped by category
+    const result = await pool.query(`
+      SELECT 
+        ep.id,
+        ep.photo_url as "imageUrl",
+        COALESCE(u.username, 'User') as username,
+        u.profile_photo as "userAvatar",
+        e.location_name as "locationName",
+        e.location_lat as lat,
+        e.location_lng as lng,
+        COALESCE(ep.like_count, 0) as "likeCount",
+        ep.created_at as "createdAt",
+        EXISTS(
+          SELECT 1 FROM photo_likes pl 
+          WHERE pl.photo_id = ep.id AND pl.user_id = $3
+        ) as "isLiked",
+        (
+          3959 * acos(
+            LEAST(1.0, GREATEST(-1.0,
+              cos(radians($1)) * cos(radians(e.location_lat)) *
+              cos(radians(e.location_lng) - radians($2)) +
+              sin(radians($1)) * sin(radians(e.location_lat))
+            ))
+          )
+        ) as distance
+      FROM event_photos ep
+      JOIN events e ON ep.event_id = e.id
+      JOIN users u ON ep.uploader_id = u.id
+      WHERE ep.share_to_explore = true
+        AND ep.moderation_status = 'approved'
+        AND e.location_lat IS NOT NULL
+        AND e.location_lng IS NOT NULL
+        AND e.location_name IS NOT NULL
+        AND (
+          3959 * acos(
+            LEAST(1.0, GREATEST(-1.0,
+              cos(radians($1)) * cos(radians(e.location_lat)) *
+              cos(radians(e.location_lng) - radians($2)) +
+              sin(radians($1)) * sin(radians(e.location_lat))
+            ))
+          )
+        ) <= $4
+      ORDER BY ep.like_count DESC, ep.created_at DESC
+    `, [userLat, userLng, req.user.id, SHARED_PHOTOS_MAX_MILES]);
+
+    // Group posts by category based on location name
+    const categories = {};
+    const categoryOrder = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
+    
+    result.rows.forEach(post => {
+      const locationLower = (post.locationName || '').toLowerCase();
+      let category = 'Other';
+      
+      if (locationLower.match(/restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi/)) {
+        category = 'Food & Dining';
+      } else if (locationLower.match(/bar|pub|brewery|tavern|club|lounge|nightlife/)) {
+        category = 'Bars & Nightlife';
+      } else if (locationLower.match(/theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium/)) {
+        category = 'Entertainment';
+      } else if (locationLower.match(/park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness/)) {
+        category = 'Outdoors';
+      }
+      
+      if (!categories[category]) {
+        categories[category] = [];
+      }
+      categories[category].push({
+        ...post,
+        distance: parseFloat(post.distance) || 0
+      });
+    });
+
+    // Format into array with category info
+    const feed = categoryOrder
+      .filter(cat => categories[cat] && categories[cat].length > 0)
+      .map(category => ({
+        category,
+        posts: categories[category]
+      }));
+
+    res.json({
+      categories: feed,
+      totalPosts: result.rows.length
+    });
+  } catch (error) {
+    console.error('User feed error:', error);
+    res.status(500).json({ error: 'Failed to fetch explore feed' });
+  }
+});
+
 router.post('/photos/:photoId/like', authenticateToken, async (req, res) => {
   const { photoId } = req.params;
   const userId = req.user.id;
