@@ -143,15 +143,10 @@ function IconCard({ location, onPress, isBanner = false }: { location: Suggested
       onPress={onPress}
       activeOpacity={0.9}
     >
-      <LinearGradient
-        colors={iconData.colors as [string, string]}
-        style={iconCardStyles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Ionicons name={iconData.icon as any} size={isBanner ? 48 : 64} color="rgba(255,255,255,0.9)" />
-      </LinearGradient>
-      <View style={iconCardStyles.overlay}>
+      <View style={iconCardStyles.iconContainer}>
+        <Ionicons name={iconData.icon as any} size={isBanner ? 36 : 48} color={iconData.colors[0]} />
+      </View>
+      <View style={iconCardStyles.textContainer}>
         <Text style={iconCardStyles.name} numberOfLines={2}>
           {location.abbreviatedName || location.name}
         </Text>
@@ -171,34 +166,32 @@ const iconCardStyles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    padding: 12,
+    justifyContent: 'space-between',
   },
-  gradient: {
+  iconContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  textContainer: {
+    paddingTop: 8,
   },
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Prompt-SemiBold',
     color: Colors.white,
   },
   address: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Prompt-Regular',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
 });
 
-function BannerCard({ location, onPress, showIcon = false }: { location: SuggestedLocation; onPress: () => void; showIcon?: boolean }) {
+function BannerCard({ location, onPress }: { location: SuggestedLocation; onPress: () => void }) {
   const iconData = getIconForCategory(location.category, location.name);
   
   return (
@@ -207,25 +200,10 @@ function BannerCard({ location, onPress, showIcon = false }: { location: Suggest
       onPress={onPress}
       activeOpacity={0.9}
     >
-      {showIcon ? (
-        <LinearGradient
-          colors={iconData.colors as [string, string]}
-          style={bannerCardStyles.iconBackground}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name={iconData.icon as any} size={40} color="rgba(255,255,255,0.9)" />
-        </LinearGradient>
-      ) : (
-        <Image 
-          source={{ uri: location.imageUrl }}
-          style={bannerCardStyles.image}
-          contentFit="cover"
-          transition={200}
-          cachePolicy="disk"
-        />
-      )}
-      <View style={bannerCardStyles.overlay}>
+      <View style={bannerCardStyles.iconContainer}>
+        <Ionicons name={iconData.icon as any} size={32} color={iconData.colors[0]} />
+      </View>
+      <View style={bannerCardStyles.textContainer}>
         <Text style={bannerCardStyles.name} numberOfLines={1}>
           {location.abbreviatedName || location.name}
         </Text>
@@ -242,28 +220,23 @@ function BannerCard({ location, onPress, showIcon = false }: { location: Suggest
 const bannerCardStyles = StyleSheet.create({
   card: {
     width: '100%',
-    aspectRatio: 16 / 9,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  iconBackground: {
-    flex: 1,
+  iconContainer: {
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  textContainer: {
+    flex: 1,
   },
   name: {
     fontSize: 15,
@@ -273,7 +246,7 @@ const bannerCardStyles = StyleSheet.create({
   address: {
     fontSize: 11,
     fontFamily: 'Prompt-Regular',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
 });
@@ -732,7 +705,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         key={`hangoutBanner${bannerNumber}`}
         location={hangout} 
         onPress={() => handleLocationPress(hangout)}
-        showIcon={shouldShowIcon(bannerNumber)}
       />
     );
   };
@@ -977,7 +949,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         key={`suggested-${index}`}
         location={location}
         onPress={() => handleLocationPress(location)}
-        showIcon={shouldShowIcon(index)}
       />
     );
   };

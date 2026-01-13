@@ -188,7 +188,7 @@ const EXPLORE_CATEGORIES = [
 
 const ALL_FUN_CODES = EXPLORE_CATEGORIES.map(c => c.codes).join(',');
 
-const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital', 'medical', 'clinic', 'school', 'church', 'office', 'bank', 'atm', 'gas station', 'parking', 'city', 'county', 'municipality', 'government', 'police', 'fire station', 'post office', 'library', 'university', 'college', 'dmv', 'court', 'prison', 'jail'];
+const EXCLUDED_NAMES = ['home', 'apartment', 'residence', 'city hall', 'hospital', 'medical', 'clinic', 'school', 'church', 'office', 'bank', 'atm', 'gas station', 'parking', 'city', 'county', 'municipality', 'government', 'police', 'fire station', 'post office', 'library', 'university', 'college', 'dmv', 'court', 'prison', 'jail', 'pizza place', 'taco stand', 'food spot', 'coffee shop', 'restaurant', 'bar', 'cafe', 'diner', 'grill', 'eatery', 'food truck', 'fast food', 'burger place', 'sandwich shop', 'bakery', 'ice cream', 'dessert', 'sushi', 'chinese food', 'mexican food', 'italian food', 'thai food', 'indian food'];
 
 const EXCLUDED_CATEGORIES = ['city', 'town', 'municipality', 'administrative', 'geographic', 'neighbourhood', 'hamlet', 'village', 'suburb', 'borough', 'district'];
 
