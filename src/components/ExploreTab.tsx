@@ -73,22 +73,6 @@ interface ExploreTabProps {
   }) => void;
 }
 
-const CATEGORY_COLORS: { [key: string]: string[] } = {
-  'Food & Dining': ['#FF6B6B', '#FF8E53'],
-  'Bars & Nightlife': ['#9B59B6', '#8E44AD'],
-  'Entertainment': ['#3498DB', '#2980B9'],
-  'Outdoors': ['#27AE60', '#2ECC71'],
-  'Other': ['#95A5A6', '#7F8C8D'],
-};
-
-const CATEGORY_ICONS: { [key: string]: string } = {
-  'Food & Dining': 'restaurant',
-  'Bars & Nightlife': 'wine',
-  'Entertainment': 'game-controller',
-  'Outdoors': 'leaf',
-  'Other': 'location',
-};
-
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -400,13 +384,49 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   };
 
-  const renderPaginationDots = (category: string, count: number) => {
-    if (count <= 1) return null;
+  const buildDisplayItems = (posts: ExplorePost[]): Array<{ post: ExplorePost; originalIndex: number } | { type: 'ad'; id: string }> => {
+    const limitedPosts = posts.slice(0, 5);
+    const items: Array<{ post: ExplorePost; originalIndex: number } | { type: 'ad'; id: string }> = [];
+    
+    limitedPosts.forEach((post, i) => {
+      items.push({ post, originalIndex: i });
+      if (i === 1 && limitedPosts.length >= 3) {
+        items.push({ type: 'ad', id: 'ad-1' });
+      }
+      if (i === 3 && limitedPosts.length >= 5) {
+        items.push({ type: 'ad', id: 'ad-2' });
+      }
+    });
+    
+    return items;
+  };
+
+  const renderInlineAdCard = (key: string) => (
+    <View key={key} style={styles.card}>
+      <LinearGradient
+        colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.08)']}
+        style={styles.inlineAdContent}
+      >
+        <View style={styles.sponsoredBadge}>
+          <Ionicons name="megaphone" size={12} color={Colors.white} />
+          <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
+        </View>
+        <View style={styles.inlineAdCenter}>
+          <Ionicons name="storefront-outline" size={40} color={Colors.grayMedium} />
+          <Text style={styles.inlineAdText}>Ad Space</Text>
+          <Text style={styles.inlineAdSubtext}>Your business here</Text>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  const renderPaginationDots = (category: string, displayCount: number) => {
+    if (displayCount <= 1) return null;
     const activeIndex = activeIndices[category] || 0;
     
     return (
       <View style={styles.dotsContainer}>
-        {Array.from({ length: Math.min(count, 5) }).map((_, i) => (
+        {Array.from({ length: Math.min(displayCount, 7) }).map((_, i) => (
           <View
             key={i}
             style={[
@@ -415,26 +435,16 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             ]}
           />
         ))}
-        {count > 5 && <Text style={styles.dotsMore}>+{count - 5}</Text>}
       </View>
     );
   };
 
   const renderCategory = (category: CategoryFeed, index: number) => {
-    const colors = CATEGORY_COLORS[category.category] || CATEGORY_COLORS['Other'];
-    const icon = CATEGORY_ICONS[category.category] || 'location';
+    const displayItems = buildDisplayItems(category.posts);
     
     return (
       <View key={category.category} style={styles.categorySection}>
         <View style={styles.categoryHeader}>
-          <LinearGradient
-            colors={colors as any}
-            style={styles.categoryIconBg}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name={icon as any} size={18} color={Colors.white} />
-          </LinearGradient>
           <Text style={styles.categoryTitle}>{category.category}</Text>
           <View style={styles.categoryCountBadge}>
             <Text style={styles.categoryCount}>{category.posts.length}</Text>
@@ -450,10 +460,16 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           onScroll={(e) => handleScroll(category.category, e)}
           scrollEventThrottle={16}
         >
-          {category.posts.map((post, postIndex) => renderPostCard(post, index, postIndex))}
+          {displayItems.map((item) => {
+            if ('type' in item && item.type === 'ad') {
+              return renderInlineAdCard(item.id);
+            }
+            const postItem = item as { post: ExplorePost; originalIndex: number };
+            return renderPostCard(postItem.post, index, postItem.originalIndex);
+          })}
         </ScrollView>
         
-        {renderPaginationDots(category.category, category.posts.length)}
+        {renderPaginationDots(category.category, displayItems.length)}
       </View>
     );
   };
@@ -653,20 +669,30 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
-                {(index + 1) % 2 === 0 && index < visibleCategories.length - 1 && renderAd(`ad-${index}`)}
               </React.Fragment>
             ))}
             
-            {hasMore && (
+            <View style={styles.bottomActions}>
+              {hasMore && (
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  onPress={handleLoadMore}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-down-outline" size={20} color={Colors.secondary} />
+                  <Text style={styles.loadMoreText}>Load More Categories</Text>
+                </TouchableOpacity>
+              )}
+              
               <TouchableOpacity
-                style={styles.loadMoreButton}
-                onPress={handleLoadMore}
+                style={styles.refreshButton}
+                onPress={onRefresh}
                 activeOpacity={0.7}
               >
-                <Ionicons name="refresh-outline" size={20} color={Colors.secondary} />
-                <Text style={styles.loadMoreText}>Load More Categories</Text>
+                <Ionicons name="refresh-outline" size={18} color={Colors.grayMedium} />
+                <Text style={styles.refreshButtonText}>Refresh Feed</Text>
               </TouchableOpacity>
-            )}
+            </View>
           </>
         )}
         
@@ -762,20 +788,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  categoryIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 10,
   },
   categoryTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: Fonts.semiBold,
-    color: Colors.black,
-    marginLeft: 10,
+    color: Colors.grayDark,
     flex: 1,
   },
   categoryCountBadge: {
@@ -945,14 +963,66 @@ const styles = StyleSheet.create({
     borderColor: Colors.secondary,
     borderRadius: 12,
     paddingVertical: 14,
-    marginHorizontal: 20,
-    marginTop: 8,
     gap: 8,
   },
   loadMoreText: {
     color: Colors.secondary,
     fontSize: 16,
     fontFamily: Fonts.semiBold,
+  },
+  bottomActions: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    gap: 12,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+  },
+  refreshButtonText: {
+    color: Colors.grayMedium,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+  },
+  inlineAdContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  sponsoredBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayMedium,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  sponsoredBadgeText: {
+    fontSize: 10,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
+  inlineAdCenter: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  inlineAdText: {
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+    color: Colors.grayDark,
+  },
+  inlineAdSubtext: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
   },
   modalLoading: {
     justifyContent: 'center',
