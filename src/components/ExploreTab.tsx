@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Fonts, Shadows } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
@@ -26,6 +27,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
 const CATEGORIES_PER_PAGE = 5;
+const TRENDING_THRESHOLD = 10;
 
 interface ExplorePost {
   id: string;
@@ -102,6 +104,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<{ id: string; photo_url: string } | null>(null);
   const [loadingHangouts, setLoadingHangouts] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
@@ -203,6 +206,58 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
+  const handleUploadPhoto = async () => {
+    if (!selectedHangout) return;
+    
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Please allow access to your photos to upload.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      setUploadingPhoto(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      const formData = new FormData();
+      const uri = result.assets[0].uri;
+      const filename = uri.split('/').pop() || 'photo.jpg';
+      formData.append('photo', {
+        uri,
+        name: filename,
+        type: 'image/jpeg',
+      } as any);
+
+      const uploadResponse = await api.uploadFormData(
+        `/events/${selectedHangout.id}/photos`,
+        formData
+      );
+
+      if (uploadResponse?.photo) {
+        setSelectedPhoto({
+          id: uploadResponse.photo.id,
+          photo_url: uploadResponse.photo.photo_url,
+        });
+        setShareStep('preview');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', error.message || 'Could not upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleCloseModal = () => {
     if (shareStep === 'preview') {
       setShareStep('photos');
@@ -280,22 +335,32 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     setActiveIndices(prev => ({ ...prev, [category]: index }));
   };
 
-  const renderPostCard = (post: ExplorePost, categoryIndex: number, postIndex: number, isPreview = false) => (
-    <TouchableOpacity
-      key={post.id}
-      style={[styles.card, isPreview && styles.previewCard]}
-      activeOpacity={0.95}
-      onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
-      disabled={isPreview}
-    >
-      <Image
-        source={{ uri: post.imageUrl }}
-        style={styles.cardImage}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-      />
-      
-      <LinearGradient
+  const renderPostCard = (post: ExplorePost, categoryIndex: number, postIndex: number, isPreview = false) => {
+    const isTrending = post.likeCount >= TRENDING_THRESHOLD;
+    
+    return (
+      <TouchableOpacity
+        key={post.id}
+        style={[styles.card, isPreview && styles.previewCard]}
+        activeOpacity={0.95}
+        onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
+        disabled={isPreview}
+      >
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={styles.cardImage}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+        
+        {isTrending && (
+          <View style={styles.trendingBadge}>
+            <Ionicons name="flame" size={12} color={Colors.white} />
+            <Text style={styles.trendingText}>Trending</Text>
+          </View>
+        )}
+        
+        <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}
         style={styles.cardGradient}
       >
@@ -332,7 +397,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         </View>
       </LinearGradient>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderPaginationDots = (category: string, count: number) => {
     if (count <= 1) return null;
@@ -464,12 +530,25 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     if (shareStep === 'photos') {
       return (
         <View>
-          <View style={styles.modalNote}>
-            <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
-            <Text style={styles.modalNoteText}>
-              Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.uploadPhotoButton}
+            onPress={handleUploadPhoto}
+            disabled={uploadingPhoto}
+            activeOpacity={0.7}
+          >
+            {uploadingPhoto ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <>
+                <Ionicons name="cloud-upload-outline" size={20} color={Colors.primary} />
+                <Text style={styles.uploadPhotoText}>Upload New Photo</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          
+          {(selectedHangout?.photos?.length || 0) > 0 && (
+            <Text style={styles.orSelectLabel}>Or select from existing photos:</Text>
+          )}
           
           <View style={styles.photosGrid}>
             {(selectedHangout?.photos || []).map((item) => (
@@ -507,13 +586,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
     return (
       <View style={styles.previewContainer}>
-        <View style={styles.modalNote}>
-          <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
-          <Text style={styles.modalNoteText}>
-            Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
-          </Text>
-        </View>
-        
         <Text style={styles.previewLabel}>This is how your post will appear:</Text>
         
         {renderPostCard(previewPost, -1, -1, true)}
@@ -734,6 +806,24 @@ const styles = StyleSheet.create({
     marginRight: 0,
     alignSelf: 'center',
   },
+  trendingBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B00',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+    zIndex: 10,
+  },
+  trendingText: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
   cardImage: {
     width: '100%',
     height: '100%',
@@ -873,19 +963,20 @@ const styles = StyleSheet.create({
   modalNote: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-    marginBottom: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 20,
   },
   modalNoteText: {
     flex: 1,
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    color: Colors.grayMedium,
-    lineHeight: 16,
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    color: Colors.grayDark,
+    lineHeight: 18,
   },
   modalEmpty: {
     justifyContent: 'center',
@@ -938,6 +1029,30 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     color: Colors.primary,
     marginTop: 2,
+  },
+  uploadPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginBottom: 16,
+    gap: 8,
+  } as any,
+  uploadPhotoText: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.primary,
+  },
+  orSelectLabel: {
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    color: Colors.grayMedium,
+    marginBottom: 12,
   },
   photosGrid: {
     flexDirection: 'row',

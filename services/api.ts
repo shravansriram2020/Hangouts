@@ -113,6 +113,46 @@ class ApiService {
       body: JSON.stringify(body),
     });
   }
+
+  async uploadFormData(endpoint: string, formData: FormData) {
+    const headers: HeadersInit = {};
+
+    if (this.token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log('[API] Upload:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const text = await response.text();
+      let data;
+      
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error('[API] Non-JSON response:', text);
+        throw new Error('Upload failed. Please try again.');
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      return data;
+    } catch (error: any) {
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error('Unable to upload. Please check your connection.');
+      }
+      throw error;
+    }
+  }
 }
 
 export const api = new ApiService();
