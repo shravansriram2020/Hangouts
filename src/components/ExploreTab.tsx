@@ -114,6 +114,8 @@ interface SharedPhoto {
   locationAddress: string;
   lat: number;
   lng: number;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 interface CategorySection {
@@ -484,38 +486,29 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Text style={styles.centeredSectionTitle}>{section.name}</Text>
         </View>
         <View style={styles.categoryRow}>
-          {displayLocations.map((location, index) => (
-            <TouchableOpacity
-              key={location.id || `${section.id}-${index}`}
-              style={styles.categoryRowItem}
-              onPress={() => handleLocationPress(location)}
-              activeOpacity={0.9}
-            >
-              {shouldShowIcon(index, true) ? (
+          {displayLocations.map((location, index) => {
+            const iconData = getIconForCategory(location.category, location.name);
+            return (
+              <TouchableOpacity
+                key={location.id || `${section.id}-${index}`}
+                style={styles.categoryIconItem}
+                onPress={() => handleLocationPress(location)}
+                activeOpacity={0.9}
+              >
                 <LinearGradient
-                  colors={getIconForCategory(location.category, location.name).colors as [string, string]}
-                  style={styles.categoryRowIconBg}
+                  colors={iconData.colors as [string, string]}
+                  style={styles.categoryIconCircle}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Ionicons name={getIconForCategory(location.category, location.name).icon as any} size={28} color="rgba(255,255,255,0.9)" />
+                  <Ionicons name={iconData.icon as any} size={28} color="rgba(255,255,255,0.95)" />
                 </LinearGradient>
-              ) : (
-                <Image 
-                  source={{ uri: location.imageUrl }}
-                  cachePolicy="disk"
-                  transition={200} 
-                  style={styles.categoryRowImage}
-                  contentFit="cover"
-                />
-              )}
-              <View style={styles.categoryRowOverlay}>
-                <Text style={styles.categoryRowName} numberOfLines={2}>
+                <Text style={styles.categoryIconName} numberOfLines={2}>
                   {location.abbreviatedName}
                 </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     );
@@ -595,20 +588,102 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   };
 
+  const handleLikePhoto = async (photoId: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const response = await api.post(`/photos/${photoId}/like`, {});
+      setSharedPhotos(prev => prev.map(p => 
+        p.id === photoId 
+          ? { ...p, likeCount: response.likeCount, isLiked: response.isLiked }
+          : p
+      ));
+    } catch (error) {
+      console.error('Failed to like photo:', error);
+    }
+  };
+
   const renderSharedPhotos = () => {
     if (sharedPhotos.length === 0) return null;
     return (
       <View key="sharedPhotos" style={styles.sharedPhotosSection}>
         <View style={styles.centeredSectionHeader}>
+          <Ionicons name="images" size={20} color={Colors.secondary} />
+          <Text style={styles.centeredSectionTitle}>Photos From Hangouts</Text>
+        </View>
+        <View style={styles.sharedPhotosGrid}>
+          {sharedPhotos.slice(0, 4).map((photo, index) => (
+            <View key={photo.id || `photo-${index}`} style={styles.largePhotoCard}>
+              <TouchableOpacity
+                style={styles.largePhotoTouchable}
+                onPress={() => onSelectLocation({
+                  name: photo.locationName,
+                  address: photo.locationAddress,
+                  lat: photo.lat,
+                  lng: photo.lng,
+                })}
+                activeOpacity={0.9}
+              >
+                <Image 
+                  source={{ uri: photo.imageUrl }}
+                  cachePolicy="disk"
+                  transition={200} 
+                  style={styles.largePhotoImage}
+                  contentFit="cover"
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.largePhotoGradient}
+                >
+                  <View style={styles.largePhotoUserRow}>
+                    <View style={styles.largePhotoAvatar}>
+                      <Text style={styles.largePhotoInitial}>
+                        {photo.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </Text>
+                    </View>
+                    <Text style={styles.largePhotoUsername} numberOfLines={1}>
+                      {photo.username}
+                    </Text>
+                  </View>
+                  <Text style={styles.largePhotoLocation} numberOfLines={2}>
+                    {photo.locationName}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.likeButton, photo.isLiked && styles.likeButtonActive]}
+                onPress={() => handleLikePhoto(photo.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons 
+                  name={photo.isLiked ? 'heart' : 'heart-outline'} 
+                  size={20} 
+                  color={photo.isLiked ? '#FF4757' : Colors.white} 
+                />
+                <Text style={[styles.likeCount, photo.isLiked && styles.likeCountActive]}>
+                  {photo.likeCount || 0}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderSharedPhotosSmall = () => {
+    if (sharedPhotos.length === 0) return null;
+    return (
+      <View key="sharedPhotosSmall" style={styles.sharedPhotosSection}>
+        <View style={styles.centeredSectionHeader}>
           <Ionicons name="camera" size={18} color={Colors.secondary} />
-          <Text style={styles.centeredSectionTitle}>Photos From Friends Nearby</Text>
+          <Text style={styles.centeredSectionTitle}>More Photos Nearby</Text>
         </View>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.sharedPhotosScroll}
         >
-          {sharedPhotos.map((photo, index) => (
+          {sharedPhotos.slice(4).map((photo, index) => (
             <TouchableOpacity
               key={photo.id || `photo-${index}`}
               style={styles.sharedPhotoCard}
@@ -925,8 +1000,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         return renderHangoutBanner(2);
       case 'hangoutBanner3':
         return renderHangoutBanner(3);
-      case 'trending':
-        return renderTrending();
       case 'adBanner1':
         return renderAdBanner('adBanner1');
       case 'adBanner2':
@@ -1572,5 +1645,104 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Prompt-Medium',
     color: Colors.white,
+  },
+  categoryIconItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  categoryIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryIconName: {
+    fontSize: 12,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.secondary,
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  sharedPhotosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  largePhotoCard: {
+    width: '48%',
+    aspectRatio: 0.85,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  largePhotoTouchable: {
+    flex: 1,
+  },
+  largePhotoImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  largePhotoGradient: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 14,
+  },
+  largePhotoUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  largePhotoAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  largePhotoInitial: {
+    fontSize: 13,
+    fontFamily: 'Prompt-Bold',
+    color: Colors.white,
+  },
+  largePhotoUsername: {
+    fontSize: 13,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.white,
+    flex: 1,
+  },
+  largePhotoLocation: {
+    fontSize: 14,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+    lineHeight: 20,
+  },
+  likeButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  likeButtonActive: {
+    backgroundColor: 'rgba(255,71,87,0.3)',
+  },
+  likeCount: {
+    fontSize: 13,
+    fontFamily: 'Prompt-SemiBold',
+    color: Colors.white,
+  },
+  likeCountActive: {
+    color: '#FF4757',
   },
 });

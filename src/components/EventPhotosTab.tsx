@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -220,7 +221,11 @@ export default function EventPhotosTab({ eventId }: Props) {
           </TouchableOpacity>
 
           {selectedPhoto && (
-            <View style={styles.modalContent}>
+            <ScrollView 
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               <Image
                 source={{ uri: selectedPhoto.photo_url }}
                 style={styles.modalImage}
@@ -309,7 +314,7 @@ export default function EventPhotosTab({ eventId }: Props) {
                   </View>
                 </TouchableOpacity>
               </View>
-            </View>
+            </ScrollView>
           )}
         </View>
       </Modal>
@@ -435,9 +440,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  modalScrollView: {
+    flex: 1,
+    marginTop: 80,
+  },
+  modalScrollContent: {
+    paddingBottom: 40,
+  },
   modalImage: {
     width: '100%',
-    height: '70%',
+    height: 350,
   },
   photoInfo: {
     padding: 20,

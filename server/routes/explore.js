@@ -409,17 +409,15 @@ const OPTIONAL_CATEGORIES = [
 
 const REQUIRED_ADS = ['adBanner1', 'adBanner2', 'adBanner3', 'adBanner4'];
 const CONTENT_SECTIONS = [
+  'sharedPhotos',
   'suggestedLocation1',
   'featuredHangout', 
-  'sharedPhotos',
+  'categories',
   'suggestedLocation2',
   'hangoutBanner1',
-  'trending',
-  'categories',
-  'suggestedLocation3',
-  'hangoutBanner2',
   'moreHangouts',
   'discoverMore',
+  'hangoutBanner2',
   'hangoutBanner3',
 ];
 
@@ -608,6 +606,11 @@ router.get('/feed', authenticateToken, async (req, res) => {
           e.location_address as "locationAddress",
           e.location_lat as lat,
           e.location_lng as lng,
+          COALESCE(ep.like_count, 0) as "likeCount",
+          EXISTS(
+            SELECT 1 FROM photo_likes pl 
+            WHERE pl.photo_id = ep.id AND pl.user_id = $4
+          ) as "isLiked",
           (
             3959 * acos(
               cos(radians($1)) * cos(radians(e.location_lat)) *
@@ -630,9 +633,9 @@ router.get('/feed', authenticateToken, async (req, res) => {
               sin(radians($1)) * sin(radians(e.location_lat))
             )
           ) <= $3
-        ORDER BY ep.photo_url, distance ASC, ep.created_at DESC
+        ORDER BY ep.photo_url, COALESCE(ep.like_count, 0) DESC, distance ASC, ep.created_at DESC
         LIMIT 10
-      `, [userLat, userLng, MAX_DISTANCE_MILES]);
+      `, [userLat, userLng, MAX_DISTANCE_MILES, req.user.id]);
       sharedPhotos = photosResult.rows;
     } catch (dbError) {
       console.log('Shared photos query failed (columns may not exist yet):', dbError.message);
@@ -740,6 +743,55 @@ router.post('/photos/:photoId/share', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Share photo error:', error);
     res.status(500).json({ error: 'Failed to update photo sharing' });
+  }
+});
+
+router.post('/photos/:photoId/like', authenticateToken, async (req, res) => {
+  const { photoId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const existingLike = await pool.query(
+      'SELECT id FROM photo_likes WHERE photo_id = $1 AND user_id = $2',
+      [photoId, userId]
+    );
+
+    let isLiked;
+    if (existingLike.rows.length > 0) {
+      await pool.query(
+        'DELETE FROM photo_likes WHERE photo_id = $1 AND user_id = $2',
+        [photoId, userId]
+      );
+      await pool.query(
+        'UPDATE event_photos SET like_count = GREATEST(0, COALESCE(like_count, 0) - 1) WHERE id = $1',
+        [photoId]
+      );
+      isLiked = false;
+    } else {
+      await pool.query(
+        'INSERT INTO photo_likes (photo_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [photoId, userId]
+      );
+      await pool.query(
+        'UPDATE event_photos SET like_count = COALESCE(like_count, 0) + 1 WHERE id = $1',
+        [photoId]
+      );
+      isLiked = true;
+    }
+
+    const result = await pool.query(
+      'SELECT COALESCE(like_count, 0) as "likeCount" FROM event_photos WHERE id = $1',
+      [photoId]
+    );
+
+    res.json({ 
+      success: true, 
+      isLiked,
+      likeCount: parseInt(result.rows[0]?.likeCount) || 0
+    });
+  } catch (error) {
+    console.error('Like photo error:', error);
+    res.status(500).json({ error: 'Failed to like photo' });
   }
 });
 
