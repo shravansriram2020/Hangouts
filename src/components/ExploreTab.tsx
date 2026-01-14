@@ -224,6 +224,15 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedPosts, setSavedPosts] = useState<ExplorePost[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const cachedSavedRef = useRef<ExplorePost[] | null>(null);
+  const cachedMyPostsRef = useRef<Array<{
+    id: string;
+    imageUrl: string;
+    locationName: string;
+    locationAddress: string;
+    likeCount: number;
+    createdAt: string;
+  }> | null>(null);
 
   const visibleCategories = allCategories.slice(0, MAX_CATEGORIES);
 
@@ -352,6 +361,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Shared!', 'Your photo is now live on Explore.');
       setShowShareModal(false);
+      cachedMyPostsRef.current = null;
       const loc = cachedLocationRef.current || { lat: 0, lng: 0 };
       await fetchFeed(loc);
     } catch (error: any) {
@@ -426,11 +436,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
-  const fetchMyPosts = async () => {
+  const fetchMyPosts = async (forceRefresh = false) => {
+    if (!forceRefresh && cachedMyPostsRef.current) {
+      setMyPosts(cachedMyPostsRef.current);
+      return;
+    }
     setLoadingMyPosts(true);
     try {
       const response = await api.get('/explore/my-photos');
-      setMyPosts(response.photos || []);
+      const posts = response.photos || [];
+      cachedMyPostsRef.current = posts;
+      setMyPosts(posts);
     } catch (error) {
       console.error('Fetch my posts error:', error);
     } finally {
@@ -443,11 +459,17 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     fetchMyPosts();
   };
 
-  const fetchSavedPosts = async () => {
+  const fetchSavedPosts = async (forceRefresh = false) => {
+    if (!forceRefresh && cachedSavedRef.current) {
+      setSavedPosts(cachedSavedRef.current);
+      return;
+    }
     setLoadingSaved(true);
     try {
       const response = await api.get('/explore/saved');
-      setSavedPosts(response.posts || []);
+      const posts = response.posts || [];
+      cachedSavedRef.current = posts;
+      setSavedPosts(posts);
     } catch (error) {
       console.error('Fetch saved posts error:', error);
     } finally {
@@ -487,9 +509,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       })));
       
       if (response.isSaved) {
-        setSavedPosts(prev => [{ ...post, isSaved: true }, ...prev.filter(p => p.id !== post.id)]);
+        const newSaved = [{ ...post, isSaved: true }, ...savedPosts.filter(p => p.id !== post.id)];
+        setSavedPosts(newSaved);
+        cachedSavedRef.current = newSaved;
       } else {
-        setSavedPosts(prev => prev.filter(p => p.id !== post.id));
+        const newSaved = savedPosts.filter(p => p.id !== post.id);
+        setSavedPosts(newSaved);
+        cachedSavedRef.current = newSaved;
       }
     } catch (error) {
       console.error('Save error:', error);
@@ -502,7 +528,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     try {
       await api.post(`/explore/photos/${post.id}/save`, {});
       
-      setSavedPosts(prev => prev.filter(p => p.id !== post.id));
+      const newSaved = savedPosts.filter(p => p.id !== post.id);
+      setSavedPosts(newSaved);
+      cachedSavedRef.current = newSaved;
       
       setAllCategories(prev => prev.map(cat => ({
         ...cat,
@@ -560,7 +588,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             try {
               await api.delete(`/explore/photos/${postId}`);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setMyPosts(prev => prev.filter(p => p.id !== postId));
+              const newMyPosts = myPosts.filter(p => p.id !== postId);
+              setMyPosts(newMyPosts);
+              cachedMyPostsRef.current = newMyPosts;
               const loc = cachedLocationRef.current || { lat: 0, lng: 0 };
               await fetchFeed(loc);
             } catch (error: any) {
@@ -1090,17 +1120,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                         }}
                       />
                     ) : (
-                      <View style={styles.placeholderNativeAd}>
-                        <Text style={styles.placeholderSponsoredText}>SPONSORED</Text>
-                        <View style={styles.placeholderNativeContent}>
-                          <View style={styles.placeholderAdIcon}>
-                            <Ionicons name="megaphone" size={24} color={Colors.white} />
-                          </View>
-                          <View style={styles.placeholderAdInfo}>
-                            <Text style={styles.placeholderAdTitle}>Advertisement</Text>
-                            <Text style={styles.placeholderAdSubtitle}>Your ad could be here</Text>
-                          </View>
-                        </View>
+                      <View style={styles.placeholderAdWrapper}>
+                        <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
+                        <View style={styles.placeholderAdBox} />
                       </View>
                     )}
                   </View>
@@ -1570,49 +1592,25 @@ const styles = StyleSheet.create({
   },
   adContainer: {
     marginHorizontal: 20,
-    marginVertical: 8,
+    marginVertical: 12,
     alignItems: 'center',
   },
-  placeholderNativeAd: {
+  placeholderAdWrapper: {
     width: '100%',
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    ...Shadows.small,
-  },
-  placeholderSponsoredText: {
-    fontSize: 10,
-    fontFamily: Fonts.semiBold,
-    color: Colors.blue,
-    marginBottom: 10,
-    letterSpacing: 1,
-  },
-  placeholderNativeContent: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
-  placeholderAdIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: Colors.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderAdInfo: {
-    flex: 1,
-  },
-  placeholderAdTitle: {
-    fontSize: 14,
-    fontFamily: Fonts.semiBold,
+  placeholderSponsoredLabel: {
+    fontSize: 9,
+    fontFamily: Fonts.medium,
     color: Colors.black,
-    marginBottom: 2,
+    letterSpacing: 1,
+    marginBottom: 6,
   },
-  placeholderAdSubtitle: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    color: Colors.grayMedium,
+  placeholderAdBox: {
+    width: '100%',
+    height: 50,
+    backgroundColor: Colors.grayLight,
+    borderRadius: 8,
   },
   bottomActions: {
     paddingHorizontal: 20,
