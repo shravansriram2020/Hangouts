@@ -25,7 +25,7 @@ import Animated, {
   withTiming,
   withSequence,
 } from 'react-native-reanimated';
-import { Colors, Fonts, Shadows } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 
@@ -34,6 +34,7 @@ const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
 const CATEGORIES_PER_PAGE = 5;
 const TRENDING_THRESHOLD = 10;
+const BG = Colors.background;
 
 interface ExplorePost {
   id: string;
@@ -107,23 +108,12 @@ const HeartOverlay = ({ visible }: { visible: boolean }) => {
   if (!visible) return null;
 
   return (
-    <Animated.View style={heartOverlayStyle}>
+    <Animated.View style={styles.heartOverlay}>
       <Animated.View style={animatedStyle}>
         <Ionicons name="heart" size={80} color="#FF6B6B" />
       </Animated.View>
     </Animated.View>
   );
-};
-
-const heartOverlayStyle = {
-  position: 'absolute' as const,
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  justifyContent: 'center' as const,
-  alignItems: 'center' as const,
-  zIndex: 20,
 };
 
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
@@ -241,19 +231,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       } finally {
         setLoadingHangouts(false);
       }
-    }
-  };
-  
-  const refreshHangouts = async () => {
-    setLoadingHangouts(true);
-    try {
-      const response = await api.get('/explore/my-events-with-photos');
-      cachedHangoutsRef.current = response || [];
-      setHangoutsWithPhotos(response || []);
-    } catch (error) {
-      console.error('Refresh hangouts error:', error);
-    } finally {
-      setLoadingHangouts(false);
     }
   };
 
@@ -483,10 +460,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     const showHeart = animatingHearts.has(post.id);
     
     return (
-      <View 
-        key={post.id} 
-        style={[styles.cardShadowWrapper, isPreview && styles.previewCardWrapper]}
-      >
+      <View key={post.id} style={[styles.cardWrapper, isPreview && styles.previewCardWrapper]}>
         <TouchableOpacity
           style={styles.card}
           activeOpacity={0.95}
@@ -568,7 +542,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   };
 
   const renderInlineAdCard = (key: string) => (
-    <View key={key} style={styles.cardShadowWrapper}>
+    <View key={key} style={styles.cardWrapper}>
       <View style={styles.card}>
         <LinearGradient
           colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
@@ -597,10 +571,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         {Array.from({ length: Math.min(displayCount, 7) }).map((_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              i === activeIndex && styles.dotActive,
-            ]}
+            style={[styles.dot, i === activeIndex && styles.dotActive]}
           />
         ))}
       </View>
@@ -622,6 +593,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.horizontalScroll}
           contentContainerStyle={styles.carousel}
           decelerationRate="fast"
           snapToInterval={CARD_WIDTH + 16}
@@ -642,20 +614,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     );
   };
 
-  const renderAd = (key: string) => {
-    return (
-      <View key={key} style={styles.adContainer}>
-        <LinearGradient
-          colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.06)']}
-          style={styles.adPlaceholder}
-        >
-          <Ionicons name="megaphone-outline" size={20} color={Colors.grayMedium} />
-          <Text style={styles.adText}>Sponsored</Text>
-        </LinearGradient>
-      </View>
-    );
-  };
-
   const renderModalContent = () => {
     if (loadingHangouts) {
       return (
@@ -667,7 +625,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
     if (shareStep === 'hangouts') {
       return (
-        <View>
+        <View style={styles.modalContentWrapper}>
           <View style={styles.modalNote}>
             <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
             <Text style={styles.modalNoteText}>
@@ -713,7 +671,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
     if (shareStep === 'photos') {
       return (
-        <View>
+        <View style={styles.modalContentWrapper}>
           <TouchableOpacity
             style={styles.uploadPhotoButton}
             onPress={handleUploadPhoto}
@@ -827,7 +785,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
       <ScrollView
         ref={scrollViewRef}
-        style={styles.scrollView}
+        style={styles.mainScroll}
+        contentContainerStyle={styles.mainScrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
@@ -844,7 +803,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             </Text>
           </View>
         ) : (
-          <>
+          <View style={styles.feedContainer}>
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
@@ -872,10 +831,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 <Text style={styles.refreshButtonText}>Refresh Feed</Text>
               </TouchableOpacity>
             </View>
-          </>
+          </View>
         )}
         
-        <View style={{ height: 100 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       <GlassModal
@@ -906,7 +865,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             </Text>
           </View>
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.myPostsScroll}>
             {myPosts.map((post) => (
               <View key={post.id} style={styles.myPostItem}>
                 <Image
@@ -948,13 +907,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   loadingText: {
     marginTop: 12,
@@ -966,11 +925,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   headerButtonRow: {
     flexDirection: 'row',
     gap: 10,
+    backgroundColor: BG,
   },
   shareButton: {
     flex: 1,
@@ -998,15 +958,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
   },
-  scrollView: {
+  mainScroll: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
+  },
+  mainScrollContent: {
+    backgroundColor: BG,
   },
   emptyState: {
     alignItems: 'center',
     padding: 40,
     marginTop: 40,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   emptyIconBg: {
     width: 100,
@@ -1031,15 +994,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: 20,
   },
+  feedContainer: {
+    backgroundColor: BG,
+  },
   categorySection: {
     marginBottom: 24,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 10,
+    backgroundColor: BG,
   },
   categoryTitle: {
     fontSize: 14,
@@ -1058,32 +1025,29 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     color: Colors.grayMedium,
   },
+  horizontalScroll: {
+    backgroundColor: BG,
+  },
   carousel: {
     paddingLeft: 20,
     paddingRight: 4,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
-  cardShadowWrapper: {
+  cardWrapper: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     marginRight: 16,
     borderRadius: 16,
-    // iOS shadows require a solid background to render properly
-    // Using platform-specific shadow handling
+    backgroundColor: BG,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 4,
-        backgroundColor: Colors.background,
       },
       android: {
         elevation: 4,
-        backgroundColor: 'transparent',
-      },
-      default: {
-        backgroundColor: 'transparent',
       },
     }),
   },
@@ -1097,6 +1061,16 @@ const styles = StyleSheet.create({
   previewCardWrapper: {
     marginRight: 0,
     alignSelf: 'center',
+  },
+  heartOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
   },
   trendingBadge: {
     position: 'absolute',
@@ -1119,6 +1093,7 @@ const styles = StyleSheet.create({
   cardImage: {
     width: '100%',
     height: '100%',
+    backgroundColor: Colors.grayLight,
   },
   cardGradient: {
     position: 'absolute',
@@ -1141,6 +1116,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
+    backgroundColor: Colors.grayLight,
   },
   avatarPlaceholder: {
     backgroundColor: Colors.glass,
@@ -1189,7 +1165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     gap: 6,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
   dot: {
     width: 8,
@@ -1203,37 +1179,17 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  dotsMore: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-    color: Colors.grayMedium,
-    marginLeft: 4,
-  },
-  adContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-    marginHorizontal: 20,
-  },
-  adPlaceholder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    gap: 8,
-    width: '100%',
-  },
-  adText: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-    color: Colors.grayMedium,
+  bottomActions: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    gap: 12,
+    backgroundColor: BG,
   },
   loadMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: BG,
     borderWidth: 2,
     borderColor: Colors.secondary,
     borderRadius: 12,
@@ -1245,23 +1201,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
   },
-  bottomActions: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 12,
-    backgroundColor: Colors.background,
-  },
   refreshButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     gap: 6,
+    backgroundColor: BG,
   },
   refreshButtonText: {
     color: Colors.grayMedium,
     fontSize: 14,
     fontFamily: Fonts.medium,
+  },
+  bottomSpacer: {
+    height: 100,
+    backgroundColor: BG,
   },
   inlineAdContent: {
     flex: 1,
@@ -1305,6 +1260,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 200,
     paddingVertical: 40,
+  },
+  modalContentWrapper: {
+    backgroundColor: 'transparent',
   },
   modalNote: {
     flexDirection: 'row',
@@ -1411,6 +1369,7 @@ const styles = StyleSheet.create({
     margin: '1%',
     borderRadius: 10,
     overflow: 'hidden',
+    backgroundColor: Colors.grayLight,
   },
   photoGridImage: {
     width: '100%',
@@ -1441,6 +1400,9 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: Colors.white,
   },
+  myPostsScroll: {
+    backgroundColor: 'transparent',
+  },
   myPostItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1454,6 +1416,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 8,
+    backgroundColor: Colors.grayLight,
   },
   myPostInfo: {
     flex: 1,
