@@ -35,6 +35,11 @@ const EXPLORE_BANNER_AD_UNIT = Platform.select({
   android: TestIds.BANNER,
 }) || TestIds.BANNER;
 
+const EXPLORE_BOX_AD_UNIT = Platform.select({
+  ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/5281079318',
+  android: TestIds.BANNER,
+}) || TestIds.BANNER;
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
@@ -743,7 +748,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const renderInlineAdCard = (key: string) => (
     <View key={key} style={styles.cardWrapper}>
-      <View style={styles.card}>
+      <View style={[styles.card, styles.adCard]}>
         <LinearGradient
           colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
           style={styles.inlineAdContent}
@@ -752,11 +757,22 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <Ionicons name="megaphone" size={12} color={Colors.white} />
             <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
           </View>
-          <View style={styles.inlineAdCenter}>
-            <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
-            <Text style={styles.inlineAdText}>Ad Space</Text>
-            <Text style={styles.inlineAdSubtext}>Your business here</Text>
-          </View>
+          {Platform.OS === 'ios' ? (
+            <View style={styles.inlineAdCenter}>
+              <BannerAd
+                unitId={EXPLORE_BOX_AD_UNIT}
+                size={BannerAdSize.MEDIUM_RECTANGLE}
+                requestOptions={{
+                  requestNonPersonalizedAdsOnly: false,
+                }}
+              />
+            </View>
+          ) : (
+            <View style={styles.inlineAdCenter}>
+              <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
+              <Text style={styles.inlineAdText}>Ad Space</Text>
+            </View>
+          )}
         </LinearGradient>
       </View>
     </View>
@@ -1355,6 +1371,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: Colors.grayLight,
+  },
+  adCard: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   previewCardWrapper: {
     marginRight: 0,
