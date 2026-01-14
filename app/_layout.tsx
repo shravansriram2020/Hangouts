@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { AuthProvider } from '../context/AuthContext';
 import { Stack, useRouter } from 'expo-router';
+import { Colors } from '../constants/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -99,7 +100,7 @@ function RootLayoutNav() {
     };
   }, [handleDeepLink]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }} />;
 }
 
 export default function RootLayout() {
