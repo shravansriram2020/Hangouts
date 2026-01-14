@@ -47,6 +47,7 @@ interface Message {
   user_initial?: string;
   content: string;
   created_at: string;
+  edited_at?: string;
   has_time_suggestion: boolean;
   has_location_suggestion: boolean;
   reply_to_id?: string;
@@ -61,6 +62,8 @@ export default function MessagesScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [editText, setEditText] = useState('');
   const [showConflictsModal, setShowConflictsModal] = useState(false);
   const [conflictType, setConflictType] = useState<'time' | 'location' | undefined>(undefined);
   const flatListRef = useRef<FlatList>(null);
@@ -126,6 +129,38 @@ export default function MessagesScreen() {
       flatListRef.current?.scrollToEnd();
     } catch (error) {
       console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleStartEdit = (message: Message) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditingMessage(message);
+    setEditText(message.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null);
+    setEditText('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessage || !editText.trim() || sending) return;
+
+    setSending(true);
+    try {
+      await api.put(`/messages/${editingMessage.id}`, {
+        content: editText.trim(),
+      });
+      setEditingMessage(null);
+      setEditText('');
+      await fetchMessages();
+    } catch (error) {
+      console.error('Failed to edit message:', error);
+      Alert.alert('Error', 'Failed to edit message');
     } finally {
       setSending(false);
     }
@@ -199,6 +234,9 @@ export default function MessagesScreen() {
               </TouchableOpacity>
             )}
             <Text style={[styles.messageText, !isOwnMessage && styles.messageTextOther]}>{item.content}</Text>
+            {item.edited_at && (
+              <Text style={[styles.editedIndicator, isOwnMessage ? styles.editedIndicatorOwn : styles.editedIndicatorOther]}>edited</Text>
+            )}
             {(item.has_time_suggestion || item.has_location_suggestion) && (
               <TouchableOpacity 
                 style={styles.addToConflictsButton}
@@ -209,12 +247,22 @@ export default function MessagesScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity 
-            style={styles.replyButton}
-            onPress={() => setReplyingTo(item)}
-          >
-            <Text style={[styles.replyText, isDarkGradient && styles.replyTextDark]}>← Reply</Text>
-          </TouchableOpacity>
+          <View style={styles.messageActions}>
+            <TouchableOpacity 
+              style={styles.replyButton}
+              onPress={() => setReplyingTo(item)}
+            >
+              <Text style={[styles.replyText, isDarkGradient && styles.replyTextDark]}>← Reply</Text>
+            </TouchableOpacity>
+            {isOwnMessage && (
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => handleStartEdit(item)}
+              >
+                <Text style={[styles.editButtonText, isDarkGradient && styles.editButtonTextDark]}>Edit</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         {isOwnMessage && (
           <View style={[styles.avatarContainer, styles.avatarContainerOwn]}>
@@ -261,7 +309,18 @@ export default function MessagesScreen() {
       />
       
       <View style={styles.inputArea}>
-        {replyingTo && (
+        {editingMessage && (
+          <View style={styles.editPreview}>
+            <View style={styles.editPreviewContent}>
+              <Text style={styles.editPreviewLabel}>Editing message</Text>
+              <Text style={styles.editPreviewText} numberOfLines={1}>{editingMessage.content}</Text>
+            </View>
+            <TouchableOpacity onPress={handleCancelEdit}>
+              <Ionicons name="close" size={18} color={Colors.gray} />
+            </TouchableOpacity>
+          </View>
+        )}
+        {replyingTo && !editingMessage && (
           <View style={styles.replyPreview}>
             <View style={styles.replyPreviewContent}>
               <Text style={styles.replyPreviewLabel}>Replying to {replyingTo.first_name}</Text>
@@ -273,22 +332,46 @@ export default function MessagesScreen() {
           </View>
         )}
         <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type a message..."
-            placeholderTextColor={Colors.grayMedium}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity 
-            style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={!newMessage.trim() || sending}
-          >
-            <Ionicons name="send" size={20} color={Colors.white} />
-          </TouchableOpacity>
+          {editingMessage ? (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Edit your message..."
+                placeholderTextColor={Colors.grayMedium}
+                value={editText}
+                onChangeText={setEditText}
+                multiline
+                maxLength={500}
+                autoFocus
+              />
+              <TouchableOpacity 
+                style={[styles.sendButton, !editText.trim() && styles.sendButtonDisabled]}
+                onPress={handleSaveEdit}
+                disabled={!editText.trim() || sending}
+              >
+                <Ionicons name="checkmark" size={20} color={Colors.white} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Type a message..."
+                placeholderTextColor={Colors.grayMedium}
+                value={newMessage}
+                onChangeText={setNewMessage}
+                multiline
+                maxLength={500}
+              />
+              <TouchableOpacity 
+                style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
+                onPress={handleSend}
+                disabled={!newMessage.trim() || sending}
+              >
+                <Ionicons name="send" size={20} color={Colors.white} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
         <Text style={[styles.helperText, { color: mutedTextColor }]}>
           Hangouts can detect messages that suggest a new location or time and add them as conflicts.
@@ -425,8 +508,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     color: Colors.white,
   },
-  replyButton: {
+  messageActions: {
+    flexDirection: 'row',
     marginTop: 4,
+    gap: 12,
+  },
+  replyButton: {
   },
   replyText: {
     fontSize: 12,
@@ -435,6 +522,28 @@ const styles = StyleSheet.create({
   },
   replyTextDark: {
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+  editButton: {
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.gray,
+  },
+  editButtonTextDark: {
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  editedIndicator: {
+    fontSize: 11,
+    fontFamily: Fonts.regular,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  editedIndicatorOwn: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  editedIndicatorOther: {
+    color: Colors.gray,
   },
   avatarContainer: {
     marginRight: 10,
@@ -486,6 +595,32 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   replyPreviewText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.secondary,
+  },
+  editPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(30, 58, 95, 0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  editPreviewContent: {
+    flex: 1,
+  },
+  editPreviewLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.secondary,
+    marginBottom: 2,
+  },
+  editPreviewText: {
     fontSize: 12,
     fontFamily: Fonts.regular,
     color: Colors.secondary,

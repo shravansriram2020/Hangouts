@@ -63,6 +63,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT 
         m.*, 
+        m.edited_at,
         u.first_name, 
         u.profile_photo,
         UPPER(LEFT(u.first_name, 1)) as user_initial,
@@ -151,6 +152,63 @@ router.post('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// Edit a message (only by the message owner)
+router.put('/:messageId', authenticateToken, async (req, res) => {
+  const { messageId } = req.params;
+  const { content } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'Message content cannot be empty' });
+  }
+
+  try {
+    // Verify the user owns this message
+    const messageCheck = await pool.query(
+      'SELECT user_id FROM messages WHERE id = $1',
+      [messageId]
+    );
+
+    if (messageCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    if (messageCheck.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only edit your own messages' });
+    }
+
+    // Re-detect suggestions in the updated content
+    const { hasTimeSuggestion, hasLocationSuggestion } = detectSuggestion(content.trim());
+
+    // Update the message
+    const result = await pool.query(
+      `UPDATE messages 
+       SET content = $1, edited_at = NOW(), has_time_suggestion = $2, has_location_suggestion = $3
+       WHERE id = $4
+       RETURNING *`,
+      [content.trim(), hasTimeSuggestion, hasLocationSuggestion, messageId]
+    );
+
+    // Fetch the updated message with user info
+    const messageWithUser = await pool.query(
+      `SELECT m.*, m.edited_at, u.first_name, u.profile_photo,
+              UPPER(LEFT(u.first_name, 1)) as user_initial,
+              reply.content as reply_to_content,
+              reply_user.first_name as reply_to_user
+       FROM messages m
+       JOIN users u ON m.user_id = u.id
+       LEFT JOIN messages reply ON m.reply_to_id = reply.id
+       LEFT JOIN users reply_user ON reply.user_id = reply_user.id
+       WHERE m.id = $1`,
+      [messageId]
+    );
+
+    res.json(messageWithUser.rows[0]);
+  } catch (error) {
+    console.error('Edit message error:', error);
+    res.status(500).json({ error: 'Failed to edit message' });
   }
 });
 
