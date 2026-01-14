@@ -1001,7 +1001,23 @@ router.post('/upload/email', authenticateAdmin, (req, res, next) => {
 });
 
 // Explore posts management endpoints
-const EXPLORE_CATEGORIES = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
+const EXPLORE_CATEGORIES = [
+  'Food & Dining',
+  'Cafes & Coffee',
+  'Entertainment',
+  'Parks & Recreation',
+  'Sports & Fitness',
+  'Museums & Culture',
+  'Shopping',
+  'Amusement',
+  'Beaches & Waterfront',
+  'Live Music & Events',
+  'Bowling & Arcades',
+  'Spas & Wellness',
+  'Golf & Country Clubs',
+  'Hiking & Nature',
+  'Other'
+];
 
 router.get('/photos/all', authenticateAdmin, async (req, res) => {
   try {

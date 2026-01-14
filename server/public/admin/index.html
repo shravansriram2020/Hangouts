@@ -1056,18 +1056,54 @@
     
     // Explore Posts Management
     let currentModerationFilter = 'all';
-    const EXPLORE_CATEGORIES = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
+    const EXPLORE_CATEGORIES = [
+      'Food & Dining',
+      'Cafes & Coffee',
+      'Entertainment',
+      'Parks & Recreation',
+      'Sports & Fitness',
+      'Museums & Culture',
+      'Shopping',
+      'Amusement',
+      'Beaches & Waterfront',
+      'Live Music & Events',
+      'Bowling & Arcades',
+      'Spas & Wellness',
+      'Golf & Country Clubs',
+      'Hiking & Nature',
+      'Other'
+    ];
     
     function getCategoryFromLocation(locationName) {
       const loc = (locationName || '').toLowerCase();
-      if (loc.match(/restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi/)) {
+      if (loc.match(/restaurant|food|dining|kitchen|grill|bistro|eatery|diner|bakery|pizza|burger|taco|sushi|steakhouse|seafood/)) {
         return 'Food & Dining';
-      } else if (loc.match(/bar|pub|brewery|lounge|club|nightclub/)) {
-        return 'Bars & Nightlife';
-      } else if (loc.match(/movie|theater|cinema|bowling|arcade|entertainment|game|amusement|park.*theme/)) {
+      } else if (loc.match(/cafe|coffee|starbucks|dunkin|espresso|boba|smoothie|juice/)) {
+        return 'Cafes & Coffee';
+      } else if (loc.match(/bowling|arcade|mini golf|putt|billiard/)) {
+        return 'Bowling & Arcades';
+      } else if (loc.match(/concert|live music|band|venue|festival|karaoke/)) {
+        return 'Live Music & Events';
+      } else if (loc.match(/movie|theater|cinema|escape room|laser tag|trampoline|go kart|zoo|aquarium/)) {
         return 'Entertainment';
-      } else if (loc.match(/park|beach|trail|lake|mountain|garden|outdoor|nature|hike/)) {
-        return 'Outdoors';
+      } else if (loc.match(/museum|gallery|culture|history|art|exhibit/)) {
+        return 'Museums & Culture';
+      } else if (loc.match(/beach|waterfront|marina|pier|boardwalk|lake|pool|swim/)) {
+        return 'Beaches & Waterfront';
+      } else if (loc.match(/trail|hik|mountain|nature|preserve|reserve|forest|camping/)) {
+        return 'Hiking & Nature';
+      } else if (loc.match(/park|garden|recreation|playground|picnic/)) {
+        return 'Parks & Recreation';
+      } else if (loc.match(/gym|fitness|tennis|basketball|soccer|football|sport|climbing|yoga|pilates|crossfit/)) {
+        return 'Sports & Fitness';
+      } else if (loc.match(/mall|shop|store|outlet|boutique|retail/)) {
+        return 'Shopping';
+      } else if (loc.match(/amusement|theme park|roller coaster|water park|fair|carnival/)) {
+        return 'Amusement';
+      } else if (loc.match(/spa|wellness|massage|sauna|facial/)) {
+        return 'Spas & Wellness';
+      } else if (loc.match(/golf|country club|driving range/)) {
+        return 'Golf & Country Clubs';
       }
       return 'Other';
     }
