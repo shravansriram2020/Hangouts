@@ -7,7 +7,6 @@ import {
   TextInput,
   ScrollView,
   Switch,
-  Linking,
   Alert,
   Image,
   Animated,
@@ -22,8 +21,157 @@ import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 import FriendsListModal from './FriendsListModal';
 
-const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL || 'https://docs.google.com/document/d/1z0lmETsm7Q2AfkAm6J8G2JNhin9Ldcuc12yXgyZM_S4/edit?usp=sharing';
-const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://docs.google.com/document/d/1Zu47SM7RqdmfCxaQ4oO6BHhrIlYTXtdddGh0eBOt7G0/edit?usp=sharing';
+const PRIVACY_POLICY_CONTENT = `Effective Date: January 14, 2026
+
+This Privacy Policy describes how Hangouts ("the App," "we," "us," or "our") collects, uses, and protects personal information when users access or interact with our services.
+
+1. Information We Collect
+
+We collect the following categories of information to operate and enhance our services:
+
+• Personal Information: First and last name, email address, and username.
+• Location Data: Real-time location (when enabled) and specific location coordinates associated with content you choose to post.
+• User Content: Images, captions, and location tags you upload to the Explore Page.
+• Friends' Data: First and last names, email addresses, and usernames of contacts you choose to connect with.
+
+2. Use of Information
+
+Collected information is used to:
+
+• Enable user interactions and friend visibility features.
+• Facilitate real-time location sharing and the "Explore Page" posting feature.
+• Display usernames and shared content to your selected audience (Friends or Everyone).
+• Maintain, improve, and personalize the App's functionality and user experience.
+• Ensure security, integrity, and reliability of services.
+
+3. Information Sharing and Visibility
+
+We provide different levels of visibility depending on how you use the App:
+
+• Usernames: Your username is publicly visible to all users of the App.
+• Event Participation: First and last names are visible only to participants within the same event.
+• Location Sharing: Real-time location data is visible solely to approved friends and only when the user has opted in.
+• Explore Page Posts: If you share to "Friends Only," your image, username, and the hangout location are visible only to your confirmed friends. If you share to "Everyone," your image, username, and the hangout location are visible to all users of the Hangouts App.
+
+Hangouts does not sell, rent, or commercially share personal information with third parties.
+
+4. Explore Page Content Guidelines
+
+Users are expected to contribute to a safe community. When sharing images and locations:
+
+• Ensure you have permission from others appearing in your photos.
+• Avoid sharing images that reveal sensitive private locations (e.g., your home address).
+• All content must comply with our Terms of Service regarding prohibited or harmful material.
+
+5. Data Security
+
+Appropriate technical and organizational measures are implemented to protect personal data against unauthorized access, alteration, disclosure, or destruction. While these measures meet industry standards, no system is completely secure, and users acknowledge inherent risks in transmitting data electronically.
+
+6. User Controls and Data Management
+
+Users maintain control over their data through the following:
+
+• Toggle Sharing: Enable or disable real-time location sharing at any time.
+• Post Management: Users can delete their Explore Page posts at any time, which removes the image and associated location data from the feed.
+• Account Updates: Update or delete personal information within account settings.
+• Data Deletion: Request permanent data deletion in accordance with applicable data protection laws.
+
+7. Children's Privacy
+
+The App is not directed toward individuals under the age of 13. We do not knowingly collect personal data from minors. If such data is inadvertently collected, it will be promptly deleted upon discovery.
+
+8. Policy Updates
+
+This Privacy Policy may be updated periodically to reflect changes in our practices or for legal, regulatory, or operational reasons. Updates will be communicated by revising the "Effective Date" above. Continued use of the App constitutes acceptance of the updated policy.`;
+
+const TERMS_OF_SERVICE_CONTENT = `Last Updated: January 14, 2026
+
+These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Hangouts ("Company," "we," "us," or "our") governing your access to and use of the Hangouts mobile application, website, and related services (collectively, the "Service"). By accessing, downloading, or using the Service, you acknowledge that you have read, understood, and agree to be bound by these Terms. If you do not agree, you may not access or use the Service.
+
+1. Eligibility
+
+You must be at least thirteen (13) years of age to create an account or use the Service. By accessing or using Hangouts, you represent and warrant that you are legally permitted to do so and that all information you provide is accurate and truthful. If you are using the Service on behalf of an entity, you represent that you have authority to bind that entity to these Terms.
+
+2. Account Registration and Security
+
+To use certain features of Hangouts, you must register for an account. By doing so, you agree to:
+
+• Provide complete, accurate, and current information, including your first and last name, email address, and location data;
+• Maintain the confidentiality of your login credentials and restrict access to your account;
+• Accept full responsibility for all activities that occur under your account.
+
+You agree to notify us immediately of any unauthorized access or suspected breach of security. Hangouts shall not be liable for any loss or damage arising from your failure to maintain the security of your account.
+
+3. Privacy and Data Usage
+
+Your use of Hangouts is subject to our Privacy Policy, which describes how we collect, use, disclose, and safeguard your information. By using the Service, you consent to our data practices as outlined in that policy.
+
+We collect personal information such as your name, email, and location. Location data is only shared with friends when both parties have explicitly enabled location sharing, or when you choose to post to the Explore Page as described in Section 6. You acknowledge and agree that Hangouts may process and store data on servers located within or outside your country of residence.
+
+4. User Conduct and Responsibilities
+
+You are solely responsible for your interactions, content, and behavior while using the Service. You agree not to:
+
+• Use the Service in violation of any applicable law, regulation, or third-party right;
+• Upload, post, or transmit any unlawful, defamatory, obscene, or harmful content;
+• Engage in harassment, stalking, or abuse of other users;
+• Impersonate any person or entity, or misrepresent your affiliation with any individual or organization;
+• Interfere with or disrupt the integrity, performance, or security of the Service;
+• Attempt to gain unauthorized access to any systems or data connected to Hangouts.
+
+5. Location Sharing
+
+The Service includes optional location-sharing features that allow users to view the real-time or recent locations of their friends. By enabling this feature, you expressly consent to share your location with selected users. You may disable location sharing at any time within the app's settings. You acknowledge that accuracy of location data cannot be guaranteed and that Hangouts is not liable for any reliance placed on such data.
+
+6. Explore Page and Shared Content
+
+The Service provides an "Explore Page" feature that allows you to share images and details of your activities ("Hangouts") with a broader audience.
+
+• Sharing Options: When you post to the Explore Page, you may choose to share your post with "Friends Only" or with "Everyone" (the general Hangouts community).
+• Visibility: By posting to the Explore Page, you acknowledge and agree that your username, the image provided, and the specific location of the Hangout will be visible to the audience you have selected.
+• User Responsibility: You are solely responsible for the content you post. Because Explore posts include location data, we urge you to exercise caution and discretion when sharing your real-world coordinates.
+
+7. Explore Post Guidelines
+
+To maintain a safe and positive community, all content shared on the Explore Page must adhere to the following standards. We reserve the right to remove any post or terminate accounts that violate these guidelines:
+
+• Respect Privacy: Do not post images of others without their express consent.
+• Safety First: Do not share sensitive or private information of third parties. Content intended to bully, harass, stalk, or intimidate is strictly prohibited.
+• Appropriate Content: Do not post sexually explicit, pornographic, excessively violent, or illegal content.
+• Authenticity: Do not post "spam" or misleading content. Posts should represent genuine Hangouts and locations.
+• Ownership: Only post images that you own or have the legal right to share.
+
+8. Intellectual Property Rights
+
+All intellectual property rights in and to the Service—including its design, interface, software, text, graphics, logos, and trademarks—are owned by Hangouts or its licensors.
+
+User Content License: By posting content (including images) to the Explore Page or elsewhere on the Service, you grant Hangouts a non-exclusive, royalty-free, transferable, sub-licensable, worldwide license to use, store, display, reproduce, and distribute your content solely for the purposes of operating and providing the Service.
+
+9. Suspension and Termination
+
+We may, at our sole discretion and without prior notice, suspend or terminate your access to the Service if we reasonably believe you have violated these Terms, engaged in fraudulent or illegal conduct, or otherwise acted in a manner detrimental to the Service or other users.
+
+Upon termination, all rights granted to you under these Terms will immediately cease. Certain provisions—including Sections 3, 8, 10, 11, and 12—shall survive termination.
+
+10. Disclaimers
+
+THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, HANGOUTS DISCLAIMS ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.
+
+11. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL HANGOUTS, ITS AFFILIATES, OR LICENSORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF DATA, PROFITS, OR REPUTATION, ARISING FROM OR RELATED TO YOUR USE OF THE SERVICE.
+
+OUR TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF OR RELATING TO THESE TERMS SHALL NOT EXCEED THE AMOUNT YOU PAID (IF ANY) FOR ACCESS TO THE SERVICE DURING THE SIX (6) MONTHS PRECEDING THE CLAIM.
+
+12. Governing Law and Dispute Resolution
+
+These Terms shall be governed by the laws of the State of California. Any dispute shall first be attempted to be resolved through good-faith negotiations. If no resolution is reached, disputes shall be submitted to binding arbitration under the rules of the American Arbitration Association in Los Angeles County, California. You agree to waive any right to participate in class actions.
+
+13. Changes to These Terms
+
+We reserve the right to modify or update these Terms at any time. Material changes will be communicated through the Service or via email. Continued use of the Service after such modifications constitutes your acceptance of the revised Terms.
+
+By accessing or using Hangouts, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.`;
 
 interface Props {
   visible: boolean;
@@ -137,7 +285,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
-  const [currentView, setCurrentView] = useState<'settings' | 'credits'>('settings');
+  const [currentView, setCurrentView] = useState<'settings' | 'credits' | 'privacy' | 'terms'>('settings');
   const [showFriendsList, setShowFriendsList] = useState(false);
   
   const creditsAnimValue = useRef(new Animated.Value(0)).current;
@@ -180,6 +328,44 @@ export default function SettingsModal({ visible, onClose }: Props) {
   };
 
   const closeCredits = () => {
+    Animated.parallel([
+      Animated.timing(creditsAnimValue, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(creditsSlideValue, {
+        toValue: 30,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCurrentView('settings');
+    });
+  };
+
+  const openLegalView = (view: 'privacy' | 'terms') => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setCurrentView(view);
+    Animated.parallel([
+      Animated.spring(creditsAnimValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 12,
+      }),
+      Animated.spring(creditsSlideValue, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 12,
+      }),
+    ]).start();
+  };
+
+  const closeLegalView = () => {
     Animated.parallel([
       Animated.timing(creditsAnimValue, {
         toValue: 0,
@@ -282,6 +468,40 @@ export default function SettingsModal({ visible, onClose }: Props) {
     onClose();
     updateUser({ tutorialCompleted: false });
   };
+
+  if (currentView === 'privacy' || currentView === 'terms') {
+    const isPrivacy = currentView === 'privacy';
+    const title = isPrivacy ? 'Privacy Policy' : 'Terms of Service';
+    const content = isPrivacy ? PRIVACY_POLICY_CONTENT : TERMS_OF_SERVICE_CONTENT;
+    
+    return (
+      <GlassModal key={currentView} visible={visible} onClose={handleClose} title={title} fullHeight>
+        <TouchableOpacity 
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8 }}
+          onPress={closeLegalView}
+        >
+          <Ionicons name="chevron-back" size={20} color={Colors.secondary} />
+          <Text style={{ fontFamily: Fonts.medium, color: Colors.secondary, marginLeft: 4 }}>Back to Settings</Text>
+        </TouchableOpacity>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ paddingBottom: 40 }}>
+          <Animated.View style={{ 
+            opacity: creditsAnimValue,
+            transform: [{ translateY: creditsSlideValue }]
+          }}>
+            <Text style={{ 
+              fontFamily: Fonts.regular, 
+              fontSize: 14, 
+              color: Colors.secondary, 
+              lineHeight: 22,
+              paddingBottom: 40
+            }}>
+              {content}
+            </Text>
+          </Animated.View>
+        </ScrollView>
+      </GlassModal>
+    );
+  }
 
   if (currentView === 'credits') {
     return (
@@ -492,12 +712,16 @@ export default function SettingsModal({ visible, onClose }: Props) {
 
             <Text style={styles.sectionTitle}>Legal & Privacy</Text>
 
-            <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
-              <Text style={styles.link}>Terms of Service</Text>
+            <TouchableOpacity style={styles.legalButton} onPress={() => openLegalView('terms')}>
+              <Ionicons name="document-text-outline" size={16} color={Colors.grayDark} />
+              <Text style={styles.legalButtonText}>Terms of Service</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
-              <Text style={styles.link}>Privacy Policy</Text>
+            <TouchableOpacity style={styles.legalButton} onPress={() => openLegalView('privacy')}>
+              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.grayDark} />
+              <Text style={styles.legalButtonText}>Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.grayMedium} />
             </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>Danger Zone</Text>
@@ -699,13 +923,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Prompt-Medium',
     marginLeft: 6,
   },
-  link: {
-    fontSize: 13,
-    color: Colors.secondary,
-    fontFamily: 'Prompt-Medium',
-    textDecorationLine: 'underline',
-    marginBottom: 10,
-  },
   dangerZone: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -810,6 +1027,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   friendsButtonText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.grayDark,
+    fontFamily: 'Prompt-Medium',
+    marginLeft: 8,
+  },
+  legalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.grayLight,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  legalButtonText: {
     flex: 1,
     fontSize: 13,
     color: Colors.grayDark,
