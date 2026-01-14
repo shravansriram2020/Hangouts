@@ -239,6 +239,28 @@ const initDb = async () => {
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS share_to_explore BOOLEAN DEFAULT false;
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20);
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS uploaded_by UUID REFERENCES users(id) ON DELETE CASCADE;
+      
+      -- Add location data columns to event_photos for explore posts (persists after event deletion)
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS location_name TEXT;
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS location_address TEXT;
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS location_lat DOUBLE PRECISION;
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS location_lng DOUBLE PRECISION;
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS tomtom_category VARCHAR(100);
+      ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS like_count INTEGER DEFAULT 0;
+      
+      -- Change event_id foreign key from CASCADE to SET NULL so explore posts persist after event deletion
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'event_photos_event_id_fkey' 
+          AND table_name = 'event_photos'
+        ) THEN
+          ALTER TABLE event_photos DROP CONSTRAINT event_photos_event_id_fkey;
+          ALTER TABLE event_photos ADD CONSTRAINT event_photos_event_id_fkey 
+            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
 
       -- Saved explore posts table
       CREATE TABLE IF NOT EXISTS saved_explore_posts (
