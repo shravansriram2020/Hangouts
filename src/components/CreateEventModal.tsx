@@ -104,7 +104,7 @@ export default function CreateEventModal({ visible, onClose, onCreated, initialL
         setLocationAddress(initialLocation.address);
         if (initialLocation.latitude) setLocationLat(initialLocation.latitude);
         if (initialLocation.longitude) setLocationLng(initialLocation.longitude);
-        setLocationQuery(initialLocation.name);
+        setLocationQuery(initialLocation.address || initialLocation.name);
       }
     }
   }, [visible, initialLocation]);
