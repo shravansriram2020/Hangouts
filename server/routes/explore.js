@@ -994,6 +994,7 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
         COALESCE(ep.location_lat, e.location_lat) as lat,
         COALESCE(ep.location_lng, e.location_lng) as lng,
         ep.tomtom_category as "tomtomCategory",
+        ep.explore_category as "exploreCategory",
         COALESCE(ep.like_count, 0) as "likeCount",
         ep.created_at as "createdAt",
         EXISTS(
@@ -1084,11 +1085,13 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
     result.rows.forEach(post => {
       let category = 'Other';
       
-      // Use TomTom category if available
-      if (post.tomtomCategory) {
+      // Priority: 1) Admin-set explore_category, 2) TomTom category, 3) regex fallback
+      if (post.exploreCategory) {
+        category = post.exploreCategory;
+      } else if (post.tomtomCategory) {
         category = post.tomtomCategory;
       } else {
-        // Fallback to regex matching for older posts without TomTom category
+        // Fallback to regex matching for older posts without category
         const locationLower = (post.locationName || '').toLowerCase();
         if (FOOD_PATTERNS.test(locationLower)) {
           category = 'Food & Dining';
