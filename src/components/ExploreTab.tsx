@@ -33,30 +33,40 @@ import GlassModal from './GlassModal';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
-let BannerAd: any = null;
-let BannerAdSize: any = null;
-let TestIds: any = { BANNER: '' };
+let NativeAdView: any = null;
+let HeadlineView: any = null;
+let TaglineView: any = null;
+let ImageView: any = null;
+let CallToActionView: any = null;
+let IconView: any = null;
+let AdvertiserView: any = null;
 
 if (!isExpoGo) {
   try {
-    const mobileAds = require('react-native-google-mobile-ads');
-    BannerAd = mobileAds.BannerAd;
-    BannerAdSize = mobileAds.BannerAdSize;
-    TestIds = mobileAds.TestIds;
+    const nativeAds = require('react-native-admob-native-ads');
+    NativeAdView = nativeAds.default;
+    HeadlineView = nativeAds.HeadlineView;
+    TaglineView = nativeAds.TaglineView;
+    ImageView = nativeAds.ImageView;
+    CallToActionView = nativeAds.CallToActionView;
+    IconView = nativeAds.IconView;
+    AdvertiserView = nativeAds.AdvertiserView;
   } catch (e) {
-    console.log('[AdMob] Not available in ExploreTab');
+    console.log('[AdMob Native] Not available in ExploreTab');
   }
 }
 
+const NATIVE_AD_TEST_ID = 'ca-app-pub-3940256099942544/2247696110';
+
 const EXPLORE_BANNER_AD_UNIT = Platform.select({
-  ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/8266335307',
-  android: TestIds.BANNER,
-}) || TestIds.BANNER;
+  ios: __DEV__ ? NATIVE_AD_TEST_ID : 'ca-app-pub-6700271097724179/8266335307',
+  android: NATIVE_AD_TEST_ID,
+}) || NATIVE_AD_TEST_ID;
 
 const EXPLORE_BOX_AD_UNIT = Platform.select({
-  ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/5281079318',
-  android: TestIds.BANNER,
-}) || TestIds.BANNER;
+  ios: __DEV__ ? NATIVE_AD_TEST_ID : 'ca-app-pub-6700271097724179/5281079318',
+  android: NATIVE_AD_TEST_ID,
+}) || NATIVE_AD_TEST_ID;
 
 const EXPLORE_FIRST_POST_KEY = 'hangouts_explore_first_post_seen';
 
@@ -826,31 +836,44 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderInlineAdCard = (key: string) => (
     <View key={key} style={styles.cardWrapper}>
       <View style={[styles.card, styles.adCard]}>
-        <LinearGradient
-          colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
-          style={styles.inlineAdContent}
-        >
-          <View style={styles.sponsoredBadge}>
-            <Ionicons name="megaphone" size={12} color={Colors.white} />
-            <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
-          </View>
-          {Platform.OS === 'ios' && BannerAd && BannerAdSize ? (
-            <View style={styles.inlineAdCenter}>
-              <BannerAd
-                unitId={EXPLORE_BOX_AD_UNIT}
-                size={BannerAdSize.MEDIUM_RECTANGLE}
-                requestOptions={{
-                  requestNonPersonalizedAdsOnly: false,
-                }}
-              />
+        {Platform.OS === 'ios' && NativeAdView ? (
+          <NativeAdView
+            adUnitID={EXPLORE_BOX_AD_UNIT}
+            style={styles.nativeAdCard}
+            onAdLoaded={() => console.log('[NativeAd] Inline ad loaded')}
+            onAdFailedToLoad={(error: any) => console.log('[NativeAd] Failed:', error)}
+          >
+            <View style={styles.nativeAdContent}>
+              <Text style={styles.nativeAdSponsoredLabel}>SPONSORED</Text>
+              <View style={styles.nativeAdHeader}>
+                {IconView && <IconView style={styles.nativeAdIcon} />}
+                <View style={styles.nativeAdHeaderText}>
+                  {HeadlineView && <HeadlineView style={styles.nativeAdHeadline} />}
+                  {AdvertiserView && <AdvertiserView style={styles.nativeAdAdvertiser} />}
+                </View>
+              </View>
+              {ImageView && <ImageView style={styles.nativeAdImage} resizeMode="cover" />}
+              {TaglineView && <TaglineView style={styles.nativeAdTagline} numberOfLines={2} />}
+              {CallToActionView && (
+                <CallToActionView 
+                  style={styles.nativeAdCta}
+                  textStyle={styles.nativeAdCtaText}
+                  allCaps
+                />
+              )}
             </View>
-          ) : (
+          </NativeAdView>
+        ) : (
+          <LinearGradient
+            colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
+            style={styles.inlineAdContent}
+          >
+            <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
             <View style={styles.inlineAdCenter}>
-              <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
-              <Text style={styles.inlineAdText}>Ad Space</Text>
+              <View style={styles.placeholderAdBox} />
             </View>
-          )}
-        </LinearGradient>
+          </LinearGradient>
+        )}
       </View>
     </View>
   );
@@ -1111,14 +1134,31 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 {renderCategory(category, index)}
                 {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && (
                   <View style={styles.adContainer}>
-                    {Platform.OS === 'ios' && BannerAd && BannerAdSize ? (
-                      <BannerAd
-                        unitId={EXPLORE_BANNER_AD_UNIT}
-                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                        requestOptions={{
-                          requestNonPersonalizedAdsOnly: false,
-                        }}
-                      />
+                    {Platform.OS === 'ios' && NativeAdView ? (
+                      <NativeAdView
+                        adUnitID={EXPLORE_BANNER_AD_UNIT}
+                        style={styles.nativeBannerAd}
+                        onAdLoaded={() => console.log('[NativeAd] Banner ad loaded')}
+                        onAdFailedToLoad={(error: any) => console.log('[NativeAd] Banner failed:', error)}
+                      >
+                        <View style={styles.nativeBannerContent}>
+                          <Text style={styles.nativeAdSponsoredLabel}>SPONSORED</Text>
+                          <View style={styles.nativeBannerRow}>
+                            {IconView && <IconView style={styles.nativeBannerIcon} />}
+                            <View style={styles.nativeBannerInfo}>
+                              {HeadlineView && <HeadlineView style={styles.nativeBannerHeadline} />}
+                              {TaglineView && <TaglineView style={styles.nativeBannerTagline} numberOfLines={1} />}
+                            </View>
+                            {CallToActionView && (
+                              <CallToActionView 
+                                style={styles.nativeBannerCta}
+                                textStyle={styles.nativeBannerCtaText}
+                                allCaps
+                              />
+                            )}
+                          </View>
+                        </View>
+                      </NativeAdView>
                     ) : (
                       <View style={styles.placeholderAdWrapper}>
                         <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
@@ -1611,6 +1651,118 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: Colors.grayLight,
     borderRadius: 8,
+  },
+  nativeAdCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  nativeAdContent: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    padding: 16,
+    borderRadius: 16,
+  },
+  nativeAdSponsoredLabel: {
+    fontSize: 9,
+    fontFamily: Fonts.medium,
+    color: Colors.black,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  nativeAdHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  nativeAdIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  nativeAdHeaderText: {
+    flex: 1,
+  },
+  nativeAdHeadline: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.black,
+  },
+  nativeAdAdvertiser: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
+    marginTop: 2,
+  },
+  nativeAdImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  nativeAdTagline: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    color: Colors.grayDark,
+    marginBottom: 12,
+  },
+  nativeAdCta: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  nativeAdCtaText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
+  },
+  nativeBannerAd: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  nativeBannerContent: {
+    backgroundColor: Colors.white,
+    padding: 14,
+    borderRadius: 12,
+  },
+  nativeBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nativeBannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  nativeBannerInfo: {
+    flex: 1,
+  },
+  nativeBannerHeadline: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    color: Colors.black,
+  },
+  nativeBannerTagline: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
+    marginTop: 2,
+  },
+  nativeBannerCta: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+  },
+  nativeBannerCtaText: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+    color: Colors.white,
   },
   bottomActions: {
     paddingHorizontal: 20,
