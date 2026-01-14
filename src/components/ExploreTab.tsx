@@ -16,6 +16,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -584,6 +585,28 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
+  const handleLike = async (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    triggerHeartAnimation(post.id);
+    
+    try {
+      const response = await api.post(`/explore/photos/${post.id}/like`, {});
+      
+      setAllCategories(prev => prev.map((cat, ci) => {
+        if (ci !== categoryIndex) return cat;
+        return {
+          ...cat,
+          posts: cat.posts.map((p, pi) => {
+            if (pi !== postIndex) return p;
+            return { ...p, isLiked: response.isLiked, likeCount: response.likeCount };
+          }),
+        };
+      }));
+    } catch (error) {
+      console.error('Like error:', error);
+    }
+  };
+
   const handleSingleTap = (post: ExplorePost) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const fullAddress = post.locationAddress || post.locationName;
@@ -934,7 +957,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading explore...</Text>
+        <Text style={styles.loadingText}>Loading Hangouts Explore...</Text>
       </View>
     );
   }
@@ -944,28 +967,34 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       <View style={styles.header}>
         <View style={styles.headerButtonRow}>
           <TouchableOpacity 
-            style={styles.headerButton}
             onPress={handleOpenShareModal}
             activeOpacity={0.7}
+            style={styles.headerButtonWrapper}
           >
-            <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
-            <Text style={styles.headerButtonText}>Post</Text>
+            <BlurView intensity={60} tint="light" style={styles.headerButton}>
+              <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+              <Text style={styles.headerButtonText}>Post</Text>
+            </BlurView>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.headerButton}
             onPress={handleOpenSaved}
             activeOpacity={0.7}
+            style={styles.headerButtonWrapper}
           >
-            <Ionicons name="bookmark-outline" size={18} color={Colors.primary} />
-            <Text style={styles.headerButtonText}>Saved</Text>
+            <BlurView intensity={60} tint="light" style={styles.headerButton}>
+              <Ionicons name="bookmark-outline" size={18} color={Colors.primary} />
+              <Text style={styles.headerButtonText}>Saved</Text>
+            </BlurView>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.headerButton}
             onPress={handleOpenMyPosts}
             activeOpacity={0.7}
+            style={styles.headerButtonWrapper}
           >
-            <Ionicons name="images-outline" size={18} color={Colors.primary} />
-            <Text style={styles.headerButtonText}>Your Posts</Text>
+            <BlurView intensity={60} tint="light" style={styles.headerButton}>
+              <Ionicons name="images-outline" size={18} color={Colors.primary} />
+              <Text style={styles.headerButtonText}>Your Posts</Text>
+            </BlurView>
           </TouchableOpacity>
         </View>
       </View>
@@ -1010,12 +1039,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               )}
               
               <TouchableOpacity
-                style={styles.refreshButton}
                 onPress={() => { scrollToTop(); onRefresh(); }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="refresh-outline" size={18} color={Colors.grayMedium} />
-                <Text style={styles.refreshButtonText}>Refresh Feed</Text>
+                <BlurView intensity={60} tint="light" style={styles.refreshButton}>
+                  <Ionicons name="refresh-outline" size={18} color={Colors.primary} />
+                  <Text style={styles.refreshButtonText}>Refresh Feed</Text>
+                </BlurView>
               </TouchableOpacity>
             </View>
           </View>
@@ -1150,7 +1180,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.backgroundGradientStart,
+    backgroundColor: 'transparent',
   },
   loadingText: {
     marginTop: 12,
@@ -1167,16 +1197,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  headerButton: {
+  headerButtonWrapper: {
     flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  headerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.glassLight,
     borderRadius: 12,
     height: 44,
     paddingHorizontal: 8,
     gap: 4,
+    overflow: 'hidden',
   },
   headerButtonText: {
     fontSize: 13,
@@ -1483,11 +1517,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 20,
     gap: 6,
-    backgroundColor: 'transparent',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   refreshButtonText: {
-    color: Colors.grayMedium,
+    color: Colors.primary,
     fontSize: 14,
     fontFamily: Fonts.medium,
   },
@@ -1720,27 +1756,16 @@ const styles = StyleSheet.create({
   savedPostItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     padding: 12,
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 12,
     gap: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   savedPostImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 8,
     backgroundColor: Colors.grayLight,
   },
   savedPostInfo: {
