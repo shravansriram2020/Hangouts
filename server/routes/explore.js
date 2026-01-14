@@ -1093,9 +1093,9 @@ router.delete('/photos/:photoId', authenticateToken, async (req, res) => {
     const { photoId } = req.params;
     const userId = req.user.id;
     
-    // Verify ownership
+    // Verify ownership (uploader_id is the column name)
     const photo = await pool.query(
-      'SELECT id FROM event_photos WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM event_photos WHERE id = $1 AND uploader_id = $2',
       [photoId, userId]
     );
     
