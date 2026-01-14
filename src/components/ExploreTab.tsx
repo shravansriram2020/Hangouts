@@ -1055,7 +1055,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 16,
-    backgroundColor: Colors.glassLight,
     ...Shadows.medium,
   },
   previewCard: {
