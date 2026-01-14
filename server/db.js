@@ -261,6 +261,19 @@ const initDb = async () => {
             FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL;
         END IF;
       END $$;
+      
+      -- Backfill location data for existing shared photos that don't have it yet
+      UPDATE event_photos ep
+      SET 
+        location_name = e.location_name,
+        location_address = e.location_address,
+        location_lat = e.location_lat,
+        location_lng = e.location_lng
+      FROM events e
+      WHERE ep.event_id = e.id
+        AND ep.share_to_explore = true
+        AND ep.location_name IS NULL
+        AND e.location_name IS NOT NULL;
 
       -- Saved explore posts table
       CREATE TABLE IF NOT EXISTS saved_explore_posts (

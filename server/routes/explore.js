@@ -818,6 +818,42 @@ router.get('/my-events-with-photos', authenticateToken, async (req, res) => {
   }
 });
 
+// Helper function to look up TomTom category for a location
+async function getTomTomCategory(locationName, lat, lng) {
+  if (!TOMTOM_API_KEY || !lat || !lng) return null;
+  
+  try {
+    const url = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(locationName)}.json?key=${TOMTOM_API_KEY}&lat=${lat}&lon=${lng}&radius=500&limit=1`;
+    const response = await fetch(url, { timeout: 5000 });
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      const poi = data.results[0].poi;
+      if (poi?.categorySet && poi.categorySet.length > 0) {
+        const categoryId = poi.categorySet[0].id;
+        if (categoryId.toString().startsWith('7315')) return 'Food & Dining';
+        if (categoryId.toString().startsWith('9376') && !categoryId.toString().startsWith('9376006')) return 'Bars & Nightlife';
+        if (categoryId.toString().startsWith('9379')) return 'Bars & Nightlife';
+        if (categoryId.toString().startsWith('9376006')) return 'Food & Dining';
+        if (['9362', '7342', '9902', '7373'].some(c => categoryId.toString().startsWith(c))) return 'Entertainment';
+        if (['9357', '7317', '7318'].some(c => categoryId.toString().startsWith(c))) return 'Outdoors';
+      }
+      if (poi?.categories && poi.categories.length > 0) {
+        const cat = poi.categories[0].toLowerCase();
+        if (cat.includes('restaurant') || cat.includes('food') || cat.includes('cafe') || cat.includes('coffee')) return 'Food & Dining';
+        if (cat.includes('bar') || cat.includes('pub') || cat.includes('nightclub') || cat.includes('nightlife')) return 'Bars & Nightlife';
+        if (cat.includes('entertainment') || cat.includes('theater') || cat.includes('cinema') || cat.includes('museum')) return 'Entertainment';
+        if (cat.includes('park') || cat.includes('outdoor') || cat.includes('recreation') || cat.includes('sports')) return 'Outdoors';
+      }
+    }
+  } catch (error) {
+    console.error('TomTom category lookup error:', error.message);
+  }
+  return null;
+}
+
 // Share a photo from an event to Explore
 router.post('/share', authenticateToken, async (req, res) => {
   const { eventId, photoId } = req.body;
@@ -826,7 +862,7 @@ router.post('/share', authenticateToken, async (req, res) => {
   try {
     // Verify user has access to the event
     const eventCheck = await pool.query(`
-      SELECT e.id, e.location_name, e.location_lat, e.location_lng
+      SELECT e.id, e.location_name, e.location_address, e.location_lat, e.location_lng
       FROM events e
       LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.user_id = $2
       WHERE e.id = $1 AND (e.host_id = $2 OR ea.status = 'accepted')
@@ -863,12 +899,25 @@ router.post('/share', authenticateToken, async (req, res) => {
       });
     }
 
-    // Share the photo (auto-approve - instantly live)
+    // Look up TomTom category for proper explore categorization
+    const tomtomCategory = await getTomTomCategory(
+      event.location_name, 
+      event.location_lat, 
+      event.location_lng
+    );
+
+    // Share the photo and copy location data (persists even if event is deleted)
     await pool.query(
       `UPDATE event_photos 
-       SET share_to_explore = true, moderation_status = 'approved'
+       SET share_to_explore = true, 
+           moderation_status = 'approved',
+           location_name = $2,
+           location_address = $3,
+           location_lat = $4,
+           location_lng = $5,
+           tomtom_category = $6
        WHERE id = $1`,
-      [photoId]
+      [photoId, event.location_name, event.location_address, event.location_lat, event.location_lng, tomtomCategory]
     );
 
     res.json({ 
@@ -890,16 +939,18 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
 
   try {
     // Get all approved shared photos within 60 miles, grouped by category
+    // Use photo's location data (persists after event deletion) with fallback to event's location
     const result = await pool.query(`
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
         COALESCE(u.username, 'User') as username,
         u.profile_photo as "userAvatar",
-        e.location_name as "locationName",
-        e.location_address as "locationAddress",
-        e.location_lat as lat,
-        e.location_lng as lng,
+        COALESCE(ep.location_name, e.location_name) as "locationName",
+        COALESCE(ep.location_address, e.location_address) as "locationAddress",
+        COALESCE(ep.location_lat, e.location_lat) as lat,
+        COALESCE(ep.location_lng, e.location_lng) as lng,
+        ep.tomtom_category as "tomtomCategory",
         COALESCE(ep.like_count, 0) as "likeCount",
         ep.created_at as "createdAt",
         EXISTS(
@@ -913,26 +964,26 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
         (
           3959 * acos(
             LEAST(1.0, GREATEST(-1.0,
-              cos(radians($1)) * cos(radians(e.location_lat)) *
-              cos(radians(e.location_lng) - radians($2)) +
-              sin(radians($1)) * sin(radians(e.location_lat))
+              cos(radians($1)) * cos(radians(COALESCE(ep.location_lat, e.location_lat))) *
+              cos(radians(COALESCE(ep.location_lng, e.location_lng)) - radians($2)) +
+              sin(radians($1)) * sin(radians(COALESCE(ep.location_lat, e.location_lat)))
             ))
           )
         ) as distance
       FROM event_photos ep
-      JOIN events e ON ep.event_id = e.id
+      LEFT JOIN events e ON ep.event_id = e.id
       JOIN users u ON ep.uploader_id = u.id
       WHERE ep.share_to_explore = true
         AND ep.moderation_status = 'approved'
-        AND e.location_lat IS NOT NULL
-        AND e.location_lng IS NOT NULL
-        AND e.location_name IS NOT NULL
+        AND COALESCE(ep.location_lat, e.location_lat) IS NOT NULL
+        AND COALESCE(ep.location_lng, e.location_lng) IS NOT NULL
+        AND COALESCE(ep.location_name, e.location_name) IS NOT NULL
         AND (
           3959 * acos(
             LEAST(1.0, GREATEST(-1.0,
-              cos(radians($1)) * cos(radians(e.location_lat)) *
-              cos(radians(e.location_lng) - radians($2)) +
-              sin(radians($1)) * sin(radians(e.location_lat))
+              cos(radians($1)) * cos(radians(COALESCE(ep.location_lat, e.location_lat))) *
+              cos(radians(COALESCE(ep.location_lng, e.location_lng)) - radians($2)) +
+              sin(radians($1)) * sin(radians(COALESCE(ep.location_lat, e.location_lat)))
             ))
           )
         ) <= $4
@@ -951,28 +1002,34 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
       ORDER BY ep.like_count DESC, ep.created_at DESC
     `, [userLat, userLng, req.user.id, SHARED_PHOTOS_MAX_MILES]);
 
-    // Group posts by category using TomTom-aligned location patterns
+    // Group posts by category - prefer TomTom category, fallback to regex patterns
     const categories = {};
     const categoryOrder = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
     
-    // TomTom-aligned category patterns
-    const FOOD_PATTERNS = /restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi|steakhouse|seafood|chinese|japanese|italian|mexican|thai|indian|korean|vietnamese|mediterranean|bbq|barbecue|buffet|brunch|breakfast|lunch|dinner|noodle|ramen|pho|wings|chicken|fish|donut|bagel|sandwich|deli|smoothie|juice|ice cream|frozen yogurt|dessert|pastry|patisserie/;
-    const BAR_PATTERNS = /bar|pub|brewery|tavern|club|lounge|nightlife|wine|cocktail|speakeasy|taphouse|beer|ale|distillery|winery|spirits|rooftop|happy hour|karaoke/;
-    const ENTERTAINMENT_PATTERNS = /theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium|escape room|laser tag|mini golf|putt|trampoline|go kart|dave & buster|topgolf|round1|main event|fun center|game|play|amusement|zoo|aquarium|planetarium|comedy|show|performance|amphitheater/;
-    const OUTDOOR_PATTERNS = /park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness|hiking|camping|nature|preserve|reserve|forest|pool|swim|surf|ski|snowboard|climbing|rock wall|yoga|pilates|crossfit|spa|wellness/;
+    // Fallback regex patterns for posts without TomTom category
+    const FOOD_PATTERNS = /restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi|steakhouse|seafood|chinese|japanese|italian|mexican|thai|indian|korean|vietnamese|mediterranean|bbq|barbecue|buffet|brunch|breakfast|lunch|dinner|noodle|ramen|pho|wings|chicken|fish|donut|bagel|sandwich|deli|smoothie|juice|ice cream|frozen yogurt|dessert|pastry|patisserie|cici/i;
+    const BAR_PATTERNS = /bar|pub|brewery|tavern|club|lounge|nightlife|wine|cocktail|speakeasy|taphouse|beer|ale|distillery|winery|spirits|rooftop|happy hour|karaoke/i;
+    const ENTERTAINMENT_PATTERNS = /theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium|escape room|laser tag|mini golf|putt|trampoline|go kart|dave & buster|topgolf|round1|main event|fun center|game|play|amusement|zoo|aquarium|planetarium|comedy|show|performance|amphitheater/i;
+    const OUTDOOR_PATTERNS = /park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness|hiking|camping|nature|preserve|reserve|forest|pool|swim|surf|ski|snowboard|climbing|rock wall|yoga|pilates|crossfit|spa|wellness/i;
     
     result.rows.forEach(post => {
-      const locationLower = (post.locationName || '').toLowerCase();
       let category = 'Other';
       
-      if (FOOD_PATTERNS.test(locationLower)) {
-        category = 'Food & Dining';
-      } else if (BAR_PATTERNS.test(locationLower)) {
-        category = 'Bars & Nightlife';
-      } else if (ENTERTAINMENT_PATTERNS.test(locationLower)) {
-        category = 'Entertainment';
-      } else if (OUTDOOR_PATTERNS.test(locationLower)) {
-        category = 'Outdoors';
+      // Use TomTom category if available
+      if (post.tomtomCategory) {
+        category = post.tomtomCategory;
+      } else {
+        // Fallback to regex matching for older posts without TomTom category
+        const locationLower = (post.locationName || '').toLowerCase();
+        if (FOOD_PATTERNS.test(locationLower)) {
+          category = 'Food & Dining';
+        } else if (BAR_PATTERNS.test(locationLower)) {
+          category = 'Bars & Nightlife';
+        } else if (ENTERTAINMENT_PATTERNS.test(locationLower)) {
+          category = 'Entertainment';
+        } else if (OUTDOOR_PATTERNS.test(locationLower)) {
+          category = 'Outdoors';
+        }
       }
       
       if (!categories[category]) {
@@ -1007,12 +1064,13 @@ router.get('/my-photos', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
+    // Use photo's location data with fallback to event's (persists after event deletion)
     const result = await pool.query(`
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
-        COALESCE(e.location_name, 'Unknown Location') as "locationName",
-        COALESCE(e.location_address, '') as "locationAddress",
+        COALESCE(ep.location_name, e.location_name, 'Unknown Location') as "locationName",
+        COALESCE(ep.location_address, e.location_address, '') as "locationAddress",
         COALESCE(ep.like_count, 0) as "likeCount",
         ep.created_at as "createdAt"
       FROM event_photos ep
@@ -1146,25 +1204,27 @@ router.get('/saved', authenticateToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // Use photo's location data with fallback to event's (persists after event deletion)
     const result = await pool.query(`
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
         u.username,
         u.profile_photo as "userAvatar",
-        e.location_name as "locationName",
-        e.location_address as "locationAddress",
-        e.location_lat as lat,
-        e.location_lng as lng,
+        COALESCE(ep.location_name, e.location_name) as "locationName",
+        COALESCE(ep.location_address, e.location_address) as "locationAddress",
+        COALESCE(ep.location_lat, e.location_lat) as lat,
+        COALESCE(ep.location_lng, e.location_lng) as lng,
         COALESCE(ep.like_count, 0) as "likeCount",
         ep.created_at as "createdAt",
         sep.saved_at as "savedAt"
       FROM saved_explore_posts sep
       JOIN event_photos ep ON sep.photo_id = ep.id
-      JOIN events e ON ep.event_id = e.id
+      LEFT JOIN events e ON ep.event_id = e.id
       JOIN users u ON ep.uploader_id = u.id
       WHERE sep.user_id = $1 
         AND ep.share_to_explore = true
+        AND COALESCE(ep.location_name, e.location_name) IS NOT NULL
         AND (
           COALESCE(u.explore_visibility, 'public') = 'public'
           OR ep.uploader_id = $1
