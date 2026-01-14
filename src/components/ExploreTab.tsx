@@ -966,6 +966,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
+    backgroundColor: Colors.background,
   },
   headerButtonRow: {
     flexDirection: 'row',
@@ -1005,6 +1006,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
     marginTop: 40,
+    backgroundColor: Colors.background,
   },
   emptyIconBg: {
     width: 100,
@@ -1031,6 +1033,7 @@ const styles = StyleSheet.create({
   },
   categorySection: {
     marginBottom: 24,
+    backgroundColor: Colors.background,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -1058,21 +1061,38 @@ const styles = StyleSheet.create({
   carousel: {
     paddingLeft: 20,
     paddingRight: 4,
+    backgroundColor: Colors.background,
   },
   cardShadowWrapper: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     marginRight: 16,
     borderRadius: 16,
-    ...Shadows.medium,
-    backgroundColor: 'transparent',
+    // iOS shadows require a solid background to render properly
+    // Using platform-specific shadow handling
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        backgroundColor: Colors.background,
+      },
+      android: {
+        elevation: 4,
+        backgroundColor: 'transparent',
+      },
+      default: {
+        backgroundColor: 'transparent',
+      },
+    }),
   },
   card: {
     width: '100%',
     height: '100%',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.grayLight,
   },
   previewCardWrapper: {
     marginRight: 0,
@@ -1169,6 +1189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     gap: 6,
+    backgroundColor: Colors.background,
   },
   dot: {
     width: 8,
@@ -1228,6 +1249,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     gap: 12,
+    backgroundColor: Colors.background,
   },
   refreshButton: {
     flexDirection: 'row',
