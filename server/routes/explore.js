@@ -176,15 +176,19 @@ const SHARED_PHOTOS_MAX_MILES = 60;
 
 const EXPLORE_CATEGORIES = [
   { name: 'Food & Dining', emoji: '🍽️', codes: '7315' },
-  { name: 'Bars & Pubs', emoji: '🍺', codes: '9376' },
-  { name: 'Nightlife', emoji: '🌙', codes: '9379' },
+  { name: 'Cafes & Coffee', emoji: '☕', codes: '9377' },
   { name: 'Entertainment', emoji: '🎬', codes: '7335,7342' },
   { name: 'Parks & Recreation', emoji: '🏞️', codes: '9362' },
   { name: 'Sports & Fitness', emoji: '⚽', codes: '7320,9373' },
   { name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
   { name: 'Shopping', emoji: '🛍️', codes: '7338' },
   { name: 'Amusement', emoji: '🎢', codes: '9902' },
-  { name: 'Cafes & Coffee', emoji: '☕', codes: '9377' },
+  { name: 'Beaches & Waterfront', emoji: '🏖️', codes: '9357' },
+  { name: 'Live Music & Events', emoji: '🎵', codes: '9379,7318' },
+  { name: 'Bowling & Arcades', emoji: '🎳', codes: '9378,7342' },
+  { name: 'Spas & Wellness', emoji: '💆', codes: '9374' },
+  { name: 'Golf & Country Clubs', emoji: '⛳', codes: '7339' },
+  { name: 'Hiking & Nature', emoji: '🥾', codes: '9927' },
 ];
 
 const ALL_FUN_CODES = EXPLORE_CATEGORIES.map(c => c.codes).join(',');
@@ -402,10 +406,15 @@ const REQUIRED_CATEGORIES = [
 
 const OPTIONAL_CATEGORIES = [
   { id: 'cafes', name: 'Coffee & Cafes', emoji: '☕', codes: '9377' },
-  { id: 'bars', name: 'Bars & Nightlife', emoji: '🍺', codes: '9376,9379' },
   { id: 'entertainment', name: 'Entertainment', emoji: '🎬', codes: '7335,7342' },
   { id: 'parks', name: 'Parks & Outdoors', emoji: '🏞️', codes: '9362' },
   { id: 'museums', name: 'Museums & Culture', emoji: '🏛️', codes: '7316,7317' },
+  { id: 'beaches', name: 'Beaches & Waterfront', emoji: '🏖️', codes: '9357' },
+  { id: 'livemusic', name: 'Live Music & Events', emoji: '🎵', codes: '9379,7318' },
+  { id: 'bowling', name: 'Bowling & Arcades', emoji: '🎳', codes: '9378,7342' },
+  { id: 'spas', name: 'Spas & Wellness', emoji: '💆', codes: '9374' },
+  { id: 'golf', name: 'Golf & Country Clubs', emoji: '⛳', codes: '7339' },
+  { id: 'hiking', name: 'Hiking & Nature', emoji: '🥾', codes: '9927' },
 ];
 
 const REQUIRED_ADS = ['adBanner1', 'adBanner2', 'adBanner3', 'adBanner4'];
@@ -832,20 +841,54 @@ async function getTomTomCategory(locationName, lat, lng) {
     if (data.results && data.results.length > 0) {
       const poi = data.results[0].poi;
       if (poi?.categorySet && poi.categorySet.length > 0) {
-        const categoryId = poi.categorySet[0].id;
-        if (categoryId.toString().startsWith('7315')) return 'Food & Dining';
-        if (categoryId.toString().startsWith('9376') && !categoryId.toString().startsWith('9376006')) return 'Bars & Nightlife';
-        if (categoryId.toString().startsWith('9379')) return 'Bars & Nightlife';
-        if (categoryId.toString().startsWith('9376006')) return 'Food & Dining';
-        if (['9362', '7342', '9902', '7373'].some(c => categoryId.toString().startsWith(c))) return 'Entertainment';
-        if (['9357', '7317', '7318'].some(c => categoryId.toString().startsWith(c))) return 'Outdoors';
+        const categoryId = poi.categorySet[0].id.toString();
+        // Food & Dining (restaurants, cafes, food courts)
+        if (categoryId.startsWith('7315')) return 'Food & Dining';
+        if (categoryId.startsWith('9376006')) return 'Food & Dining'; // Cafes
+        // Cafes & Coffee
+        if (categoryId.startsWith('9377')) return 'Cafes & Coffee';
+        // Entertainment (cinema, theater, casino)
+        if (['7335', '7342'].some(c => categoryId.startsWith(c))) return 'Entertainment';
+        // Parks & Recreation
+        if (categoryId.startsWith('9362')) return 'Parks & Recreation';
+        // Sports & Fitness
+        if (['7320', '9373'].some(c => categoryId.startsWith(c))) return 'Sports & Fitness';
+        // Museums & Culture
+        if (['7316', '7317'].some(c => categoryId.startsWith(c))) return 'Museums & Culture';
+        // Shopping
+        if (categoryId.startsWith('7338')) return 'Shopping';
+        // Amusement
+        if (categoryId.startsWith('9902')) return 'Amusement';
+        // Beaches & Waterfront
+        if (categoryId.startsWith('9357')) return 'Beaches & Waterfront';
+        // Live Music & Events (concert halls, music venues)
+        if (['9379', '7318'].some(c => categoryId.startsWith(c))) return 'Live Music & Events';
+        // Bowling & Arcades
+        if (categoryId.startsWith('9378')) return 'Bowling & Arcades';
+        // Spas & Wellness
+        if (categoryId.startsWith('9374')) return 'Spas & Wellness';
+        // Golf & Country Clubs
+        if (categoryId.startsWith('7339')) return 'Golf & Country Clubs';
+        // Hiking & Nature
+        if (categoryId.startsWith('9927')) return 'Hiking & Nature';
       }
+      // Fallback to text-based category matching
       if (poi?.categories && poi.categories.length > 0) {
         const cat = poi.categories[0].toLowerCase();
-        if (cat.includes('restaurant') || cat.includes('food') || cat.includes('cafe') || cat.includes('coffee')) return 'Food & Dining';
-        if (cat.includes('bar') || cat.includes('pub') || cat.includes('nightclub') || cat.includes('nightlife')) return 'Bars & Nightlife';
-        if (cat.includes('entertainment') || cat.includes('theater') || cat.includes('cinema') || cat.includes('museum')) return 'Entertainment';
-        if (cat.includes('park') || cat.includes('outdoor') || cat.includes('recreation') || cat.includes('sports')) return 'Outdoors';
+        if (cat.includes('restaurant') || cat.includes('food')) return 'Food & Dining';
+        if (cat.includes('cafe') || cat.includes('coffee')) return 'Cafes & Coffee';
+        if (cat.includes('entertainment') || cat.includes('theater') || cat.includes('cinema')) return 'Entertainment';
+        if (cat.includes('museum') || cat.includes('gallery') || cat.includes('culture')) return 'Museums & Culture';
+        if (cat.includes('park') || cat.includes('recreation')) return 'Parks & Recreation';
+        if (cat.includes('sport') || cat.includes('fitness') || cat.includes('gym')) return 'Sports & Fitness';
+        if (cat.includes('beach') || cat.includes('waterfront') || cat.includes('marina')) return 'Beaches & Waterfront';
+        if (cat.includes('music') || cat.includes('concert') || cat.includes('live')) return 'Live Music & Events';
+        if (cat.includes('bowling') || cat.includes('arcade') || cat.includes('game')) return 'Bowling & Arcades';
+        if (cat.includes('spa') || cat.includes('wellness') || cat.includes('massage')) return 'Spas & Wellness';
+        if (cat.includes('golf') || cat.includes('country club')) return 'Golf & Country Clubs';
+        if (cat.includes('hik') || cat.includes('trail') || cat.includes('nature')) return 'Hiking & Nature';
+        if (cat.includes('shop') || cat.includes('mall') || cat.includes('store')) return 'Shopping';
+        if (cat.includes('amusement') || cat.includes('theme park')) return 'Amusement';
       }
     }
   } catch (error) {
@@ -1004,13 +1047,39 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
 
     // Group posts by category - prefer TomTom category, fallback to regex patterns
     const categories = {};
-    const categoryOrder = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
+    const categoryOrder = [
+      'Food & Dining', 
+      'Cafes & Coffee',
+      'Entertainment', 
+      'Parks & Recreation',
+      'Sports & Fitness',
+      'Museums & Culture',
+      'Shopping',
+      'Amusement',
+      'Beaches & Waterfront',
+      'Live Music & Events',
+      'Bowling & Arcades',
+      'Spas & Wellness',
+      'Golf & Country Clubs',
+      'Hiking & Nature',
+      'Other'
+    ];
     
     // Fallback regex patterns for posts without TomTom category
-    const FOOD_PATTERNS = /restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi|steakhouse|seafood|chinese|japanese|italian|mexican|thai|indian|korean|vietnamese|mediterranean|bbq|barbecue|buffet|brunch|breakfast|lunch|dinner|noodle|ramen|pho|wings|chicken|fish|donut|bagel|sandwich|deli|smoothie|juice|ice cream|frozen yogurt|dessert|pastry|patisserie|cici/i;
-    const BAR_PATTERNS = /bar|pub|brewery|tavern|club|lounge|nightlife|wine|cocktail|speakeasy|taphouse|beer|ale|distillery|winery|spirits|rooftop|happy hour|karaoke/i;
-    const ENTERTAINMENT_PATTERNS = /theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium|escape room|laser tag|mini golf|putt|trampoline|go kart|dave & buster|topgolf|round1|main event|fun center|game|play|amusement|zoo|aquarium|planetarium|comedy|show|performance|amphitheater/i;
-    const OUTDOOR_PATTERNS = /park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness|hiking|camping|nature|preserve|reserve|forest|pool|swim|surf|ski|snowboard|climbing|rock wall|yoga|pilates|crossfit|spa|wellness/i;
+    const FOOD_PATTERNS = /restaurant|food|dining|kitchen|grill|bistro|eatery|diner|bakery|pizza|burger|taco|sushi|steakhouse|seafood|chinese|japanese|italian|mexican|thai|indian|korean|vietnamese|mediterranean|bbq|barbecue|buffet|brunch|breakfast|lunch|dinner|noodle|ramen|pho|wings|chicken|fish|donut|bagel|sandwich|deli|ice cream|frozen yogurt|dessert|pastry|patisserie|cici/i;
+    const CAFE_PATTERNS = /cafe|coffee|starbucks|dunkin|espresso|latte|cappuccino|tea house|boba|smoothie|juice/i;
+    const ENTERTAINMENT_PATTERNS = /theater|theatre|cinema|movie|museum|gallery|concert|arena|stadium|escape room|laser tag|trampoline|go kart|dave & buster|topgolf|round1|main event|fun center|game|play|amusement|zoo|aquarium|planetarium|comedy|show|performance|amphitheater/i;
+    const PARKS_PATTERNS = /park|garden|recreation|playground|picnic/i;
+    const SPORTS_PATTERNS = /gym|fitness|tennis|basketball|soccer|football|baseball|sport|athletic|climbing|rock wall|yoga|pilates|crossfit/i;
+    const MUSEUMS_PATTERNS = /museum|gallery|culture|history|art|exhibit/i;
+    const SHOPPING_PATTERNS = /mall|shop|store|outlet|boutique|retail/i;
+    const AMUSEMENT_PATTERNS = /amusement|theme park|roller coaster|water park|fair|carnival/i;
+    const BEACH_PATTERNS = /beach|waterfront|marina|pier|boardwalk|lake|pool|swim/i;
+    const MUSIC_PATTERNS = /concert|live music|band|venue|festival|karaoke/i;
+    const BOWLING_PATTERNS = /bowling|arcade|mini golf|putt|billiard|pool hall/i;
+    const SPA_PATTERNS = /spa|wellness|massage|sauna|facial/i;
+    const GOLF_PATTERNS = /golf|country club|driving range/i;
+    const HIKING_PATTERNS = /trail|hik|mountain|nature|preserve|reserve|forest|camping|outdoor/i;
     
     result.rows.forEach(post => {
       let category = 'Other';
@@ -1023,12 +1092,32 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
         const locationLower = (post.locationName || '').toLowerCase();
         if (FOOD_PATTERNS.test(locationLower)) {
           category = 'Food & Dining';
-        } else if (BAR_PATTERNS.test(locationLower)) {
-          category = 'Bars & Nightlife';
+        } else if (CAFE_PATTERNS.test(locationLower)) {
+          category = 'Cafes & Coffee';
+        } else if (BOWLING_PATTERNS.test(locationLower)) {
+          category = 'Bowling & Arcades';
+        } else if (MUSIC_PATTERNS.test(locationLower)) {
+          category = 'Live Music & Events';
         } else if (ENTERTAINMENT_PATTERNS.test(locationLower)) {
           category = 'Entertainment';
-        } else if (OUTDOOR_PATTERNS.test(locationLower)) {
-          category = 'Outdoors';
+        } else if (MUSEUMS_PATTERNS.test(locationLower)) {
+          category = 'Museums & Culture';
+        } else if (BEACH_PATTERNS.test(locationLower)) {
+          category = 'Beaches & Waterfront';
+        } else if (HIKING_PATTERNS.test(locationLower)) {
+          category = 'Hiking & Nature';
+        } else if (PARKS_PATTERNS.test(locationLower)) {
+          category = 'Parks & Recreation';
+        } else if (SPORTS_PATTERNS.test(locationLower)) {
+          category = 'Sports & Fitness';
+        } else if (SHOPPING_PATTERNS.test(locationLower)) {
+          category = 'Shopping';
+        } else if (AMUSEMENT_PATTERNS.test(locationLower)) {
+          category = 'Amusement';
+        } else if (SPA_PATTERNS.test(locationLower)) {
+          category = 'Spas & Wellness';
+        } else if (GOLF_PATTERNS.test(locationLower)) {
+          category = 'Golf & Country Clubs';
         }
       }
       
