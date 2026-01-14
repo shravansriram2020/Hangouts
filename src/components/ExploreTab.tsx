@@ -25,9 +25,15 @@ import Animated, {
   withTiming,
   withSequence,
 } from 'react-native-reanimated';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
+
+const EXPLORE_BANNER_AD_UNIT = Platform.select({
+  ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/8266335307',
+  android: TestIds.BANNER,
+}) || TestIds.BANNER;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -1010,12 +1016,15 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
-                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && (
+                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && Platform.OS === 'ios' && (
                   <View style={styles.adContainer}>
-                    <View style={styles.adPlaceholder}>
-                      <Ionicons name="megaphone-outline" size={20} color={Colors.grayMedium} />
-                      <Text style={styles.adPlaceholderText}>Sponsored</Text>
-                    </View>
+                    <BannerAd
+                      unitId={EXPLORE_BANNER_AD_UNIT}
+                      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                      requestOptions={{
+                        requestNonPersonalizedAdsOnly: false,
+                      }}
+                    />
                   </View>
                 )}
               </React.Fragment>
@@ -1480,20 +1489,7 @@ const styles = StyleSheet.create({
   adContainer: {
     marginHorizontal: 20,
     marginVertical: 8,
-  },
-  adPlaceholder: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 12,
-    paddingVertical: 16,
-    gap: 8,
-  },
-  adPlaceholderText: {
-    color: Colors.grayMedium,
-    fontSize: 13,
-    fontFamily: Fonts.medium,
   },
   bottomActions: {
     paddingHorizontal: 20,
