@@ -239,6 +239,15 @@ const initDb = async () => {
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS share_to_explore BOOLEAN DEFAULT false;
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20);
       ALTER TABLE event_photos ADD COLUMN IF NOT EXISTS uploaded_by UUID REFERENCES users(id) ON DELETE CASCADE;
+
+      -- Saved explore posts table
+      CREATE TABLE IF NOT EXISTS saved_explore_posts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        photo_id UUID REFERENCES event_photos(id) ON DELETE CASCADE,
+        saved_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, photo_id)
+      );
     `);
     console.log('Database tables created successfully');
   } catch (error) {

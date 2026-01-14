@@ -906,6 +906,10 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
           SELECT 1 FROM photo_likes pl 
           WHERE pl.photo_id = ep.id AND pl.user_id = $3
         ) as "isLiked",
+        EXISTS(
+          SELECT 1 FROM saved_explore_posts sep 
+          WHERE sep.photo_id = ep.id AND sep.user_id = $3
+        ) as "isSaved",
         (
           3959 * acos(
             LEAST(1.0, GREATEST(-1.0,
@@ -1091,6 +1095,70 @@ router.post('/photos/:photoId/like', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Like photo error:', error);
     res.status(500).json({ error: 'Failed to like photo' });
+  }
+});
+
+router.post('/photos/:photoId/save', authenticateToken, async (req, res) => {
+  const { photoId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM saved_explore_posts WHERE photo_id = $1 AND user_id = $2',
+      [photoId, userId]
+    );
+
+    let isSaved;
+    if (existing.rows.length > 0) {
+      await pool.query(
+        'DELETE FROM saved_explore_posts WHERE photo_id = $1 AND user_id = $2',
+        [photoId, userId]
+      );
+      isSaved = false;
+    } else {
+      await pool.query(
+        'INSERT INTO saved_explore_posts (photo_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [photoId, userId]
+      );
+      isSaved = true;
+    }
+
+    res.json({ success: true, isSaved });
+  } catch (error) {
+    console.error('Save photo error:', error);
+    res.status(500).json({ error: 'Failed to save photo' });
+  }
+});
+
+router.get('/saved', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(`
+      SELECT 
+        ep.id,
+        ep.photo_url as "imageUrl",
+        u.username,
+        u.avatar_url as "userAvatar",
+        e.location_name as "locationName",
+        e.location_address as "locationAddress",
+        e.location_lat as lat,
+        e.location_lng as lng,
+        COALESCE(ep.like_count, 0) as "likeCount",
+        ep.created_at as "createdAt",
+        sep.saved_at as "savedAt"
+      FROM saved_explore_posts sep
+      JOIN event_photos ep ON sep.photo_id = ep.id
+      JOIN events e ON ep.event_id = e.id
+      JOIN users u ON ep.uploaded_by = u.id
+      WHERE sep.user_id = $1 AND ep.share_to_explore = true
+      ORDER BY sep.saved_at DESC
+    `, [userId]);
+
+    res.json({ posts: result.rows });
+  } catch (error) {
+    console.error('Get saved posts error:', error);
+    res.status(500).json({ error: 'Failed to get saved posts' });
   }
 });
 

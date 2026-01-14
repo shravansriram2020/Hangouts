@@ -47,6 +47,7 @@ interface ExplorePost {
   lng: number;
   likeCount: number;
   isLiked: boolean;
+  isSaved: boolean;
   distance: number;
   createdAt: string;
 }
@@ -116,6 +117,42 @@ const HeartOverlay = ({ visible }: { visible: boolean }) => {
   );
 };
 
+const SavedOverlay = ({ visible }: { visible: boolean }) => {
+  const scale = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      scale.value = 0;
+      opacity.value = 1;
+      scale.value = withSequence(
+        withTiming(1.4, { duration: 250 }),
+        withTiming(1, { duration: 150 })
+      );
+      opacity.value = withSequence(
+        withTiming(1, { duration: 250 }),
+        withTiming(1, { duration: 500 }),
+        withTiming(0, { duration: 250 })
+      );
+    }
+  }, [visible]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={styles.heartOverlay}>
+      <Animated.View style={animatedStyle}>
+        <Ionicons name="bookmark" size={80} color="#8B5CF6" />
+      </Animated.View>
+    </Animated.View>
+  );
+};
+
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,7 +186,13 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
+  const [animatingSaved, setAnimatingSaved] = useState<Set<string>>(new Set());
+  const longPressTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [savedPosts, setSavedPosts] = useState<ExplorePost[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   const visibleCategories = allCategories.slice(0, visibleCount);
   const hasMore = visibleCount < allCategories.length;
@@ -348,6 +391,78 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     fetchMyPosts();
   };
 
+  const fetchSavedPosts = async () => {
+    setLoadingSaved(true);
+    try {
+      const response = await api.get('/explore/saved');
+      setSavedPosts(response.posts || []);
+    } catch (error) {
+      console.error('Fetch saved posts error:', error);
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  const handleOpenSaved = () => {
+    setShowSavedModal(true);
+    fetchSavedPosts();
+  };
+
+  const triggerSavedAnimation = useCallback((postId: string) => {
+    setAnimatingSaved(prev => new Set(prev).add(postId));
+    setTimeout(() => {
+      setAnimatingSaved(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    }, 1000);
+  }, []);
+
+  const handleSavePost = async (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    triggerSavedAnimation(post.id);
+    
+    try {
+      const response = await api.post(`/explore/photos/${post.id}/save`, {});
+      
+      setAllCategories(prev => prev.map(cat => ({
+        ...cat,
+        posts: cat.posts.map(p => {
+          if (p.id !== post.id) return p;
+          return { ...p, isSaved: response.isSaved };
+        }),
+      })));
+      
+      if (response.isSaved) {
+        setSavedPosts(prev => [{ ...post, isSaved: true }, ...prev.filter(p => p.id !== post.id)]);
+      } else {
+        setSavedPosts(prev => prev.filter(p => p.id !== post.id));
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+    }
+  };
+
+  const handleLongPressStart = (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    const postId = post.id;
+    if (longPressTimerRef.current[postId]) {
+      clearTimeout(longPressTimerRef.current[postId]);
+    }
+    
+    longPressTimerRef.current[postId] = setTimeout(() => {
+      handleSavePost(post, categoryIndex, postIndex);
+      longPressTimerRef.current[postId] = null;
+    }, 2000);
+  };
+
+  const handleLongPressEnd = (postId: string) => {
+    if (longPressTimerRef.current[postId]) {
+      clearTimeout(longPressTimerRef.current[postId]);
+      longPressTimerRef.current[postId] = null;
+    }
+  };
+
   const handleDeletePost = async (postId: string) => {
     Alert.alert(
       'Remove Post',
@@ -458,6 +573,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderPostCard = (post: ExplorePost, categoryIndex: number, postIndex: number, isPreview = false) => {
     const isTrending = post.likeCount >= TRENDING_THRESHOLD;
     const showHeart = animatingHearts.has(post.id);
+    const showSaved = animatingSaved.has(post.id);
     
     return (
       <View key={post.id} style={[styles.cardWrapper, isPreview && styles.previewCardWrapper]}>
@@ -465,6 +581,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           style={styles.card}
           activeOpacity={0.95}
           onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
+          onPressIn={() => !isPreview && handleLongPressStart(post, categoryIndex, postIndex)}
+          onPressOut={() => !isPreview && handleLongPressEnd(post.id)}
           disabled={isPreview}
         >
           <Image
@@ -481,7 +599,14 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             </View>
           )}
           
+          {post.isSaved && (
+            <View style={styles.savedBadge}>
+              <Ionicons name="bookmark" size={12} color={Colors.white} />
+            </View>
+          )}
+          
           <HeartOverlay visible={showHeart} />
+          <SavedOverlay visible={showSaved} />
           
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -722,6 +847,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       lng: selectedHangout?.location_lng || 0,
       likeCount: 0,
       isLiked: false,
+      isSaved: false,
       distance: 0,
       createdAt: new Date().toISOString(),
     };
@@ -770,7 +896,15 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             activeOpacity={0.7}
           >
             <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-            <Text style={styles.shareButtonText}>Share Hangout</Text>
+            <Text style={styles.shareButtonText}>Post</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.savedButton}
+            onPress={handleOpenSaved}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="bookmark-outline" size={20} color="#8B5CF6" />
+            <Text style={styles.savedButtonText}>Saved</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.myPostsButton}
@@ -900,6 +1034,53 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </ScrollView>
         )}
       </GlassModal>
+
+      <GlassModal
+        visible={showSavedModal}
+        onClose={() => setShowSavedModal(false)}
+        title="Saved Posts"
+        fullHeight
+      >
+        {loadingSaved ? (
+          <View style={styles.modalLoading}>
+            <ActivityIndicator size="large" color="#8B5CF6" />
+          </View>
+        ) : savedPosts.length === 0 ? (
+          <View style={styles.modalEmpty}>
+            <Ionicons name="bookmark-outline" size={48} color="#8B5CF6" />
+            <Text style={styles.modalEmptyText}>No saved posts</Text>
+            <Text style={styles.modalEmptySubtext}>
+              Hold down on any post for 2 seconds to save it!
+            </Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.myPostsScroll}>
+            {savedPosts.map((post) => (
+              <View key={post.id} style={styles.savedPostItem}>
+                <Image
+                  source={{ uri: post.imageUrl }}
+                  style={styles.myPostImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+                <View style={styles.myPostInfo}>
+                  <Text style={styles.myPostLocation} numberOfLines={1}>
+                    {post.locationName}
+                  </Text>
+                  <Text style={styles.savedPostUsername}>by {post.username}</Text>
+                  <View style={styles.myPostStats}>
+                    <Ionicons name="heart" size={14} color="#FF6B6B" />
+                    <Text style={styles.myPostLikes}>{post.likeCount}</Text>
+                  </View>
+                </View>
+                <View style={styles.savedBadgeSmall}>
+                  <Ionicons name="bookmark" size={16} color="#8B5CF6" />
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </GlassModal>
     </View>
   );
 }
@@ -953,8 +1134,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 6,
   },
+  savedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.glassLight,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 6,
+  },
   shareButtonText: {
     color: Colors.primary,
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
+  },
+  savedButtonText: {
+    color: '#8B5CF6',
     fontSize: 16,
     fontFamily: Fonts.semiBold,
   },
@@ -1089,6 +1285,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  savedBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: '#8B5CF6',
+    padding: 6,
+    borderRadius: 8,
+    zIndex: 10,
   },
   cardImage: {
     width: '100%',
@@ -1438,6 +1643,23 @@ const styles = StyleSheet.create({
     color: Colors.grayDark,
   },
   myPostDeleteButton: {
+    padding: 8,
+  },
+  savedPostItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  savedPostUsername: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
+  },
+  savedBadgeSmall: {
     padding: 8,
   },
 });
