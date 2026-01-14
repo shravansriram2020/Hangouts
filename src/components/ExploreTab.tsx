@@ -186,7 +186,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
   const [animatingSaved, setAnimatingSaved] = useState<Set<string>>(new Set());
-  const longPressTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [showSavedModal, setShowSavedModal] = useState(false);
@@ -443,22 +442,23 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
-  const handleLongPressStart = (post: ExplorePost, categoryIndex: number, postIndex: number) => {
-    const postId = post.id;
-    if (longPressTimerRef.current[postId]) {
-      clearTimeout(longPressTimerRef.current[postId]);
-    }
+  const handleUnsaveFromModal = async (post: ExplorePost) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    longPressTimerRef.current[postId] = setTimeout(() => {
-      handleSavePost(post, categoryIndex, postIndex);
-      longPressTimerRef.current[postId] = null;
-    }, 2000);
-  };
-
-  const handleLongPressEnd = (postId: string) => {
-    if (longPressTimerRef.current[postId]) {
-      clearTimeout(longPressTimerRef.current[postId]);
-      longPressTimerRef.current[postId] = null;
+    try {
+      await api.post(`/explore/photos/${post.id}/save`, {});
+      
+      setSavedPosts(prev => prev.filter(p => p.id !== post.id));
+      
+      setAllCategories(prev => prev.map(cat => ({
+        ...cat,
+        posts: cat.posts.map(p => {
+          if (p.id !== post.id) return p;
+          return { ...p, isSaved: false };
+        }),
+      })));
+    } catch (error) {
+      console.error('Unsave error:', error);
     }
   };
 
@@ -580,8 +580,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           style={styles.card}
           activeOpacity={0.95}
           onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
-          onPressIn={() => !isPreview && handleLongPressStart(post, categoryIndex, postIndex)}
-          onPressOut={() => !isPreview && handleLongPressEnd(post.id)}
           disabled={isPreview}
         >
           <Image
@@ -595,12 +593,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <View style={styles.trendingBadge}>
               <Ionicons name="flame" size={12} color={Colors.white} />
               <Text style={styles.trendingText}>Trending</Text>
-            </View>
-          )}
-          
-          {post.isSaved && (
-            <View style={styles.savedBadge}>
-              <Ionicons name="bookmark" size={12} color={Colors.white} />
             </View>
           )}
           
@@ -637,6 +629,19 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                   />
                   <Text style={styles.statText}>{post.likeCount}</Text>
                 </View>
+                {!isPreview && (
+                  <TouchableOpacity 
+                    style={styles.saveButton}
+                    onPress={() => handleSavePost(post, categoryIndex, postIndex)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons 
+                      name={post.isSaved ? "bookmark" : "bookmark-outline"} 
+                      size={18} 
+                      color={post.isSaved ? '#8B5CF6' : Colors.white} 
+                    />
+                  </TouchableOpacity>
+                )}
                 {post.distance > 0 && (
                   <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
                 )}
@@ -1061,23 +1066,27 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               <View key={post.id} style={styles.savedPostItem}>
                 <Image
                   source={{ uri: post.imageUrl }}
-                  style={styles.myPostImage}
+                  style={styles.savedPostImage}
                   contentFit="cover"
                   cachePolicy="memory-disk"
                 />
-                <View style={styles.myPostInfo}>
-                  <Text style={styles.myPostLocation} numberOfLines={1}>
+                <View style={styles.savedPostInfo}>
+                  <Text style={styles.savedPostLocation} numberOfLines={1}>
                     {post.locationName}
                   </Text>
                   <Text style={styles.savedPostUsername}>by {post.username}</Text>
-                  <View style={styles.myPostStats}>
+                  <View style={styles.savedPostStats}>
                     <Ionicons name="heart" size={14} color="#FF6B6B" />
-                    <Text style={styles.myPostLikes}>{post.likeCount}</Text>
+                    <Text style={styles.savedPostLikes}>{post.likeCount}</Text>
                   </View>
                 </View>
-                <View style={styles.savedBadgeSmall}>
-                  <Ionicons name="bookmark" size={16} color="#8B5CF6" />
-                </View>
+                <TouchableOpacity 
+                  style={styles.unsaveButton}
+                  onPress={() => handleUnsaveFromModal(post)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+                </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
@@ -1665,18 +1674,59 @@ const styles = StyleSheet.create({
   savedPostItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
     gap: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  savedPostImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    backgroundColor: Colors.grayLight,
+  },
+  savedPostInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  savedPostLocation: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.grayDark,
   },
   savedPostUsername: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: Fonts.regular,
     color: Colors.grayMedium,
   },
-  savedBadgeSmall: {
-    padding: 8,
+  savedPostStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  savedPostLikes: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    color: Colors.grayMedium,
+  },
+  unsaveButton: {
+    padding: 4,
+  },
+  saveButton: {
+    padding: 4,
+    marginLeft: 8,
   },
 });
