@@ -986,6 +986,64 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
   }
 });
 
+// Get user's own explore posts
+router.get('/my-photos', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const result = await pool.query(`
+      SELECT 
+        ep.id,
+        ep.photo_url as "imageUrl",
+        ep.location_name as "locationName",
+        ep.location_address as "locationAddress",
+        COALESCE(ep.like_count, 0) as "likeCount",
+        ep.created_at as "createdAt"
+      FROM event_photos ep
+      WHERE ep.user_id = $1 
+        AND ep.shared_to_explore = true
+      ORDER BY ep.created_at DESC
+    `, [userId]);
+
+    res.json({ photos: result.rows });
+  } catch (error) {
+    console.error('Get my photos error:', error);
+    res.status(500).json({ error: 'Failed to fetch your photos' });
+  }
+});
+
+// Delete user's own explore post
+router.delete('/photos/:photoId', authenticateToken, async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const userId = req.user.id;
+    
+    // Verify ownership
+    const photo = await pool.query(
+      'SELECT id FROM event_photos WHERE id = $1 AND user_id = $2',
+      [photoId, userId]
+    );
+    
+    if (photo.rows.length === 0) {
+      return res.status(404).json({ error: 'Photo not found or not authorized' });
+    }
+    
+    // Remove from explore (set shared_to_explore to false instead of deleting)
+    await pool.query(
+      'UPDATE event_photos SET shared_to_explore = false WHERE id = $1',
+      [photoId]
+    );
+    
+    // Also delete likes for this photo
+    await pool.query('DELETE FROM photo_likes WHERE photo_id = $1', [photoId]);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete photo error:', error);
+    res.status(500).json({ error: 'Failed to delete photo' });
+  }
+});
+
 router.post('/photos/:photoId/like', authenticateToken, async (req, res) => {
   const { photoId } = req.params;
   const userId = req.user.id;

@@ -144,6 +144,18 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const cachedHangoutsRef = useRef<HangoutWithPhotos[] | null>(null);
 
+  const [showMyPostsModal, setShowMyPostsModal] = useState(false);
+  const [myPosts, setMyPosts] = useState<Array<{
+    id: string;
+    imageUrl: string;
+    locationName: string;
+    locationAddress: string;
+    likeCount: number;
+    createdAt: string;
+  }>>([]);
+  const [loadingMyPosts, setLoadingMyPosts] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
@@ -335,6 +347,51 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     } else {
       setShowShareModal(false);
     }
+  };
+
+  const fetchMyPosts = async () => {
+    setLoadingMyPosts(true);
+    try {
+      const response = await api.get('/explore/my-photos');
+      setMyPosts(response.photos || []);
+    } catch (error) {
+      console.error('Fetch my posts error:', error);
+    } finally {
+      setLoadingMyPosts(false);
+    }
+  };
+
+  const handleOpenMyPosts = () => {
+    setShowMyPostsModal(true);
+    fetchMyPosts();
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    Alert.alert(
+      'Remove Post',
+      'This will remove your post from Explore. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingPostId(postId);
+            try {
+              await api.delete(`/explore/photos/${postId}`);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setMyPosts(prev => prev.filter(p => p.id !== postId));
+              const loc = cachedLocationRef.current || { lat: 0, lng: 0 };
+              await fetchFeed(loc);
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to remove post');
+            } finally {
+              setDeletingPostId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getModalTitle = () => {
@@ -736,14 +793,24 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.shareButton}
-          onPress={handleOpenShareModal}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={Colors.secondary} />
-          <Text style={styles.shareButtonText}>Share your Hangout</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtonRow}>
+          <TouchableOpacity 
+            style={styles.shareButton}
+            onPress={handleOpenShareModal}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={Colors.secondary} />
+            <Text style={styles.shareButtonText}>Share your Hangout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.myPostsButton}
+            onPress={handleOpenMyPosts}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="images-outline" size={20} color={Colors.secondary} />
+            <Text style={styles.shareButtonText}>Your Posts</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -806,6 +873,61 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       >
         {renderModalContent()}
       </GlassModal>
+
+      <GlassModal
+        visible={showMyPostsModal}
+        onClose={() => setShowMyPostsModal(false)}
+        title="Your Posts"
+        fullHeight
+      >
+        {loadingMyPosts ? (
+          <View style={styles.modalLoading}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : myPosts.length === 0 ? (
+          <View style={styles.modalEmpty}>
+            <Ionicons name="images-outline" size={48} color={Colors.grayMedium} />
+            <Text style={styles.modalEmptyText}>No posts yet</Text>
+            <Text style={styles.modalEmptySubtext}>
+              Share your first hangout photo to see it here!
+            </Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {myPosts.map((post) => (
+              <View key={post.id} style={styles.myPostItem}>
+                <Image
+                  source={{ uri: post.imageUrl }}
+                  style={styles.myPostImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+                <View style={styles.myPostInfo}>
+                  <Text style={styles.myPostLocation} numberOfLines={1}>
+                    {post.locationName}
+                  </Text>
+                  <View style={styles.myPostStats}>
+                    <Ionicons name="heart" size={14} color="#FF6B6B" />
+                    <Text style={styles.myPostLikes}>{post.likeCount}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.myPostDeleteButton}
+                  onPress={() => handleDeletePost(post.id)}
+                  disabled={deletingPostId === post.id}
+                  activeOpacity={0.7}
+                >
+                  {deletingPostId === post.id ? (
+                    <ActivityIndicator size="small" color={Colors.grayMedium} />
+                  ) : (
+                    <Ionicons name="trash-outline" size={20} color={Colors.grayMedium} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </GlassModal>
     </View>
   );
 }
@@ -832,7 +954,12 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
+  headerButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   shareButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -841,8 +968,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.secondary,
     borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 20,
-    gap: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+  },
+  myPostsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: Colors.secondary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 6,
   },
   shareButtonText: {
     color: Colors.secondary,
@@ -1263,5 +1402,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  myPostItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  myPostImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  myPostInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  myPostLocation: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    color: Colors.black,
+  },
+  myPostStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  myPostLikes: {
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    color: Colors.grayDark,
+  },
+  myPostDeleteButton: {
+    padding: 8,
   },
 });
