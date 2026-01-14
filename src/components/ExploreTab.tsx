@@ -843,36 +843,29 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             onAdLoaded={() => console.log('[NativeAd] Inline ad loaded')}
             onAdFailedToLoad={(error: any) => console.log('[NativeAd] Failed:', error)}
           >
-            <View style={styles.nativeAdContent}>
+            <View style={styles.nativeInlineContent}>
               <Text style={styles.nativeAdSponsoredLabel}>SPONSORED</Text>
-              <View style={styles.nativeAdHeader}>
-                {IconView && <IconView style={styles.nativeAdIcon} />}
-                <View style={styles.nativeAdHeaderText}>
-                  {HeadlineView && <HeadlineView style={styles.nativeAdHeadline} />}
-                  {AdvertiserView && <AdvertiserView style={styles.nativeAdAdvertiser} />}
+              <View style={styles.nativeInlineRow}>
+                {IconView && <IconView style={styles.nativeInlineIcon} />}
+                <View style={styles.nativeInlineInfo}>
+                  {HeadlineView && <HeadlineView style={styles.nativeInlineHeadline} />}
+                  {TaglineView && <TaglineView style={styles.nativeInlineTagline} numberOfLines={1} />}
                 </View>
               </View>
-              {ImageView && <ImageView style={styles.nativeAdImage} resizeMode="cover" />}
-              {TaglineView && <TaglineView style={styles.nativeAdTagline} numberOfLines={2} />}
               {CallToActionView && (
                 <CallToActionView 
-                  style={styles.nativeAdCta}
-                  textStyle={styles.nativeAdCtaText}
+                  style={styles.nativeInlineCta}
+                  textStyle={styles.nativeInlineCtaText}
                   allCaps
                 />
               )}
             </View>
           </NativeAdView>
         ) : (
-          <LinearGradient
-            colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
-            style={styles.inlineAdContent}
-          >
+          <View style={styles.inlineAdPlaceholder}>
             <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
-            <View style={styles.inlineAdCenter}>
-              <View style={styles.placeholderAdBox} />
-            </View>
-          </LinearGradient>
+            <View style={styles.inlineAdPlaceholderBox} />
+          </View>
         )}
       </View>
     </View>
@@ -1657,12 +1650,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
   },
-  nativeAdContent: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    padding: 16,
-    borderRadius: 16,
-  },
   nativeAdSponsoredLabel: {
     fontSize: 9,
     fontFamily: Fonts.medium,
@@ -1670,54 +1657,63 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
   },
-  nativeAdHeader: {
+  nativeInlineContent: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    padding: 16,
+    borderRadius: 16,
+    justifyContent: 'center',
+  },
+  nativeInlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  nativeAdIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 10,
+  nativeInlineIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginRight: 12,
   },
-  nativeAdHeaderText: {
+  nativeInlineInfo: {
     flex: 1,
   },
-  nativeAdHeadline: {
-    fontSize: 15,
+  nativeInlineHeadline: {
+    fontSize: 14,
     fontFamily: Fonts.semiBold,
     color: Colors.black,
   },
-  nativeAdAdvertiser: {
+  nativeInlineTagline: {
     fontSize: 12,
     fontFamily: Fonts.regular,
     color: Colors.grayMedium,
     marginTop: 2,
   },
-  nativeAdImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  nativeAdTagline: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    color: Colors.grayDark,
-    marginBottom: 12,
-  },
-  nativeAdCta: {
+  nativeInlineCta: {
     backgroundColor: Colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
   },
-  nativeAdCtaText: {
+  nativeInlineCtaText: {
     fontSize: 13,
     fontFamily: Fonts.semiBold,
     color: Colors.white,
+  },
+  inlineAdPlaceholder: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    padding: 16,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inlineAdPlaceholderBox: {
+    width: '100%',
+    height: 80,
+    backgroundColor: Colors.grayLight,
+    borderRadius: 10,
   },
   nativeBannerAd: {
     width: '100%',
