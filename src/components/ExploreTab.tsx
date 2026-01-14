@@ -478,66 +478,70 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     const showHeart = animatingHearts.has(post.id);
     
     return (
-      <TouchableOpacity
-        key={post.id}
-        style={[styles.card, isPreview && styles.previewCard]}
-        activeOpacity={0.95}
-        onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
-        disabled={isPreview}
+      <View 
+        key={post.id} 
+        style={[styles.cardShadowWrapper, isPreview && styles.previewCardWrapper]}
       >
-        <Image
-          source={{ uri: post.imageUrl }}
-          style={styles.cardImage}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
-        
-        {isTrending && (
-          <View style={styles.trendingBadge}>
-            <Ionicons name="flame" size={12} color={Colors.white} />
-            <Text style={styles.trendingText}>Trending</Text>
-          </View>
-        )}
-        
-        <HeartOverlay visible={showHeart} />
-        
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.cardGradient}
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.95}
+          onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
+          disabled={isPreview}
         >
-          <View style={styles.cardContent}>
-            <View style={styles.userRow}>
-              {post.userAvatar ? (
-                <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Ionicons name="person" size={14} color={Colors.white} />
-                </View>
-              )}
-              <Text style={styles.username}>{post.username}</Text>
+          <Image
+            source={{ uri: post.imageUrl }}
+            style={styles.cardImage}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+          
+          {isTrending && (
+            <View style={styles.trendingBadge}>
+              <Ionicons name="flame" size={12} color={Colors.white} />
+              <Text style={styles.trendingText}>Trending</Text>
             </View>
-            
-            <View style={styles.locationRow}>
-              <Ionicons name="location" size={16} color={Colors.white} />
-              <Text style={styles.locationName} numberOfLines={1}>{post.locationName}</Text>
-            </View>
-            
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Ionicons 
-                  name={post.isLiked ? "heart" : "heart-outline"} 
-                  size={18} 
-                  color={post.isLiked ? '#FF6B6B' : Colors.white} 
-                />
-                <Text style={styles.statText}>{post.likeCount}</Text>
+          )}
+          
+          <HeartOverlay visible={showHeart} />
+          
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.cardGradient}
+          >
+            <View style={styles.cardContent}>
+              <View style={styles.userRow}>
+                {post.userAvatar ? (
+                  <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                    <Ionicons name="person" size={14} color={Colors.white} />
+                  </View>
+                )}
+                <Text style={styles.username}>{post.username}</Text>
               </View>
-              {post.distance > 0 && (
-                <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
-              )}
+              
+              <View style={styles.locationRow}>
+                <Ionicons name="location" size={16} color={Colors.white} />
+                <Text style={styles.locationName} numberOfLines={1}>{post.locationName}</Text>
+              </View>
+              
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Ionicons 
+                    name={post.isLiked ? "heart" : "heart-outline"} 
+                    size={18} 
+                    color={post.isLiked ? '#FF6B6B' : Colors.white} 
+                  />
+                  <Text style={styles.statText}>{post.likeCount}</Text>
+                </View>
+                {post.distance > 0 && (
+                  <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
+                )}
+              </View>
             </View>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -559,21 +563,23 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   };
 
   const renderInlineAdCard = (key: string) => (
-    <View key={key} style={styles.card}>
-      <LinearGradient
-        colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
-        style={styles.inlineAdContent}
-      >
-        <View style={styles.sponsoredBadge}>
-          <Ionicons name="megaphone" size={12} color={Colors.white} />
-          <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
-        </View>
-        <View style={styles.inlineAdCenter}>
-          <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
-          <Text style={styles.inlineAdText}>Ad Space</Text>
-          <Text style={styles.inlineAdSubtext}>Your business here</Text>
-        </View>
-      </LinearGradient>
+    <View key={key} style={styles.cardShadowWrapper}>
+      <View style={styles.card}>
+        <LinearGradient
+          colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
+          style={styles.inlineAdContent}
+        >
+          <View style={styles.sponsoredBadge}>
+            <Ionicons name="megaphone" size={12} color={Colors.white} />
+            <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
+          </View>
+          <View style={styles.inlineAdCenter}>
+            <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
+            <Text style={styles.inlineAdText}>Ad Space</Text>
+            <Text style={styles.inlineAdSubtext}>Your business here</Text>
+          </View>
+        </LinearGradient>
+      </View>
     </View>
   );
 
@@ -1050,15 +1056,22 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 4,
   },
-  card: {
+  cardShadowWrapper: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
+    marginRight: 16,
+    borderRadius: 16,
+    ...Shadows.medium,
+    backgroundColor: 'transparent',
+  },
+  card: {
+    width: '100%',
+    height: '100%',
     borderRadius: 16,
     overflow: 'hidden',
-    marginRight: 16,
-    ...Shadows.medium,
+    backgroundColor: 'transparent',
   },
-  previewCard: {
+  previewCardWrapper: {
     marginRight: 0,
     alignSelf: 'center',
   },
