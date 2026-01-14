@@ -997,6 +997,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   emptyState: {
     alignItems: 'center',
