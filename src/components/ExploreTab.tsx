@@ -186,6 +186,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
   const [animatingSaved, setAnimatingSaved] = useState<Set<string>>(new Set());
+  const longPressTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
+  const longPressFiredRef = useRef<{ [key: string]: boolean }>({});
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [showSavedModal, setShowSavedModal] = useState(false);
@@ -462,6 +464,36 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
+  const handleLongPressStart = (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    const postId = post.id;
+    longPressFiredRef.current[postId] = false;
+    
+    if (longPressTimerRef.current[postId]) {
+      clearTimeout(longPressTimerRef.current[postId]);
+    }
+    
+    longPressTimerRef.current[postId] = setTimeout(() => {
+      longPressFiredRef.current[postId] = true;
+      handleSavePost(post, categoryIndex, postIndex);
+      longPressTimerRef.current[postId] = null;
+    }, 1500);
+  };
+
+  const handleLongPressEnd = (postId: string) => {
+    if (longPressTimerRef.current[postId]) {
+      clearTimeout(longPressTimerRef.current[postId]);
+      longPressTimerRef.current[postId] = null;
+    }
+  };
+
+  const handleCardPress = (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    if (longPressFiredRef.current[post.id]) {
+      longPressFiredRef.current[post.id] = false;
+      return;
+    }
+    handleTap(post, categoryIndex, postIndex);
+  };
+
   const handleDeletePost = async (postId: string) => {
     Alert.alert(
       'Remove Post',
@@ -579,7 +611,9 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         <TouchableOpacity
           style={styles.card}
           activeOpacity={0.95}
-          onPress={() => !isPreview && handleTap(post, categoryIndex, postIndex)}
+          onPress={() => !isPreview && handleCardPress(post, categoryIndex, postIndex)}
+          onPressIn={() => !isPreview && handleLongPressStart(post, categoryIndex, postIndex)}
+          onPressOut={() => !isPreview && handleLongPressEnd(post.id)}
           disabled={isPreview}
         >
           <Image
@@ -621,14 +655,29 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               </View>
               
               <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Ionicons 
-                    name={post.isLiked ? "heart" : "heart-outline"} 
-                    size={18} 
-                    color={post.isLiked ? '#FF6B6B' : Colors.white} 
-                  />
-                  <Text style={styles.statText}>{post.likeCount}</Text>
-                </View>
+                {!isPreview ? (
+                  <TouchableOpacity 
+                    style={styles.statItem}
+                    onPress={() => handleLike(post, categoryIndex, postIndex)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons 
+                      name={post.isLiked ? "heart" : "heart-outline"} 
+                      size={18} 
+                      color={post.isLiked ? '#FF6B6B' : Colors.white} 
+                    />
+                    <Text style={styles.statText}>{post.likeCount}</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.statItem}>
+                    <Ionicons 
+                      name={post.isLiked ? "heart" : "heart-outline"} 
+                      size={18} 
+                      color={post.isLiked ? '#FF6B6B' : Colors.white} 
+                    />
+                    <Text style={styles.statText}>{post.likeCount}</Text>
+                  </View>
+                )}
                 {!isPreview && (
                   <TouchableOpacity 
                     style={styles.saveButton}
@@ -891,10 +940,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   }
 
   return (
-    <LinearGradient
-      colors={[Colors.backgroundGradientStart, Colors.backgroundGradientEnd]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerButtonRow}>
           <TouchableOpacity 
@@ -906,12 +952,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <Text style={styles.headerButtonText}>Post</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.headerButton, styles.savedButtonColor]}
+            style={styles.headerButton}
             onPress={handleOpenSaved}
             activeOpacity={0.7}
           >
-            <Ionicons name="bookmark-outline" size={18} color="#8B5CF6" />
-            <Text style={styles.savedButtonText}>Saved</Text>
+            <Ionicons name="bookmark-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Saved</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.headerButton}
@@ -1092,7 +1138,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </ScrollView>
         )}
       </GlassModal>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -1176,8 +1222,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
   },
   savedButtonText: {
-    color: '#8B5CF6',
-    fontSize: 16,
+    color: Colors.primary,
+    fontSize: 13,
     fontFamily: Fonts.semiBold,
   },
   mainScroll: {
