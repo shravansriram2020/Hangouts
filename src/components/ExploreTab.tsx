@@ -1149,6 +1149,21 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                   </View>
                 </View>
                 <TouchableOpacity 
+                  style={styles.savedPostCreateButton}
+                  onPress={() => {
+                    setShowSavedModal(false);
+                    onSelectLocation({
+                      name: post.locationName,
+                      address: post.locationAddress || '',
+                      lat: post.lat,
+                      lng: post.lng,
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={22} color={Colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
                   style={styles.myPostDeleteButton}
                   onPress={() => handleUnsaveFromModal(post)}
                   activeOpacity={0.7}
@@ -1732,6 +1747,9 @@ const styles = StyleSheet.create({
     color: Colors.grayDark,
   },
   myPostDeleteButton: {
+    padding: 8,
+  },
+  savedPostCreateButton: {
     padding: 8,
   },
   savedPostItem: {
