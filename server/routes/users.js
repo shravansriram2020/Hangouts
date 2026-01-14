@@ -110,7 +110,7 @@ router.delete('/friends/:userId', authenticateToken, async (req, res) => {
 });
 
 router.put('/profile', authenticateToken, async (req, res) => {
-  const { username, firstName, lastName, profilePhoto, locationEnabled } = req.body;
+  const { username, firstName, lastName, profilePhoto, locationEnabled, exploreVisibility } = req.body;
 
   try {
     const currentUser = await pool.query(
@@ -147,10 +147,11 @@ router.put('/profile', authenticateToken, async (req, res) => {
           last_name = COALESCE($3, last_name),
           profile_photo = COALESCE($4, profile_photo),
           location_enabled = COALESCE($5, location_enabled),
+          explore_visibility = COALESCE($6, explore_visibility),
           updated_at = NOW()
-         WHERE id = $6
-         RETURNING id, email, username, first_name, last_name, profile_photo, location_enabled`,
-        [username?.toLowerCase(), firstName, lastName, profilePhoto, locationEnabled, req.user.id]
+         WHERE id = $7
+         RETURNING id, email, username, first_name, last_name, profile_photo, location_enabled, explore_visibility`,
+        [username?.toLowerCase(), firstName, lastName, profilePhoto, locationEnabled, exploreVisibility, req.user.id]
       );
 
       if (locationEnabled === false) {
@@ -170,7 +171,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
         firstName: user.first_name,
         lastName: user.last_name,
         profilePhoto: user.profile_photo,
-        locationEnabled: user.location_enabled
+        locationEnabled: user.location_enabled,
+        exploreVisibility: user.explore_visibility || 'public'
       });
     } catch (txError) {
       await client.query('ROLLBACK');

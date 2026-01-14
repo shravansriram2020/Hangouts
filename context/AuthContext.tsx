@@ -12,6 +12,7 @@ interface User {
   profilePhoto: string | null;
   locationEnabled: boolean;
   tutorialCompleted: boolean;
+  exploreVisibility: 'public' | 'friends';
 }
 
 interface AuthContextType {

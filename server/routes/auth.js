@@ -286,7 +286,8 @@ router.post('/signin', async (req, res) => {
         lastName: user.last_name,
         profilePhoto: user.profile_photo,
         tutorialCompleted: user.tutorial_completed,
-        locationEnabled: user.location_enabled
+        locationEnabled: user.location_enabled,
+        exploreVisibility: user.explore_visibility || 'public'
       },
       token
     });
@@ -299,7 +300,7 @@ router.post('/signin', async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, username, first_name, last_name, profile_photo, location_enabled, tutorial_completed FROM users WHERE id = $1',
+      'SELECT id, email, username, first_name, last_name, profile_photo, location_enabled, tutorial_completed, explore_visibility FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -316,7 +317,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       lastName: user.last_name,
       profilePhoto: user.profile_photo,
       locationEnabled: user.location_enabled,
-      tutorialCompleted: user.tutorial_completed
+      tutorialCompleted: user.tutorial_completed,
+      exploreVisibility: user.explore_visibility || 'public'
     });
   } catch (error) {
     console.error('Get user error:', error);

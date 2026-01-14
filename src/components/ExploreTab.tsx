@@ -811,7 +811,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             onPress={handleOpenShareModal}
             activeOpacity={0.7}
           >
-            <Ionicons name="add-circle-outline" size={20} color={Colors.secondary} />
+            <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
             <Text style={styles.shareButtonText}>Share Hangout</Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -819,7 +819,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             onPress={handleOpenMyPosts}
             activeOpacity={0.7}
           >
-            <Ionicons name="images-outline" size={20} color={Colors.secondary} />
+            <Ionicons name="images-outline" size={20} color={Colors.primary} />
             <Text style={styles.shareButtonText}>Your Posts</Text>
           </TouchableOpacity>
         </View>
@@ -976,9 +976,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.secondary,
+    backgroundColor: Colors.glassLight,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 12,
@@ -988,16 +986,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.secondary,
+    backgroundColor: Colors.glassLight,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 6,
   },
   shareButtonText: {
-    color: Colors.secondary,
+    color: Colors.primary,
     fontSize: 16,
     fontFamily: Fonts.semiBold,
   },

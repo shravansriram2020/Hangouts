@@ -133,6 +133,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || '');
   const [locationEnabled, setLocationEnabled] = useState(user?.locationEnabled || false);
+  const [exploreVisibility, setExploreVisibility] = useState<'public' | 'friends'>(user?.exploreVisibility || 'public');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -148,6 +149,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
     setLastName(user?.lastName || '');
     setProfilePhoto(user?.profilePhoto || '');
     setLocationEnabled(user?.locationEnabled || false);
+    setExploreVisibility(user?.exploreVisibility || 'public');
     setNewPassword('');
     setConfirmPassword('');
     setCurrentView('settings');
@@ -229,6 +231,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
         lastName,
         profilePhoto,
         locationEnabled,
+        exploreVisibility,
       });
 
       if (newPassword && newPassword === confirmPassword) {
@@ -237,7 +240,7 @@ export default function SettingsModal({ visible, onClose }: Props) {
         setConfirmPassword('');
       }
 
-      updateUser({ username, firstName, lastName, profilePhoto, locationEnabled });
+      updateUser({ username, firstName, lastName, profilePhoto, locationEnabled, exploreVisibility });
       Alert.alert('Success', 'Settings saved successfully');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to save settings');
@@ -398,6 +401,51 @@ export default function SettingsModal({ visible, onClose }: Props) {
                 trackColor={{ false: Colors.grayLight, true: Colors.greenLight }}
                 thumbColor={locationEnabled ? Colors.green : Colors.grayMedium}
               />
+            </View>
+
+            <View style={styles.exploreVisibilitySection}>
+              <View style={styles.switchInfo}>
+                <Text style={styles.switchTitle}>Explore Post Preferences</Text>
+                <Text style={styles.switchDescription}>Choose who sees your posts</Text>
+              </View>
+              <View style={styles.visibilityOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.visibilityOption,
+                    exploreVisibility === 'public' && styles.visibilityOptionActive
+                  ]}
+                  onPress={() => setExploreVisibility('public')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name="globe-outline" 
+                    size={16} 
+                    color={exploreVisibility === 'public' ? Colors.white : Colors.secondary} 
+                  />
+                  <Text style={[
+                    styles.visibilityOptionText,
+                    exploreVisibility === 'public' && styles.visibilityOptionTextActive
+                  ]}>Everyone</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.visibilityOption,
+                    exploreVisibility === 'friends' && styles.visibilityOptionActive
+                  ]}
+                  onPress={() => setExploreVisibility('friends')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name="heart-outline" 
+                    size={16} 
+                    color={exploreVisibility === 'friends' ? Colors.white : Colors.secondary} 
+                  />
+                  <Text style={[
+                    styles.visibilityOptionText,
+                    exploreVisibility === 'friends' && styles.visibilityOptionTextActive
+                  ]}>Friends only</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity style={styles.friendsButton} onPress={() => setShowFriendsList(true)}>
@@ -599,6 +647,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.grayDark,
     fontFamily: 'Prompt-Regular',
+  },
+  exploreVisibilitySection: {
+    backgroundColor: Colors.grayLight,
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  visibilityOptions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  visibilityOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.grayMedium,
+  },
+  visibilityOptionActive: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  visibilityOptionText: {
+    fontSize: 13,
+    fontFamily: 'Prompt-Medium',
+    color: Colors.secondary,
+  },
+  visibilityOptionTextActive: {
+    color: Colors.white,
   },
   actionButton: {
     flexDirection: 'row',
