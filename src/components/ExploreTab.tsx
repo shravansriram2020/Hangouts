@@ -25,10 +25,28 @@ import Animated, {
   withTiming,
   withSequence,
 } from 'react-native-reanimated';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { Colors, Fonts } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
+
+const isExpoGo = Constants.appOwnership === 'expo';
+
+let BannerAd: any = null;
+let BannerAdSize: any = null;
+let TestIds: any = { BANNER: '' };
+
+if (!isExpoGo) {
+  try {
+    const mobileAds = require('react-native-google-mobile-ads');
+    BannerAd = mobileAds.BannerAd;
+    BannerAdSize = mobileAds.BannerAdSize;
+    TestIds = mobileAds.TestIds;
+  } catch (e) {
+    console.log('[AdMob] Not available in ExploreTab');
+  }
+}
 
 const EXPLORE_BANNER_AD_UNIT = Platform.select({
   ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/8266335307',
@@ -39,6 +57,8 @@ const EXPLORE_BOX_AD_UNIT = Platform.select({
   ios: __DEV__ ? TestIds.BANNER : 'ca-app-pub-6700271097724179/5281079318',
   android: TestIds.BANNER,
 }) || TestIds.BANNER;
+
+const EXPLORE_FIRST_POST_KEY = 'hangouts_explore_first_post_seen';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -259,6 +279,32 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   }, []);
 
   const handleOpenShareModal = async () => {
+    try {
+      const hasSeenWarning = await AsyncStorage.getItem(EXPLORE_FIRST_POST_KEY);
+      
+      if (!hasSeenWarning) {
+        Alert.alert(
+          'Welcome to Hangouts Explore!',
+          'By posting, you share an image of your Hangout and its location. You can manage your post visibility in settings; however, by default, visibility is set to Everyone. You can change this at any time. Please note that inappropriate or harmful content will be removed and appropriate action will be taken.',
+          [
+            {
+              text: 'OK, I understand',
+              onPress: async () => {
+                await AsyncStorage.setItem(EXPLORE_FIRST_POST_KEY, 'true');
+                setShowShareModal(true);
+                setShareStep('hangouts');
+                setSelectedHangout(null);
+                setSelectedPhoto(null);
+              }
+            }
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking first post warning:', error);
+    }
+    
     setShowShareModal(true);
     setShareStep('hangouts');
     setSelectedHangout(null);
@@ -757,7 +803,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             <Ionicons name="megaphone" size={12} color={Colors.white} />
             <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
           </View>
-          {Platform.OS === 'ios' ? (
+          {Platform.OS === 'ios' && BannerAd && BannerAdSize ? (
             <View style={styles.inlineAdCenter}>
               <BannerAd
                 unitId={EXPLORE_BOX_AD_UNIT}
@@ -1032,7 +1078,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
-                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && Platform.OS === 'ios' && (
+                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && Platform.OS === 'ios' && BannerAd && BannerAdSize && (
                   <View style={styles.adContainer}>
                     <BannerAd
                       unitId={EXPLORE_BANNER_AD_UNIT}
