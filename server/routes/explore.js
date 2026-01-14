@@ -995,13 +995,14 @@ router.get('/my-photos', authenticateToken, async (req, res) => {
       SELECT 
         ep.id,
         ep.photo_url as "imageUrl",
-        ep.location_name as "locationName",
-        ep.location_address as "locationAddress",
+        COALESCE(e.location_name, 'Unknown Location') as "locationName",
+        COALESCE(e.location_address, '') as "locationAddress",
         COALESCE(ep.like_count, 0) as "likeCount",
         ep.created_at as "createdAt"
       FROM event_photos ep
-      WHERE ep.user_id = $1 
-        AND ep.shared_to_explore = true
+      LEFT JOIN events e ON ep.event_id = e.id
+      WHERE ep.uploader_id = $1 
+        AND ep.share_to_explore = true
       ORDER BY ep.created_at DESC
     `, [userId]);
 
@@ -1028,9 +1029,9 @@ router.delete('/photos/:photoId', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Photo not found or not authorized' });
     }
     
-    // Remove from explore (set shared_to_explore to false instead of deleting)
+    // Remove from explore (set share_to_explore to false instead of deleting)
     await pool.query(
-      'UPDATE event_photos SET shared_to_explore = false WHERE id = $1',
+      'UPDATE event_photos SET share_to_explore = false WHERE id = $1',
       [photoId]
     );
     

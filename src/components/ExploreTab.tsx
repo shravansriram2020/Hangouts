@@ -295,36 +295,36 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
       if (result.canceled || !result.assets?.[0]) return;
 
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert('Error', 'Could not process image');
+        return;
+      }
+
       setUploadingPhoto(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      const formData = new FormData();
-      const uri = result.assets[0].uri;
-      const filename = uri.split('/').pop() || 'photo.jpg';
-      formData.append('photo', {
-        uri,
-        name: filename,
-        type: 'image/jpeg',
-      } as any);
+      const photoUrl = `data:image/jpeg;base64,${asset.base64}`;
+      
+      const uploadResponse = await api.post('/photos', {
+        eventId: selectedHangout.id,
+        photoUrl,
+      });
 
-      const uploadResponse = await api.uploadFormData(
-        `/events/${selectedHangout.id}/photos`,
-        formData
-      );
-
-      if (uploadResponse?.photo) {
+      if (uploadResponse?.id) {
         cachedHangoutsRef.current = null;
         setSelectedPhoto({
-          id: uploadResponse.photo.id,
-          photo_url: uploadResponse.photo.photo_url,
+          id: uploadResponse.id,
+          photo_url: uploadResponse.photo_url,
         });
         setShareStep('preview');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -800,7 +800,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             activeOpacity={0.7}
           >
             <Ionicons name="add-circle-outline" size={20} color={Colors.secondary} />
-            <Text style={styles.shareButtonText}>Share your Hangout</Text>
+            <Text style={styles.shareButtonText}>Share Hangout</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.myPostsButton}
