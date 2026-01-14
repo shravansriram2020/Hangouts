@@ -278,33 +278,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     setRefreshing(false);
   }, []);
 
-  const handleOpenShareModal = async () => {
-    try {
-      const hasSeenWarning = await AsyncStorage.getItem(EXPLORE_FIRST_POST_KEY);
-      
-      if (!hasSeenWarning) {
-        Alert.alert(
-          'Welcome to Hangouts Explore!',
-          'By posting, you share an image of your Hangout and its location. You can manage your post visibility in settings; however, by default, visibility is set to Everyone. You can change this at any time. Please note that inappropriate or harmful content will be removed and appropriate action will be taken.',
-          [
-            {
-              text: 'OK, I understand',
-              onPress: async () => {
-                await AsyncStorage.setItem(EXPLORE_FIRST_POST_KEY, 'true');
-                setShowShareModal(true);
-                setShareStep('hangouts');
-                setSelectedHangout(null);
-                setSelectedPhoto(null);
-              }
-            }
-          ]
-        );
-        return;
-      }
-    } catch (error) {
-      console.log('Error checking first post warning:', error);
-    }
-    
+  const openShareModalWithData = async () => {
     setShowShareModal(true);
     setShareStep('hangouts');
     setSelectedHangout(null);
@@ -326,6 +300,33 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
         setLoadingHangouts(false);
       }
     }
+  };
+
+  const handleOpenShareModal = async () => {
+    try {
+      const hasSeenWarning = await AsyncStorage.getItem(EXPLORE_FIRST_POST_KEY);
+      
+      if (!hasSeenWarning) {
+        Alert.alert(
+          'Welcome to Hangouts Explore!',
+          'By posting, you share an image of your Hangout and its location. You can manage your post visibility in settings; however, by default, visibility is set to Everyone. You can change this at any time. Please note that inappropriate or harmful content will be removed and appropriate action will be taken.',
+          [
+            {
+              text: 'OK, I understand',
+              onPress: async () => {
+                await AsyncStorage.setItem(EXPLORE_FIRST_POST_KEY, 'true');
+                openShareModalWithData();
+              }
+            }
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking first post warning:', error);
+    }
+    
+    openShareModalWithData();
   };
 
   const handleSelectHangout = (hangout: HangoutWithPhotos) => {
