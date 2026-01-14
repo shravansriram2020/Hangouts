@@ -159,6 +159,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
   const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const visibleCategories = allCategories.slice(0, visibleCount);
   const hasMore = visibleCount < allCategories.length;
@@ -201,6 +202,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       setLoading(false);
     };
     init();
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -821,6 +826,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
@@ -859,7 +865,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               
               <TouchableOpacity
                 style={styles.refreshButton}
-                onPress={onRefresh}
+                onPress={() => { scrollToTop(); onRefresh(); }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="refresh-outline" size={18} color={Colors.grayMedium} />
