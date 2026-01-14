@@ -34,7 +34,6 @@ const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
 const CATEGORIES_PER_PAGE = 5;
 const TRENDING_THRESHOLD = 10;
-const BG = Colors.background;
 
 interface ExplorePost {
   id: string;
@@ -887,32 +886,35 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[Colors.backgroundGradientStart, Colors.backgroundGradientEnd]}
+      style={styles.container}
+    >
       <View style={styles.header}>
         <View style={styles.headerButtonRow}>
           <TouchableOpacity 
-            style={styles.shareButton}
+            style={styles.headerButton}
             onPress={handleOpenShareModal}
             activeOpacity={0.7}
           >
-            <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-            <Text style={styles.shareButtonText}>Post</Text>
+            <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Post</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.savedButton}
+            style={[styles.headerButton, styles.savedButtonColor]}
             onPress={handleOpenSaved}
             activeOpacity={0.7}
           >
-            <Ionicons name="bookmark-outline" size={20} color="#8B5CF6" />
+            <Ionicons name="bookmark-outline" size={18} color="#8B5CF6" />
             <Text style={styles.savedButtonText}>Saved</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.myPostsButton}
+            style={styles.headerButton}
             onPress={handleOpenMyPosts}
             activeOpacity={0.7}
           >
-            <Ionicons name="images-outline" size={20} color={Colors.primary} />
-            <Text style={styles.shareButtonText}>Your Posts</Text>
+            <Ionicons name="images-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Your Posts</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1081,20 +1083,19 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </ScrollView>
         )}
       </GlassModal>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: BG,
+    backgroundColor: Colors.backgroundGradientStart,
   },
   loadingText: {
     marginTop: 12,
@@ -1106,12 +1107,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: BG,
   },
   headerButtonRow: {
     flexDirection: 'row',
     gap: 10,
-    backgroundColor: BG,
+  },
+  headerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.glassLight,
+    borderRadius: 12,
+    height: 44,
+    paddingHorizontal: 8,
+    gap: 4,
+  },
+  headerButtonText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    color: Colors.primary,
+  },
+  savedButtonColor: {
   },
   shareButton: {
     flex: 1,
@@ -1120,9 +1137,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.glassLight,
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    gap: 6,
+    height: 44,
+    paddingHorizontal: 8,
+    gap: 4,
   },
   myPostsButton: {
     flexDirection: 'row',
@@ -1156,16 +1173,16 @@ const styles = StyleSheet.create({
   },
   mainScroll: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   mainScrollContent: {
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   emptyState: {
     alignItems: 'center',
     padding: 40,
     marginTop: 40,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   emptyIconBg: {
     width: 100,
@@ -1191,18 +1208,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   feedContainer: {
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   categorySection: {
     marginBottom: 24,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 10,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   categoryTitle: {
     fontSize: 14,
@@ -1222,19 +1239,19 @@ const styles = StyleSheet.create({
     color: Colors.grayMedium,
   },
   horizontalScroll: {
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   carousel: {
     paddingLeft: 20,
     paddingRight: 4,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   cardWrapper: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     marginRight: 16,
     borderRadius: 16,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1370,7 +1387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     gap: 6,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   dot: {
     width: 8,
@@ -1388,13 +1405,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     gap: 12,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   loadMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: Colors.secondary,
     borderRadius: 12,
@@ -1412,7 +1429,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     gap: 6,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   refreshButtonText: {
     color: Colors.grayMedium,
@@ -1421,7 +1438,7 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 100,
-    backgroundColor: BG,
+    backgroundColor: 'transparent',
   },
   inlineAdContent: {
     flex: 1,
