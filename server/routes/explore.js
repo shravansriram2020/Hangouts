@@ -936,6 +936,18 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
             ))
           )
         ) <= $4
+        AND (
+          COALESCE(u.explore_visibility, 'public') = 'public'
+          OR ep.uploader_id = $3
+          OR (
+            COALESCE(u.explore_visibility, 'public') = 'friends'
+            AND EXISTS (
+              SELECT 1 FROM friends f 
+              WHERE (f.user_id = ep.uploader_id AND f.friend_id = $3)
+                 OR (f.user_id = $3 AND f.friend_id = ep.uploader_id)
+            )
+          )
+        )
       ORDER BY ep.like_count DESC, ep.created_at DESC
     `, [userLat, userLng, req.user.id, SHARED_PHOTOS_MAX_MILES]);
 
@@ -1139,7 +1151,7 @@ router.get('/saved', authenticateToken, async (req, res) => {
         ep.id,
         ep.photo_url as "imageUrl",
         u.username,
-        u.avatar_url as "userAvatar",
+        u.profile_photo as "userAvatar",
         e.location_name as "locationName",
         e.location_address as "locationAddress",
         e.location_lat as lat,
@@ -1150,8 +1162,21 @@ router.get('/saved', authenticateToken, async (req, res) => {
       FROM saved_explore_posts sep
       JOIN event_photos ep ON sep.photo_id = ep.id
       JOIN events e ON ep.event_id = e.id
-      JOIN users u ON ep.uploaded_by = u.id
-      WHERE sep.user_id = $1 AND ep.share_to_explore = true
+      JOIN users u ON ep.uploader_id = u.id
+      WHERE sep.user_id = $1 
+        AND ep.share_to_explore = true
+        AND (
+          COALESCE(u.explore_visibility, 'public') = 'public'
+          OR ep.uploader_id = $1
+          OR (
+            COALESCE(u.explore_visibility, 'public') = 'friends'
+            AND EXISTS (
+              SELECT 1 FROM friends f 
+              WHERE (f.user_id = ep.uploader_id AND f.friend_id = $1)
+                 OR (f.user_id = $1 AND f.friend_id = ep.uploader_id)
+            )
+          )
+        )
       ORDER BY sep.saved_at DESC
     `, [userId]);
 
