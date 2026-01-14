@@ -27,7 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { Colors, Fonts } from '../../constants/theme';
+import { Colors, Fonts, Shadows } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
 
@@ -1079,15 +1079,30 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
-                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && Platform.OS === 'ios' && BannerAd && BannerAdSize && (
+                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && (
                   <View style={styles.adContainer}>
-                    <BannerAd
-                      unitId={EXPLORE_BANNER_AD_UNIT}
-                      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                      requestOptions={{
-                        requestNonPersonalizedAdsOnly: false,
-                      }}
-                    />
+                    {Platform.OS === 'ios' && BannerAd && BannerAdSize ? (
+                      <BannerAd
+                        unitId={EXPLORE_BANNER_AD_UNIT}
+                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                        requestOptions={{
+                          requestNonPersonalizedAdsOnly: false,
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.placeholderNativeAd}>
+                        <Text style={styles.placeholderSponsoredText}>SPONSORED</Text>
+                        <View style={styles.placeholderNativeContent}>
+                          <View style={styles.placeholderAdIcon}>
+                            <Ionicons name="megaphone" size={24} color={Colors.white} />
+                          </View>
+                          <View style={styles.placeholderAdInfo}>
+                            <Text style={styles.placeholderAdTitle}>Advertisement</Text>
+                            <Text style={styles.placeholderAdSubtitle}>Your ad could be here</Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
                   </View>
                 )}
               </React.Fragment>
@@ -1557,6 +1572,47 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 8,
     alignItems: 'center',
+  },
+  placeholderNativeAd: {
+    width: '100%',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    ...Shadows.small,
+  },
+  placeholderSponsoredText: {
+    fontSize: 10,
+    fontFamily: Fonts.semiBold,
+    color: Colors.blue,
+    marginBottom: 10,
+    letterSpacing: 1,
+  },
+  placeholderNativeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  placeholderAdIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderAdInfo: {
+    flex: 1,
+  },
+  placeholderAdTitle: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    color: Colors.black,
+    marginBottom: 2,
+  },
+  placeholderAdSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.grayMedium,
   },
   bottomActions: {
     paddingHorizontal: 20,
