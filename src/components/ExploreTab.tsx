@@ -458,9 +458,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const handleSingleTap = (post: ExplorePost) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const fullAddress = post.locationAddress || post.locationName;
     onSelectLocation({
-      name: post.locationName,
-      address: post.locationAddress || '',
+      name: fullAddress,
+      address: fullAddress,
       lat: post.lat,
       lng: post.lng,
     });
@@ -657,7 +658,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       return (
         <View>
           <View style={styles.modalNote}>
-            <Ionicons name="information-circle-outline" size={16} color={Colors.grayMedium} />
+            <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
             <Text style={styles.modalNoteText}>
               Note: By sharing, you share your Hangout location and one image with others. Inappropriate or harmful content will be removed.
             </Text>
@@ -665,7 +666,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           
           {hangoutsWithPhotos.length === 0 ? (
             <View style={styles.modalEmpty}>
-              <Ionicons name="camera-outline" size={48} color={Colors.grayMedium} />
+              <Ionicons name="camera-outline" size={48} color={Colors.primary} />
               <Text style={styles.modalEmptyText}>No hangouts with photos</Text>
               <Text style={styles.modalEmptySubtext}>
                 Add photos to your hangouts first, then share them here!
@@ -682,7 +683,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 <View style={styles.hangoutInfo}>
                   <Text style={styles.hangoutTitle} numberOfLines={1}>{item.title}</Text>
                   <View style={styles.hangoutLocation}>
-                    <Ionicons name="location-outline" size={14} color={Colors.grayMedium} />
+                    <Ionicons name="location-outline" size={14} color={Colors.primary} />
                     <Text style={styles.hangoutLocationText} numberOfLines={1}>
                       {item.location_name || 'No location'}
                     </Text>
@@ -691,7 +692,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                     {item.photos.length} photo{item.photos.length !== 1 ? 's' : ''}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.grayMedium} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
               </TouchableOpacity>
             ))
           )}
@@ -886,7 +887,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </View>
         ) : myPosts.length === 0 ? (
           <View style={styles.modalEmpty}>
-            <Ionicons name="images-outline" size={48} color={Colors.grayMedium} />
+            <Ionicons name="images-outline" size={48} color={Colors.primary} />
             <Text style={styles.modalEmptyText}>No posts yet</Text>
             <Text style={styles.modalEmptySubtext}>
               Share your first hangout photo to see it here!
@@ -1299,7 +1300,7 @@ const styles = StyleSheet.create({
   modalEmptySubtext: {
     fontSize: 14,
     fontFamily: Fonts.regular,
-    color: Colors.grayMedium,
+    color: Colors.primary,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -1328,7 +1329,7 @@ const styles = StyleSheet.create({
   hangoutLocationText: {
     fontSize: 13,
     fontFamily: Fonts.regular,
-    color: Colors.grayMedium,
+    color: Colors.primary,
     flex: 1,
   },
   hangoutPhotoCount: {
@@ -1358,7 +1359,7 @@ const styles = StyleSheet.create({
   orSelectLabel: {
     fontSize: 14,
     fontFamily: Fonts.medium,
-    color: Colors.grayMedium,
+    color: Colors.primary,
     marginBottom: 12,
   },
   photosGrid: {
@@ -1383,7 +1384,7 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontSize: 14,
     fontFamily: Fonts.medium,
-    color: Colors.grayMedium,
+    color: Colors.primary,
     marginBottom: 12,
     textAlign: 'center',
   },
