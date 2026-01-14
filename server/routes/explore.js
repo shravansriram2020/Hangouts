@@ -935,21 +935,27 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
       ORDER BY ep.like_count DESC, ep.created_at DESC
     `, [userLat, userLng, req.user.id, SHARED_PHOTOS_MAX_MILES]);
 
-    // Group posts by category based on location name
+    // Group posts by category using TomTom-aligned location patterns
     const categories = {};
     const categoryOrder = ['Food & Dining', 'Bars & Nightlife', 'Entertainment', 'Outdoors', 'Other'];
+    
+    // TomTom-aligned category patterns
+    const FOOD_PATTERNS = /restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi|steakhouse|seafood|chinese|japanese|italian|mexican|thai|indian|korean|vietnamese|mediterranean|bbq|barbecue|buffet|brunch|breakfast|lunch|dinner|noodle|ramen|pho|wings|chicken|fish|donut|bagel|sandwich|deli|smoothie|juice|ice cream|frozen yogurt|dessert|pastry|patisserie/;
+    const BAR_PATTERNS = /bar|pub|brewery|tavern|club|lounge|nightlife|wine|cocktail|speakeasy|taphouse|beer|ale|distillery|winery|spirits|rooftop|happy hour|karaoke/;
+    const ENTERTAINMENT_PATTERNS = /theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium|escape room|laser tag|mini golf|putt|trampoline|go kart|dave & buster|topgolf|round1|main event|fun center|game|play|amusement|zoo|aquarium|planetarium|comedy|show|performance|amphitheater/;
+    const OUTDOOR_PATTERNS = /park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness|hiking|camping|nature|preserve|reserve|forest|pool|swim|surf|ski|snowboard|climbing|rock wall|yoga|pilates|crossfit|spa|wellness/;
     
     result.rows.forEach(post => {
       const locationLower = (post.locationName || '').toLowerCase();
       let category = 'Other';
       
-      if (locationLower.match(/restaurant|food|dining|kitchen|grill|bistro|eatery|diner|cafe|coffee|bakery|pizza|burger|taco|sushi/)) {
+      if (FOOD_PATTERNS.test(locationLower)) {
         category = 'Food & Dining';
-      } else if (locationLower.match(/bar|pub|brewery|tavern|club|lounge|nightlife/)) {
+      } else if (BAR_PATTERNS.test(locationLower)) {
         category = 'Bars & Nightlife';
-      } else if (locationLower.match(/theater|theatre|cinema|movie|bowling|arcade|museum|gallery|concert|arena|stadium/)) {
+      } else if (ENTERTAINMENT_PATTERNS.test(locationLower)) {
         category = 'Entertainment';
-      } else if (locationLower.match(/park|beach|trail|garden|lake|mountain|outdoor|recreation|golf|tennis|gym|fitness/)) {
+      } else if (OUTDOOR_PATTERNS.test(locationLower)) {
         category = 'Outdoors';
       }
       

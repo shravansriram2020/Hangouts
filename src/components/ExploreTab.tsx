@@ -19,6 +19,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import { Colors, Fonts, Shadows } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
@@ -73,6 +79,53 @@ interface ExploreTabProps {
   }) => void;
 }
 
+const HeartOverlay = ({ visible }: { visible: boolean }) => {
+  const scale = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      scale.value = 0;
+      opacity.value = 1;
+      scale.value = withSequence(
+        withTiming(1.3, { duration: 200 }),
+        withTiming(1, { duration: 100 })
+      );
+      opacity.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(1, { duration: 400 }),
+        withTiming(0, { duration: 200 })
+      );
+    }
+  }, [visible]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={heartOverlayStyle}>
+      <Animated.View style={animatedStyle}>
+        <Ionicons name="heart" size={80} color="#FF6B6B" />
+      </Animated.View>
+    </Animated.View>
+  );
+};
+
+const heartOverlayStyle = {
+  position: 'absolute' as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+  zIndex: 20,
+};
+
 export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,44 +142,51 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loadingHangouts, setLoadingHangouts] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const cachedHangoutsRef = useRef<HangoutWithPhotos[] | null>(null);
 
   const lastTapTimeRef = useRef<{ [key: string]: number }>({});
   const doubleTapTimerRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | null }>({});
+  const [animatingHearts, setAnimatingHearts] = useState<Set<string>>(new Set());
 
   const visibleCategories = allCategories.slice(0, visibleCount);
   const hasMore = visibleCount < allCategories.length;
 
-  const fetchLocation = async () => {
+  const cachedLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  const fetchLocation = async (forceRefresh = false) => {
+    if (!forceRefresh && cachedLocationRef.current) {
+      return cachedLocationRef.current;
+    }
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        return { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        cachedLocationRef.current = coords;
+        setLocation(coords);
+        return coords;
       }
     } catch (error) {
       console.log('Location error:', error);
     }
-    return null;
+    return cachedLocationRef.current || { lat: 0, lng: 0 };
   };
 
-  const fetchFeed = async (loc?: { lat: number; lng: number } | null) => {
+  const fetchFeed = async (loc: { lat: number; lng: number }) => {
     try {
-      const coords = loc || location || { lat: 0, lng: 0 };
-      const response = await api.get(`/explore/user-feed?lat=${coords.lat}&lng=${coords.lng}`);
+      const response = await api.get(`/explore/user-feed?lat=${loc.lat}&lng=${loc.lng}`);
       setAllCategories(response.categories || []);
     } catch (error) {
       console.error('Feed error:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const loc = await fetchLocation();
       await fetchFeed(loc);
+      setLoading(false);
     };
     init();
   }, []);
@@ -134,8 +194,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setVisibleCount(CATEGORIES_PER_PAGE);
-    await fetchFeed();
-  }, [location]);
+    const loc = await fetchLocation(true);
+    await fetchFeed(loc);
+    setRefreshing(false);
+  }, []);
 
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + CATEGORIES_PER_PAGE, allCategories.length));
@@ -146,14 +208,33 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     setShareStep('hangouts');
     setSelectedHangout(null);
     setSelectedPhoto(null);
-    setLoadingHangouts(true);
     
+    if (cachedHangoutsRef.current) {
+      setHangoutsWithPhotos(cachedHangoutsRef.current);
+      setLoadingHangouts(false);
+    } else {
+      setLoadingHangouts(true);
+      try {
+        const response = await api.get('/explore/my-events-with-photos');
+        cachedHangoutsRef.current = response || [];
+        setHangoutsWithPhotos(response || []);
+      } catch (error) {
+        console.error('Fetch hangouts error:', error);
+        setHangoutsWithPhotos([]);
+      } finally {
+        setLoadingHangouts(false);
+      }
+    }
+  };
+  
+  const refreshHangouts = async () => {
+    setLoadingHangouts(true);
     try {
       const response = await api.get('/explore/my-events-with-photos');
+      cachedHangoutsRef.current = response || [];
       setHangoutsWithPhotos(response || []);
     } catch (error) {
-      console.error('Fetch hangouts error:', error);
-      setHangoutsWithPhotos([]);
+      console.error('Refresh hangouts error:', error);
     } finally {
       setLoadingHangouts(false);
     }
@@ -182,7 +263,8 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Shared!', 'Your photo is now live on Explore.');
       setShowShareModal(false);
-      await fetchFeed();
+      const loc = cachedLocationRef.current || { lat: 0, lng: 0 };
+      await fetchFeed(loc);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to share photo');
     } finally {
@@ -227,6 +309,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       );
 
       if (uploadResponse?.photo) {
+        cachedHangoutsRef.current = null;
         setSelectedPhoto({
           id: uploadResponse.photo.id,
           photo_url: uploadResponse.photo.photo_url,
@@ -284,7 +367,20 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
     }
   };
 
+  const triggerHeartAnimation = useCallback((postId: string) => {
+    setAnimatingHearts(prev => new Set(prev).add(postId));
+    setTimeout(() => {
+      setAnimatingHearts(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    }, 800);
+  }, []);
+
   const handleDoubleTap = async (post: ExplorePost, categoryIndex: number, postIndex: number) => {
+    triggerHeartAnimation(post.id);
+    
     try {
       const response = await api.post(`/explore/photos/${post.id}/like`, {});
       
@@ -321,6 +417,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const renderPostCard = (post: ExplorePost, categoryIndex: number, postIndex: number, isPreview = false) => {
     const isTrending = post.likeCount >= TRENDING_THRESHOLD;
+    const showHeart = animatingHearts.has(post.id);
     
     return (
       <TouchableOpacity
@@ -344,43 +441,45 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           </View>
         )}
         
+        <HeartOverlay visible={showHeart} />
+        
         <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.cardGradient}
-      >
-        <View style={styles.cardContent}>
-          <View style={styles.userRow}>
-            {post.userAvatar ? (
-              <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <Ionicons name="person" size={14} color={Colors.white} />
-              </View>
-            )}
-            <Text style={styles.username}>{post.username}</Text>
-          </View>
-          
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={Colors.white} />
-            <Text style={styles.locationName} numberOfLines={1}>{post.locationName}</Text>
-          </View>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Ionicons 
-                name={post.isLiked ? "heart" : "heart-outline"} 
-                size={18} 
-                color={post.isLiked ? '#FF6B6B' : Colors.white} 
-              />
-              <Text style={styles.statText}>{post.likeCount}</Text>
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.cardGradient}
+        >
+          <View style={styles.cardContent}>
+            <View style={styles.userRow}>
+              {post.userAvatar ? (
+                <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <Ionicons name="person" size={14} color={Colors.white} />
+                </View>
+              )}
+              <Text style={styles.username}>{post.username}</Text>
             </View>
-            {post.distance > 0 && (
-              <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
-            )}
+            
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={16} color={Colors.white} />
+              <Text style={styles.locationName} numberOfLines={1}>{post.locationName}</Text>
+            </View>
+            
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Ionicons 
+                  name={post.isLiked ? "heart" : "heart-outline"} 
+                  size={18} 
+                  color={post.isLiked ? '#FF6B6B' : Colors.white} 
+                />
+                <Text style={styles.statText}>{post.likeCount}</Text>
+              </View>
+              {post.distance > 0 && (
+                <Text style={styles.distanceText}>{post.distance.toFixed(1)} mi</Text>
+              )}
+            </View>
           </View>
-        </View>
-      </LinearGradient>
-    </TouchableOpacity>
+        </LinearGradient>
+      </TouchableOpacity>
     );
   };
 
@@ -404,7 +503,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderInlineAdCard = (key: string) => (
     <View key={key} style={styles.card}>
       <LinearGradient
-        colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.08)']}
+        colors={[Colors.glassLight, 'rgba(200,220,235,0.9)']}
         style={styles.inlineAdContent}
       >
         <View style={styles.sponsoredBadge}>
@@ -412,7 +511,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
           <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
         </View>
         <View style={styles.inlineAdCenter}>
-          <Ionicons name="storefront-outline" size={40} color={Colors.grayMedium} />
+          <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
           <Text style={styles.inlineAdText}>Ad Space</Text>
           <Text style={styles.inlineAdSubtext}>Your business here</Text>
         </View>
