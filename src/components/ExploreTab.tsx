@@ -32,8 +32,9 @@ import GlassModal from './GlassModal';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_HEIGHT = 280;
-const CATEGORIES_PER_PAGE = 5;
+const MAX_CATEGORIES = 6;
 const TRENDING_THRESHOLD = 10;
+const AD_INTERVAL = 2;
 
 interface ExplorePost {
   id: string;
@@ -156,7 +157,6 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [allCategories, setAllCategories] = useState<CategoryFeed[]>([]);
-  const [visibleCount, setVisibleCount] = useState(CATEGORIES_PER_PAGE);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeIndices, setActiveIndices] = useState<{ [key: string]: number }>({});
   
@@ -194,8 +194,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const [savedPosts, setSavedPosts] = useState<ExplorePost[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
-  const visibleCategories = allCategories.slice(0, visibleCount);
-  const hasMore = visibleCount < allCategories.length;
+  const visibleCategories = allCategories.slice(0, MAX_CATEGORIES);
 
   const cachedLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
@@ -243,15 +242,10 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setVisibleCount(CATEGORIES_PER_PAGE);
     const loc = await fetchLocation(true);
     await fetchFeed(loc);
     setRefreshing(false);
   }, []);
-
-  const handleLoadMore = () => {
-    setVisibleCount(prev => Math.min(prev + CATEGORIES_PER_PAGE, allCategories.length));
-  };
 
   const handleOpenShareModal = async () => {
     setShowShareModal(true);
@@ -1016,21 +1010,18 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
             {visibleCategories.map((category, index) => (
               <React.Fragment key={category.category}>
                 {renderCategory(category, index)}
+                {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && (
+                  <View style={styles.adContainer}>
+                    <View style={styles.adPlaceholder}>
+                      <Ionicons name="megaphone-outline" size={20} color={Colors.grayMedium} />
+                      <Text style={styles.adPlaceholderText}>Sponsored</Text>
+                    </View>
+                  </View>
+                )}
               </React.Fragment>
             ))}
             
             <View style={styles.bottomActions}>
-              {hasMore && (
-                <TouchableOpacity
-                  style={styles.loadMoreButton}
-                  onPress={handleLoadMore}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="chevron-down-outline" size={20} color={Colors.secondary} />
-                  <Text style={styles.loadMoreText}>Load More Categories</Text>
-                </TouchableOpacity>
-              )}
-              
               <TouchableOpacity
                 style={styles.refreshButton}
                 onPress={() => { scrollToTop(); onRefresh(); }}
@@ -1485,6 +1476,24 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  adContainer: {
+    marginHorizontal: 20,
+    marginVertical: 8,
+  },
+  adPlaceholder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 12,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  adPlaceholderText: {
+    color: Colors.grayMedium,
+    fontSize: 13,
+    fontFamily: Fonts.medium,
   },
   bottomActions: {
     paddingHorizontal: 20,
