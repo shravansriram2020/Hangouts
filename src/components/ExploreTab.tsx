@@ -16,7 +16,6 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -967,34 +966,28 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
       <View style={styles.header}>
         <View style={styles.headerButtonRow}>
           <TouchableOpacity 
+            style={styles.headerButton}
             onPress={handleOpenShareModal}
             activeOpacity={0.7}
-            style={styles.headerButtonWrapper}
           >
-            <BlurView intensity={60} tint="light" style={styles.headerButton}>
-              <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
-              <Text style={styles.headerButtonText}>Post</Text>
-            </BlurView>
+            <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Post</Text>
           </TouchableOpacity>
           <TouchableOpacity 
+            style={styles.headerButton}
             onPress={handleOpenSaved}
             activeOpacity={0.7}
-            style={styles.headerButtonWrapper}
           >
-            <BlurView intensity={60} tint="light" style={styles.headerButton}>
-              <Ionicons name="bookmark-outline" size={18} color={Colors.primary} />
-              <Text style={styles.headerButtonText}>Saved</Text>
-            </BlurView>
+            <Ionicons name="bookmark-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Saved</Text>
           </TouchableOpacity>
           <TouchableOpacity 
+            style={styles.headerButton}
             onPress={handleOpenMyPosts}
             activeOpacity={0.7}
-            style={styles.headerButtonWrapper}
           >
-            <BlurView intensity={60} tint="light" style={styles.headerButton}>
-              <Ionicons name="images-outline" size={18} color={Colors.primary} />
-              <Text style={styles.headerButtonText}>Your Posts</Text>
-            </BlurView>
+            <Ionicons name="images-outline" size={18} color={Colors.primary} />
+            <Text style={styles.headerButtonText}>Your Posts</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1039,13 +1032,12 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
               )}
               
               <TouchableOpacity
+                style={styles.refreshButton}
                 onPress={() => { scrollToTop(); onRefresh(); }}
                 activeOpacity={0.7}
               >
-                <BlurView intensity={60} tint="light" style={styles.refreshButton}>
-                  <Ionicons name="refresh-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.refreshButtonText}>Refresh Feed</Text>
-                </BlurView>
+                <Ionicons name="refresh-outline" size={18} color={Colors.primary} />
+                <Text style={styles.refreshButtonText}>Refresh Feed</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1157,11 +1149,11 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                   </View>
                 </View>
                 <TouchableOpacity 
-                  style={styles.unsaveButton}
+                  style={styles.myPostDeleteButton}
                   onPress={() => handleUnsaveFromModal(post)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+                  <Ionicons name="trash-outline" size={20} color={Colors.grayMedium} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -1197,20 +1189,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  headerButtonWrapper: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
   headerButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     borderRadius: 12,
     height: 44,
     paddingHorizontal: 8,
     gap: 4,
-    overflow: 'hidden',
   },
   headerButtonText: {
     fontSize: 13,
@@ -1509,11 +1497,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     paddingVertical: 12,
     paddingHorizontal: 20,
     gap: 6,
     borderRadius: 12,
-    overflow: 'hidden',
   },
   refreshButtonText: {
     color: Colors.primary,
@@ -1785,9 +1773,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.medium,
     color: Colors.grayMedium,
-  },
-  unsaveButton: {
-    padding: 4,
   },
   saveButton: {
     padding: 4,
