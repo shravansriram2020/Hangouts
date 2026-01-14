@@ -1217,8 +1217,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: Colors.primary,
   },
-  savedButtonColor: {
-  },
   shareButton: {
     flex: 1,
     flexDirection: 'row',
@@ -1253,11 +1251,6 @@ const styles = StyleSheet.create({
   shareButtonText: {
     color: Colors.primary,
     fontSize: 16,
-    fontFamily: Fonts.semiBold,
-  },
-  savedButtonText: {
-    color: Colors.primary,
-    fontSize: 13,
     fontFamily: Fonts.semiBold,
   },
   mainScroll: {
