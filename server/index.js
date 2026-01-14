@@ -117,6 +117,13 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
   res.json(aasa);
 });
 
+// AdMob app-ads.txt for ad verification
+app.get('/app-ads.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send('google.com, pub-6700271097724179, DIRECT, f08c47fec0942fa0');
+});
+
 // App Store ID - update this with your actual App Store ID
 const APP_STORE_ID = process.env.APP_STORE_ID || 'YOUR_APP_STORE_ID';
 

@@ -24,10 +24,7 @@ import CreateEventModal from '../components/CreateEventModal';
 import EventCard from '../components/EventCard';
 import ArchivedEvents from '../components/ArchivedEvents';
 import NewsPopup from '../components/NewsPopup';
-import { AdBanner } from '../components/AdComponents';
 import ExploreTab from '../components/ExploreTab';
-
-const ADMOB_BANNER_ID = 'ca-app-pub-6700271097724179/1798427047';
 
 interface HomeScreenProps {
   navigation: any;
