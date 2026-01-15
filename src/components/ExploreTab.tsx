@@ -30,43 +30,19 @@ import Constants from 'expo-constants';
 import { Colors, Fonts, Shadows } from '../../constants/theme';
 import { api } from '../../services/api';
 import GlassModal from './GlassModal';
+import NativeAdCard from './NativeAdCard';
 
-const isExpoGo = Constants.appOwnership === 'expo';
-
-let NativeAdView: any = null;
-let HeadlineView: any = null;
-let TaglineView: any = null;
-let ImageView: any = null;
-let CallToActionView: any = null;
-let IconView: any = null;
-let AdvertiserView: any = null;
-
-if (!isExpoGo) {
-  try {
-    const nativeAds = require('react-native-admob-native-ads');
-    NativeAdView = nativeAds.default;
-    HeadlineView = nativeAds.HeadlineView;
-    TaglineView = nativeAds.TaglineView;
-    ImageView = nativeAds.ImageView;
-    CallToActionView = nativeAds.CallToActionView;
-    IconView = nativeAds.IconView;
-    AdvertiserView = nativeAds.AdvertiserView;
-  } catch (e) {
-    console.log('[AdMob Native] Not available in ExploreTab');
-  }
-}
-
-const NATIVE_AD_TEST_ID = 'ca-app-pub-3940256099942544/2247696110';
+const NATIVE_TEST_ID = 'ca-app-pub-3940256099942544/3986624511';
 
 const EXPLORE_BANNER_AD_UNIT = Platform.select({
-  ios: __DEV__ ? NATIVE_AD_TEST_ID : 'ca-app-pub-6700271097724179/8266335307',
-  android: NATIVE_AD_TEST_ID,
-}) || NATIVE_AD_TEST_ID;
+  ios: __DEV__ ? NATIVE_TEST_ID : 'ca-app-pub-6700271097724179/8266335307',
+  android: NATIVE_TEST_ID,
+}) || NATIVE_TEST_ID;
 
 const EXPLORE_BOX_AD_UNIT = Platform.select({
-  ios: __DEV__ ? NATIVE_AD_TEST_ID : 'ca-app-pub-6700271097724179/5281079318',
-  android: NATIVE_AD_TEST_ID,
-}) || NATIVE_AD_TEST_ID;
+  ios: __DEV__ ? NATIVE_TEST_ID : 'ca-app-pub-6700271097724179/5281079318',
+  android: NATIVE_TEST_ID,
+}) || NATIVE_TEST_ID;
 
 const EXPLORE_FIRST_POST_KEY = 'hangouts_explore_first_post_seen';
 
@@ -836,37 +812,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
   const renderInlineAdCard = (key: string) => (
     <View key={key} style={styles.cardWrapper}>
       <View style={[styles.card, styles.adCard]}>
-        {Platform.OS === 'ios' && NativeAdView ? (
-          <NativeAdView
-            adUnitID={EXPLORE_BOX_AD_UNIT}
-            style={styles.nativeAdCard}
-            onAdLoaded={() => console.log('[NativeAd] Inline ad loaded')}
-            onAdFailedToLoad={(error: any) => console.log('[NativeAd] Failed:', error)}
-          >
-            <View style={styles.nativeInlineContent}>
-              <Text style={styles.nativeAdSponsoredLabel}>SPONSORED</Text>
-              <View style={styles.nativeInlineRow}>
-                {IconView && <IconView style={styles.nativeInlineIcon} />}
-                <View style={styles.nativeInlineInfo}>
-                  {HeadlineView && <HeadlineView style={styles.nativeInlineHeadline} />}
-                  {TaglineView && <TaglineView style={styles.nativeInlineTagline} numberOfLines={1} />}
-                </View>
-              </View>
-              {CallToActionView && (
-                <CallToActionView 
-                  style={styles.nativeInlineCta}
-                  textStyle={styles.nativeInlineCtaText}
-                  allCaps
-                />
-              )}
-            </View>
-          </NativeAdView>
-        ) : (
-          <View style={styles.inlineAdPlaceholder}>
-            <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
-            <View style={styles.inlineAdPlaceholderBox} />
-          </View>
-        )}
+        <NativeAdCard adUnitId={EXPLORE_BOX_AD_UNIT} variant="inline" />
       </View>
     </View>
   );
@@ -1127,37 +1073,7 @@ export default function ExploreTab({ onSelectLocation }: ExploreTabProps) {
                 {renderCategory(category, index)}
                 {(index + 1) % AD_INTERVAL === 0 && index < visibleCategories.length - 1 && (
                   <View style={styles.adContainer}>
-                    {Platform.OS === 'ios' && NativeAdView ? (
-                      <NativeAdView
-                        adUnitID={EXPLORE_BANNER_AD_UNIT}
-                        style={styles.nativeBannerAd}
-                        onAdLoaded={() => console.log('[NativeAd] Banner ad loaded')}
-                        onAdFailedToLoad={(error: any) => console.log('[NativeAd] Banner failed:', error)}
-                      >
-                        <View style={styles.nativeBannerContent}>
-                          <Text style={styles.nativeAdSponsoredLabel}>SPONSORED</Text>
-                          <View style={styles.nativeBannerRow}>
-                            {IconView && <IconView style={styles.nativeBannerIcon} />}
-                            <View style={styles.nativeBannerInfo}>
-                              {HeadlineView && <HeadlineView style={styles.nativeBannerHeadline} />}
-                              {TaglineView && <TaglineView style={styles.nativeBannerTagline} numberOfLines={1} />}
-                            </View>
-                            {CallToActionView && (
-                              <CallToActionView 
-                                style={styles.nativeBannerCta}
-                                textStyle={styles.nativeBannerCtaText}
-                                allCaps
-                              />
-                            )}
-                          </View>
-                        </View>
-                      </NativeAdView>
-                    ) : (
-                      <View style={styles.placeholderAdWrapper}>
-                        <Text style={styles.placeholderSponsoredLabel}>SPONSORED</Text>
-                        <View style={styles.placeholderAdBox} />
-                      </View>
-                    )}
+                    <NativeAdCard adUnitId={EXPLORE_BANNER_AD_UNIT} variant="banner" />
                   </View>
                 )}
               </React.Fragment>
