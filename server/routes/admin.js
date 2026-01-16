@@ -1029,11 +1029,11 @@ router.get('/photos/all', authenticateAdmin, async (req, res) => {
              u.email as uploader_email,
              u.profile_photo as user_avatar,
              e.title as event_title,
-             e.location_name,
-             e.location_address
+             COALESCE(ep.location_name, e.location_name) as location_name,
+             COALESCE(ep.location_address, e.location_address) as location_address
       FROM event_photos ep
       JOIN users u ON ep.uploader_id = u.id
-      JOIN events e ON ep.event_id = e.id
+      LEFT JOIN events e ON ep.event_id = e.id
       WHERE ep.share_to_explore = true
     `;
     
