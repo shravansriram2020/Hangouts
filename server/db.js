@@ -283,6 +283,15 @@ const initDb = async () => {
         saved_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, photo_id)
       );
+
+      -- Blocked emails table (for permanently banned users)
+      CREATE TABLE IF NOT EXISTS blocked_emails (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        reason TEXT,
+        blocked_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+        blocked_at TIMESTAMP DEFAULT NOW()
+      );
     `);
     console.log('Database tables created successfully');
   } catch (error) {

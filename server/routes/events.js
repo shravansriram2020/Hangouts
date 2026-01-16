@@ -56,6 +56,16 @@ router.post('/', authenticateToken, async (req, res) => {
 
     if (invitedUsers && invitedUsers.length > 0) {
       for (const userId of invitedUsers) {
+        // Skip banned users
+        const userCheck = await pool.query(
+          'SELECT is_banned FROM users WHERE id = $1',
+          [userId]
+        );
+        if (userCheck.rows.length > 0 && userCheck.rows[0].is_banned) {
+          console.log('[Events] Skipping invite for banned user:', userId);
+          continue;
+        }
+
         await pool.query(
           `INSERT INTO event_attendees (event_id, user_id, status)
            VALUES ($1, $2, 'invited')

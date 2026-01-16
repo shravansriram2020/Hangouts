@@ -455,6 +455,7 @@ router.post('/users/:id/ban', authenticateAdmin, async (req, res) => {
   
   try {
     const banExpiresAt = duration ? new Date(Date.now() + duration * 60 * 60 * 1000) : null;
+    const isPermanent = !duration;
     
     // Get user details for email
     const userResult = await pool.query(
@@ -468,13 +469,7 @@ router.post('/users/:id/ban', authenticateAdmin, async (req, res) => {
     
     const user = userResult.rows[0];
     
-    await pool.query(
-      `UPDATE users SET is_banned = true, ban_reason = $1, ban_expires_at = $2, banned_by = $3
-       WHERE id = $4`,
-      [reason || 'Violation of terms', banExpiresAt, req.admin.id, req.params.id]
-    );
-    
-    // Send ban notification email if user has valid email
+    // Send ban notification email first (before potential deletion)
     if (user.email && user.email.includes('@')) {
       try {
         await sendBanNotificationEmail(user.email, user.first_name, reason || 'Violation of community guidelines', banExpiresAt);
@@ -486,10 +481,46 @@ router.post('/users/:id/ban', authenticateAdmin, async (req, res) => {
       console.log('[Admin] User has no valid email, skipping ban notification');
     }
     
-    await logAction(req.admin.id, 'ban_user', req.params.id, { reason, duration });
-    
-    console.log('[Admin] User banned:', req.params.id, 'by', req.admin.email);
-    res.json({ message: 'User banned successfully' });
+    if (isPermanent) {
+      // For permanent bans: block email and delete account
+      console.log('[Admin] Permanent ban - blocking email and deleting account for:', user.email);
+      
+      // Block the email from future signups
+      if (user.email && user.email.includes('@')) {
+        await pool.query(
+          `INSERT INTO blocked_emails (email, reason, blocked_by)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (email) DO UPDATE SET reason = $2, blocked_by = $3, blocked_at = NOW()`,
+          [user.email.toLowerCase(), reason || 'Permanently banned for violation of terms', req.admin.id]
+        );
+        console.log('[Admin] Email blocked:', user.email);
+      }
+      
+      // Log the action before deleting (preserve user ID reference)
+      await logAction(req.admin.id, 'permanent_ban_delete_user', req.params.id, { 
+        reason, 
+        email: user.email,
+        firstName: user.first_name 
+      });
+      
+      // Delete the user account (cascades to related data)
+      await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+      
+      console.log('[Admin] User permanently banned and deleted:', req.params.id, 'by', req.admin.email);
+      res.json({ message: 'User permanently banned. Account deleted and email blocked from future signups.' });
+    } else {
+      // For temporary bans: just suspend the account
+      await pool.query(
+        `UPDATE users SET is_banned = true, ban_reason = $1, ban_expires_at = $2, banned_by = $3
+         WHERE id = $4`,
+        [reason || 'Violation of terms', banExpiresAt, req.admin.id, req.params.id]
+      );
+      
+      await logAction(req.admin.id, 'ban_user', req.params.id, { reason, duration });
+      
+      console.log('[Admin] User temporarily banned:', req.params.id, 'by', req.admin.email);
+      res.json({ message: 'User banned successfully' });
+    }
   } catch (error) {
     console.error('Ban user error:', error);
     res.status(500).json({ error: 'Failed to ban user' });

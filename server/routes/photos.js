@@ -185,6 +185,17 @@ router.patch('/:id/share', authenticateToken, async (req, res) => {
   const { share_to_explore } = req.body;
   
   try {
+    // Check if user is banned
+    if (share_to_explore) {
+      const banCheck = await pool.query(
+        'SELECT is_banned FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      if (banCheck.rows.length > 0 && banCheck.rows[0].is_banned) {
+        return res.status(403).json({ error: 'Your account is suspended and cannot share to Explore' });
+      }
+    }
+
     // Get the photo and its associated event
     const photoResult = await pool.query(
       `SELECT ep.*, e.location_name, e.location_address
