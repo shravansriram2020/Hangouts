@@ -185,14 +185,17 @@ router.patch('/:id/share', authenticateToken, async (req, res) => {
   const { share_to_explore } = req.body;
   
   try {
-    // Check if user is banned
+    // Check if user is currently banned (active ban with no expiry or future expiry)
     if (share_to_explore) {
       const banCheck = await pool.query(
-        'SELECT is_banned FROM users WHERE id = $1',
+        'SELECT is_banned, ban_expires_at FROM users WHERE id = $1',
         [req.user.id]
       );
       if (banCheck.rows.length > 0 && banCheck.rows[0].is_banned) {
-        return res.status(403).json({ error: 'Your account is suspended and cannot share to Explore' });
+        const banExpiry = banCheck.rows[0].ban_expires_at;
+        if (!banExpiry || new Date(banExpiry) > new Date()) {
+          return res.status(403).json({ error: 'Your account is suspended and cannot share to Explore' });
+        }
       }
     }
 

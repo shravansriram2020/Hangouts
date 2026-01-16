@@ -634,7 +634,7 @@ router.get('/feed', authenticateToken, async (req, res) => {
         JOIN users u ON ep.uploader_id = u.id
         WHERE ep.share_to_explore = true
           AND ep.moderation_status = 'approved'
-          AND u.is_banned = false
+          AND (u.is_banned = false OR (u.ban_expires_at IS NOT NULL AND u.ban_expires_at <= NOW()))
           AND e.location_lat IS NOT NULL
           AND e.location_lng IS NOT NULL
           AND (
@@ -728,7 +728,7 @@ router.get('/shared-photos', authenticateToken, async (req, res) => {
       JOIN users u ON ep.uploader_id = u.id
       WHERE ep.share_to_explore = true
         AND ep.moderation_status = 'approved'
-        AND u.is_banned = false
+        AND (u.is_banned = false OR (u.ban_expires_at IS NOT NULL AND u.ban_expires_at <= NOW()))
         AND e.location_lat IS NOT NULL
         AND e.location_lng IS NOT NULL
         AND (
@@ -905,13 +905,16 @@ router.post('/share', authenticateToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Check if user is banned
+    // Check if user is currently banned (active ban with no expiry or future expiry)
     const banCheck = await pool.query(
-      'SELECT is_banned FROM users WHERE id = $1',
+      'SELECT is_banned, ban_expires_at FROM users WHERE id = $1',
       [userId]
     );
     if (banCheck.rows.length > 0 && banCheck.rows[0].is_banned) {
-      return res.status(403).json({ error: 'Your account is suspended and cannot share to Explore' });
+      const banExpiry = banCheck.rows[0].ban_expires_at;
+      if (!banExpiry || new Date(banExpiry) > new Date()) {
+        return res.status(403).json({ error: 'Your account is suspended and cannot share to Explore' });
+      }
     }
 
     // Verify user has access to the event
@@ -1030,7 +1033,7 @@ router.get('/user-feed', authenticateToken, async (req, res) => {
       JOIN users u ON ep.uploader_id = u.id
       WHERE ep.share_to_explore = true
         AND ep.moderation_status = 'approved'
-        AND u.is_banned = false
+        AND (u.is_banned = false OR (u.ban_expires_at IS NOT NULL AND u.ban_expires_at <= NOW()))
         AND COALESCE(ep.location_lat, e.location_lat) IS NOT NULL
         AND COALESCE(ep.location_lng, e.location_lng) IS NOT NULL
         AND COALESCE(ep.location_name, e.location_name) IS NOT NULL

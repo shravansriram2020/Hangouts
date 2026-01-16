@@ -56,14 +56,18 @@ router.post('/', authenticateToken, async (req, res) => {
 
     if (invitedUsers && invitedUsers.length > 0) {
       for (const userId of invitedUsers) {
-        // Skip banned users
+        // Skip users who are currently banned (active ban with no expiry or future expiry)
         const userCheck = await pool.query(
-          'SELECT is_banned FROM users WHERE id = $1',
+          'SELECT is_banned, ban_expires_at FROM users WHERE id = $1',
           [userId]
         );
         if (userCheck.rows.length > 0 && userCheck.rows[0].is_banned) {
-          console.log('[Events] Skipping invite for banned user:', userId);
-          continue;
+          const banExpiry = userCheck.rows[0].ban_expires_at;
+          // Skip if ban is permanent (no expiry) or ban hasn't expired yet
+          if (!banExpiry || new Date(banExpiry) > new Date()) {
+            console.log('[Events] Skipping invite for banned user:', userId);
+            continue;
+          }
         }
 
         await pool.query(

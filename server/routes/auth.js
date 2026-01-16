@@ -125,6 +125,16 @@ router.post('/verify-code', async (req, res) => {
   }
 
   try {
+    // Check if email is blocked (permanently banned)
+    const blockedEmail = await pool.query(
+      'SELECT id FROM blocked_emails WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (blockedEmail.rows.length > 0) {
+      return res.status(403).json({ error: 'This email address cannot be used to create an account' });
+    }
+
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1 OR username = $2',
       [email.toLowerCase(), username.toLowerCase()]
@@ -206,6 +216,16 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
+    // Check if email is blocked (permanently banned)
+    const blockedEmail = await pool.query(
+      'SELECT id FROM blocked_emails WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (blockedEmail.rows.length > 0) {
+      return res.status(403).json({ error: 'This email address cannot be used to create an account' });
+    }
+
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1 OR username = $2',
       [email.toLowerCase(), username.toLowerCase()]
