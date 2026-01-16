@@ -94,13 +94,15 @@ const sendBanNotificationEmail = async (email, firstName, reason, banExpiresAt) 
   const resend = new Resend(resendApiKey);
   
   const expirationText = banExpiresAt 
-    ? `Your suspension will be lifted on <strong>${new Date(banExpiresAt).toLocaleDateString('en-US', { 
+    ? `Your suspension will be lifted on <strong>${new Date(banExpiresAt).toLocaleString('en-US', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric',
         hour: 'numeric',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'UTC',
+        timeZoneName: 'short'
       })}</strong>.`
     : 'This suspension is <strong>permanent</strong>.';
   
@@ -128,9 +130,6 @@ const sendBanNotificationEmail = async (email, firstName, reason, banExpiresAt) 
           If you believe this was a mistake, please contact our support team.
         </p>
       </div>
-      <p style="color: #999; font-size: 12px; text-align: center; margin-top: 32px;">
-        &copy; ${new Date().getFullYear()} Hangouts. All rights reserved.
-      </p>
     </div>
   `;
   
