@@ -22,7 +22,10 @@
           "fetch",
           "remote-notification"
         ],
-        "UIViewControllerBasedStatusBarAppearance": false
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "NSLocationWhenInUseUsageDescription": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements.",
+        "NSLocationAlwaysUsageDescription": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements."
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -119,9 +122,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Hangouts to use your location to share with friends even when the app is closed.",
-          "locationAlwaysPermission": "Allow Hangouts to always access your location so friends can see where you are on the way to events.",
-          "locationWhenInUsePermission": "Allow Hangouts to access your location while using the app.",
+          "locationAlwaysAndWhenInUsePermission": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements.",
+          "locationAlwaysPermission": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements.",
+          "locationWhenInUsePermission": "Your location is used to show you Explore posts within a 60-mile radius and to enable the 'Share ETA' feature. It also helps us provide more relevant local advertisements.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
